@@ -128,6 +128,8 @@ const notificationRoutes = require('./routes/notifications');
 const promotionRoutes = require('./routes/promotions');
 const chatbotRoutes = require('./routes/chatbot');
 const chatbotKnowledgeRoutes = require('./routes/chatbot-knowledge');
+const recommendationRoutes = require('./routes/recommendations'); // ✅ Hook Route HML
+const interestRoutes = require('./routes/interests'); // ✅ Quản lý sở thích
 
 app.use('/api/products', productRoutes);
 app.use('/api/auth', authRoutes);
@@ -143,6 +145,8 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/promotions', promotionRoutes);
 app.use('/api/chatbot', chatbotRoutes);
 app.use('/api/chatbot-knowledge', chatbotKnowledgeRoutes);
+app.use('/api/recommendations', recommendationRoutes); // ✅ Endpoint UI sử dụng
+app.use('/api/interests', interestRoutes); // ✅ Sở thích khách hàng
 
 // Health check
 app.get('/api/health', (req, res) => {

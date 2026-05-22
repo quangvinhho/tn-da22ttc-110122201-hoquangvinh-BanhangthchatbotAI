@@ -36,8 +36,25 @@
 
   <!-- Structured Data / Schema.org -->
   <script type="application/ld+json">
-
-</script>
+  {
+    "@context": "https://schema.org",
+    "@type": "ElectronicsStore",
+    "name": "QuangHưng Mobile",
+    "image": "https://quanghungmobile.vn/images/og-image.jpg",
+    "description": "Mua điện thoại chính hãng, giá tốt nhất thị trường. iPhone, Samsung, Sony Xperia.",
+    "url": "https://quanghungmobile.vn/",
+    "telephone": "+84123456789",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "123 Đường Điện Thoại",
+      "addressLocality": "Hồ Chí Minh",
+      "addressRegion": "Hồ Chí Minh",
+      "postalCode": "700000",
+      "addressCountry": "VN"
+    },
+    "priceRange": "$$"
+  }
+  </script>
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -111,15 +128,15 @@
           <div id="banner-track" class="flex transition-transform duration-700 ease-out">
             <!-- Slide 1 - OPPO Reno14 Series -->
             <a href="product-detail.html?id=14" class="min-w-full block cursor-pointer">
-              <img src="images/desk_header_d7212039d2.webp" class="w-full h-auto" alt="OPPO Reno14 Banner">
+              <img src="images/desk_header_d7212039d2.webp" class="w-full h-auto" alt="OPPO Reno14 Banner" loading="lazy">
             </a>
             <!-- Slide 2 - Samsung Galaxy A17 -->
             <a href="product-detail.html?id=13" class="min-w-full block cursor-pointer">
-              <img src="images/desk_header_21220f992b.webp" class="w-full h-auto" alt="Samsung Galaxy A17 Banner">
+              <img src="images/desk_header_21220f992b.webp" class="w-full h-auto" alt="Samsung Galaxy A17 Banner" loading="lazy">
             </a>
             <!-- Slide 3 - Khuyến mãi -->
             <a href="promotions.html" class="min-w-full block cursor-pointer">
-              <img src="images/desk_theme_content_f5f704c2f2.webp" class="w-full h-auto" alt="Khuyến mãi">
+              <img src="images/desk_theme_content_f5f704c2f2.webp" class="w-full h-auto" alt="Khuyến mãi" loading="lazy">
             </a>
           </div>
 
@@ -142,10 +159,10 @@
         <!-- Dưới: 2 Banner nhỏ nằm cạnh nhau -->
         <div class="grid grid-cols-2 gap-3 md:gap-4 bg-gray-50 p-3 md:p-4 mt-1 border-t border-gray-100">
           <a href="product-detail.html?id=13" class="block group overflow-hidden rounded-lg">
-            <img src="images/H1_1440x242_1_95840a416f.webp" class="w-full h-auto group-hover:scale-[1.02] transition-transform duration-300" alt="Samsung Galaxy A17">
+            <img src="images/H1_1440x242_1_95840a416f.webp" class="w-full h-auto group-hover:scale-[1.02] transition-transform duration-300" alt="Samsung Galaxy A17" loading="lazy">
           </a>
           <a href="product-detail.html?id=14" class="block group overflow-hidden rounded-lg">
-            <img src="images/H1_1440x242_ff204ca315.webp" class="w-full h-auto group-hover:scale-[1.02] transition-transform duration-300" alt="OPPO Reno14">
+            <img src="images/H1_1440x242_ff204ca315.webp" class="w-full h-auto group-hover:scale-[1.02] transition-transform duration-300" alt="OPPO Reno14" loading="lazy">
           </a>
         </div>
       </div>
@@ -155,104 +172,127 @@
     </div>
   </section>
 
+  
+
+  
+
+  <!-- GỢI Ý DÀNH CHO BẠN (AI RECOMMENDATION) -->
+  <section id="recommendations-section" class="py-3 sm:py-4 md:py-5 bg-red-50 reveal-on-scroll hidden">
+    <div class="max-w-[1920px] mx-auto px-2 sm:px-3 md:px-4">
+      <div class="bg-gradient-to-r from-red-100 to-red-50 rounded-xl md:rounded-2xl shadow-sm border border-red-200 p-3 sm:p-4 md:p-5 relative overflow-hidden">
+        <div class="absolute -right-10 -top-10 opacity-10 pointer-events-none">
+            <i class="fas fa-magic text-9xl text-red-600"></i>
+        </div>
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 pb-2 border-b border-red-200 gap-3 sm:gap-0 relative z-10">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 md:w-12 md:h-12 bg-red-600 rounded-full flex items-center justify-center shadow-md">
+                <i class="fas fa-heart text-white text-xl"></i>
+            </div>
+            <div>
+                <h2 class="text-2xl sm:text-3xl md:text-3xl font-extrabold text-red-700 tracking-tight">Dành Riêng Cho Bạn</h2>
+                <p class="text-red-600/80 text-sm font-medium">Gợi ý phù hợp nhất dành riêng cho bạn</p>
+            </div>
+          </div>
+        </div>
+        <div id="ai-recommendations-grid" class="product-grid-responsive relative z-10">
+        </div>
+      </div>
+    </div>
+  </section>
+
   <script>
-    // Logic Banner Slider mới (Carousel style)
-    const bannerTrack = document.getElementById('banner-track');
-    const indicators = document.querySelectorAll('.banner-indicator');
-    const totalSlides = 3; // Số lượng slide (3 banner chính)
-    let currentBannerIndex = 0;
-    let autoPlayInterval = null;
-    const AUTO_PLAY_DELAY = 4000; // Tốc độ tự động chuyển (4 giây)
+    window.loadRecommendations = async function() {
+        const user = JSON.parse(localStorage.getItem('user') || 'null');
+        const section = document.getElementById('recommendations-section');
+        const grid = document.getElementById('ai-recommendations-grid');
 
-    // Hàm cập nhật vị trí slider
-    function updateSlider() {
-      if (!bannerTrack) return;
-
-      // Trượt track dựa trên index (mỗi slide chiếm 100% chiều rộng)
-      bannerTrack.style.transform = `translateX(-${currentBannerIndex * 100}%)`;
-
-      // Cập nhật dots
-      indicators.forEach((dot, index) => {
-        if (index === currentBannerIndex) {
-          dot.style.backgroundColor = '#e41e26'; // Màu đỏ active
-          dot.style.width = '24px';
-          dot.style.opacity = '1';
-        } else {
-          dot.style.backgroundColor = 'rgba(255,255,255,0.7)';
-          dot.style.width = '8px';
-          dot.style.opacity = '0.7';
+        if (!user || !user.ma_kh || !section || !grid) {
+            if (section) section.classList.add('hidden');
+            return;
         }
-      });
-    }
 
-    // Chuyển đến banner tiếp theo
-    function nextBanner(resetAutoPlay = true) {
-      currentBannerIndex = (currentBannerIndex + 1) % totalSlides;
-      updateSlider();
-      if (resetAutoPlay) startAutoPlay();
-    }
+        try {
+            grid.innerHTML = '<div class="col-span-full text-center py-8"><i class="fas fa-spinner fa-spin text-3xl text-red-500 mb-2"></i><p class="text-gray-500">Đang phân tích gợi ý...</p></div>';
+            section.classList.remove('hidden');
 
-    // Chuyển về banner trước
-    function prevBanner(resetAutoPlay = true) {
-      currentBannerIndex = (currentBannerIndex - 1 + totalSlides) % totalSlides;
-      updateSlider();
-      if (resetAutoPlay) startAutoPlay();
-    }
+            const res = await fetch('http://localhost:3000/api/recommendations', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: user.ma_kh, cartItems: [] })
+            });
+            const data = await res.json();
 
-    // Chuyển đến banner cụ thể (khi click dot hoặc banner nhỏ)
-    function goToBanner(index) {
-      currentBannerIndex = index;
-      updateSlider();
-      startAutoPlay();
-    }
+            if (data.success && data.data && data.data.length > 0) {
+                grid.innerHTML = data.data.slice(0, 5).map(function(product, index) {
+                    var price = new Intl.NumberFormat('vi-VN').format(product.price) + '₫';
+                    var oldPrice = new Intl.NumberFormat('vi-VN').format(Math.round(product.price * 1.25)) + '₫';
+                    var imgPath = product.image || 'images/iphone-17-pro-max-256.jpg';
+                    if (imgPath && !imgPath.startsWith('images/') && !imgPath.startsWith('http')) {
+                        imgPath = 'images/' + imgPath;
+                    }
+                    var storage = product.storage ? ' ' + product.storage + 'GB' : '';
+                    var rating = 5;
+                    var reviewCount = Math.floor(Math.random() * 150) + 40;
+                    
+                    // Render stars
+                    var stars = '';
+                    for (var i = 1; i <= 5; i++) {
+                        stars += '<i class="fas fa-star"></i>';
+                    }
+                    
+                    var promoLines = ['Trả góp 0% | Trade-in giảm đến 5 triệu'];
+                    var promoHtml = promoLines[0].split('|').map(function(line) {
+                        var text = line.trim();
+                        text = text.replace(/(\d+(?:\.\d+)*(?:k|đ| đ| triệu| ngày|%|.000đ))/gi, '<strong class="text-[#d70018]">$1</strong>');
+                        return '<p class="text-[10px] md:text-[11px] text-gray-600 mb-0.5 last:mb-0">' + text + '</p>';
+                    }).join('');
 
-    // Quản lý Autoplay
-    function startAutoPlay() {
-      if (autoPlayInterval) clearInterval(autoPlayInterval);
-      autoPlayInterval = setInterval(() => {
-        nextBanner(false);
-      }, AUTO_PLAY_DELAY);
-    }
+                    return '<div class="product-card-hover rounded-xl p-3 relative group flex flex-col justify-between h-full bg-white border border-gray-100 hover:border-red-400">' +
+                      '<a href="product-detail.html?id=' + product.id + '" class="flex-1 flex flex-col pt-1">' +
+                        '<div class="relative h-44 sm:h-52 mb-3 overflow-hidden p-0 flex items-center justify-center">' +
+                          '<span class="absolute top-0 left-0 bg-gradient-to-r from-red-600 to-pink-500 text-white text-[9px] font-bold px-2 py-1 rounded-br-lg z-10 shadow-sm"><i class="fas fa-heart mr-1"></i>Dành cho bạn</span>' +
+                          '<img src="' + imgPath + '" alt="' + (product.name || 'Sản phẩm') + '" class="card-image rounded-md w-full h-full object-contain transition-transform group-hover:scale-105" onerror="this.src=\'images/iphone-17-pro-max-256.jpg\'" loading="lazy">' +
+                        '</div>' +
+                        '<div class="flex flex-col gap-1.5 mt-auto">' +
+                          '<h3 class="font-bold text-[13px] sm:text-[14px] text-gray-800 line-clamp-2 min-h-[40px] leading-snug">' + (product.name || 'Sản phẩm') + storage + '</h3>' +
+                          '<div class="price-block flex items-end gap-2 mt-1">' +
+                            '<div class="text-base sm:text-lg font-black text-[#d70018] leading-none">' + price + '</div>' +
+                            '<div class="text-[11px] text-gray-400 line-through mb-0.5">' + oldPrice + '</div>' +
+                          '</div>' +
+                          '<div class="bg-gray-50 rounded px-2 py-1.5 mt-1.5 border border-gray-100">' +
+                            promoHtml +
+                          '</div>' +
+                          '<div class="flex items-center justify-between mt-1">' +
+                            '<div class="flex items-center gap-1 text-yellow-400 text-[10px]">' + stars + '</div>' +
+                            '<div class="text-[11px] text-gray-500 hidden sm:block">(' + reviewCount + ' đánh giá)</div>' +
+                          '</div>' +
+                        '</div>' +
+                      '</a>' +
+                      '<div class="flex gap-2 mt-3 pt-3 border-t border-gray-100">' +
+                        '<a href="product-detail.html?id=' + product.id + '" ' +
+                           'class="flex-1 bg-[#d70018] hover:bg-red-700 text-white text-center text-[13px] font-semibold py-2 px-2 rounded-lg transition-colors flex items-center justify-center gap-1.5 shadow-sm">' +
+                          '<i class="fas fa-bolt"></i> Mua Ngay' +
+                        '</a>' +
+                        '<button onclick="event.preventDefault(); addToCartQuick(' + product.id + ', \'' + (product.name || '').replace(/'/g, "\\'") + '\', ' + product.price + ', \'' + imgPath + '\')" ' +
+                                'class="bg-gray-100 hover:bg-gray-200 text-gray-700 text-[13px] font-semibold py-2 px-3 rounded-lg transition-colors flex items-center justify-center" ' +
+                                'title="Thêm vào giỏ">' +
+                          '<i class="fas fa-cart-plus hover:scale-110 transition-transform"></i>' +
+                        '</button>' +
+                      '</div>' +
+                    '</div>';
+                }).join('');
+            } else {
+                section.classList.add('hidden');
+            }
+        } catch (e) {
+            console.error('Lỗi load recommendations:', e);
+            if (section) section.classList.add('hidden');
+        }
+    };
 
-    function stopAutoPlay() {
-      if (autoPlayInterval) clearInterval(autoPlayInterval);
-    }
-
-    // Khởi tạo
-    document.addEventListener('DOMContentLoaded', function () {
-      updateSlider();
-      startAutoPlay();
-
-      // Dừng autoplay khi hover chuột vào banner
-      const bannerContainer = document.querySelector('.group'); // Class group ở container cha
-      if (bannerContainer) {
-        bannerContainer.addEventListener('mouseenter', stopAutoPlay);
-        bannerContainer.addEventListener('mouseleave', startAutoPlay);
-      }
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(window.loadRecommendations, 2000);
     });
-
-    // Dừng autoplay khi tab không hoạt động để tiết kiệm tài nguyên
-    document.addEventListener('visibilitychange', function () {
-      if (document.hidden) {
-        stopAutoPlay();
-      } else {
-        startAutoPlay();
-      }
-    });
-  </script>
-
-  <script>
-    // Scroll products horizontally
-    function scrollProducts(containerId, direction) {
-      const container = document.getElementById(containerId);
-      if (!container) return;
-
-      const scrollAmount = 300;
-      container.scrollBy({
-        left: direction * scrollAmount,
-        behavior: 'smooth'
-      });
-    }
   </script>
 
   <!-- GIÁ SỐC MỖI NGÀY - Load động từ API (5 sản phẩm bán chậm, thay đổi mỗi ngày) -->
@@ -392,7 +432,7 @@
                     <span class="absolute top-0 right-0 bg-red-600 text-white text-[10px] font-bold px-3 py-1.5 rounded-bl-lg z-10 shadow-sm">-${discountPercent}%</span>
                     <img src="${product.image}" alt="${product.name}" 
                       class="card-image rounded-md w-full h-full object-contain transition-transform group-hover:scale-105"
-                      onerror="this.src='images/iphone-17-pro-max-256.jpg'">
+                      onerror="this.src='images/iphone-17-pro-max-256.jpg'" loading="lazy">
                   </div>
                   <div class="flex flex-col gap-1.5 mt-auto">
                     <h3 class="font-bold text-[13px] sm:text-[14px] text-gray-800 line-clamp-2 min-h-[44px] leading-snug">${product.name}${storage}</h3>
@@ -527,7 +567,7 @@
                           ${product.totalSold > 0 ? `<span class="absolute top-0 right-0 bg-red-500 text-white text-[9px] font-bold px-2 py-1 rounded-bl-lg z-10 shadow-sm">🔥 ${product.totalSold} đã bán</span>` : ''}
                           <img src="${product.image}" alt="${product.name}" 
                             class="card-image rounded-md w-full h-full object-contain transition-transform group-hover:scale-105"
-                            onerror="this.src='images/iphone-17-pro-max-256.jpg'">
+                            onerror="this.src='images/iphone-17-pro-max-256.jpg'" loading="lazy">
                         </div>
                         <div class="flex flex-col gap-1.5 mt-auto">
                           <h3 class="font-bold text-[13px] sm:text-[14px] text-gray-800 line-clamp-2 min-h-[40px] leading-snug">${product.name}${storage}</h3>
@@ -689,6 +729,8 @@
           }
         </script>
       </div>
+
+
   <!-- APPLE CHÍNH HÃNG - Load động từ API -->
   <section class="py-3 sm:py-4 md:py-5 bg-gray-50 reveal-on-scroll">
     <div class="max-w-[1920px] mx-auto px-2 sm:px-3 md:px-4">
@@ -772,7 +814,7 @@
                           <div class="relative h-40 sm:h-48 mb-3 overflow-hidden p-0 flex items-center justify-center">
                             <img src="${product.image}" alt="${product.name}" 
                               class="card-image rounded-md w-full h-full object-contain transition-transform group-hover:scale-105"
-                              onerror="this.src='images/iphone-17-pro-max-256.jpg'">
+                              onerror="this.src='images/iphone-17-pro-max-256.jpg'" loading="lazy">
                           </div>
                           
                           <div class="flex flex-col gap-1 mt-auto text-left">
@@ -898,7 +940,7 @@
                           <div class="relative h-40 sm:h-48 mb-3 overflow-hidden p-0 flex items-center justify-center">
                             <img src="${product.image}" alt="${product.name}" 
                               class="card-image rounded-md w-full h-full object-contain transition-transform group-hover:scale-105"
-                              onerror="this.src='images/samsung-galaxy-s24_15__2.webp'">
+                              onerror="this.src='images/samsung-galaxy-s24_15__2.webp'" loading="lazy">
                           </div>
                           
                           <div class="flex flex-col gap-1 mt-auto text-left">
@@ -975,7 +1017,7 @@
               <div class="flex items-center gap-3">
                 <div class="w-14 h-14 bg-gray-100 rounded-lg p-1 shadow-sm">
                   <img src="images/iphone-17-pro-max-256.jpg" alt="iPhone 17 icon"
-                    class="w-full h-full object-contain" onerror="this.src='images/iphone.jpg'">
+                    class="w-full h-full object-contain" onerror="this.src='images/iphone.jpg'" loading="lazy">
                 </div>
                 <div>
                   <h3 class="text-sm md:text-base font-semibold text-gray-900 mb-0.5">Điện thoại Apple iPhone 17 Pro Max
@@ -1003,7 +1045,7 @@
                   <div class="w-14 h-14 md:w-12 md:h-12 bg-gray-100 rounded-lg p-1 shadow-sm">
                     <img src="images/iphone-15-pro-max-256-99.png"
                       alt="iPhone 15 icon" class="w-full h-full object-contain"
-                      onerror="this.src='images/15-256.avif'">
+                      onerror="this.src='images/15-256.avif'" loading="lazy">
                   </div>
                   <div>
                     <h4 class="text-sm md:text-base font-semibold text-gray-900 mb-0.5">Điện thoại Apple iPhone 15 Pro
@@ -1023,7 +1065,7 @@
                 <div class="flex items-center gap-2">
                   <div class="w-14 h-14 md:w-12 md:h-12 bg-gray-100 rounded-lg p-1 shadow-sm">
                     <img src="images/iphone-14-pro-max-128-99.webp"
-                      alt="iPhone 14 icon" class="w-full h-full object-contain" onerror="this.src='images/iphone-14-pro-max-128-99.webp'">
+                      alt="iPhone 14 icon" class="w-full h-full object-contain" onerror="this.src='images/iphone-14-pro-max-128-99.webp'" loading="lazy">
                   </div>
                   <div>
                     <h4 class="text-sm md:text-base font-semibold text-gray-900 mb-0.5">Điện thoại Apple iPhone 14 Pro
@@ -1098,7 +1140,7 @@
                         <div class="relative h-64 rounded-2xl overflow-hidden mb-4">
                           <img src="${news.anh_dai_dien || 'images/inta.webp'}" alt="${news.tieu_de}"
                             class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                            onerror="this.src='images/inta.webp'">
+                            onerror="this.src='images/inta.webp'" loading="lazy">
                           <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
                           <div class="absolute bottom-4 left-4 right-4">
                             <div class="flex items-center gap-2 text-white text-sm">
@@ -1142,7 +1184,7 @@
 
           <!-- Cột trái: Hình ảnh -->
           <div class="relative rounded-2xl overflow-hidden shadow-lg">
-            <img src="images/cuahang.png" alt="QuangHưng Mobile Store" class="w-full h-[400px] object-cover">
+            <img src="images/cuahang.png" alt="QuangHưng Mobile Store" class="w-full h-[400px] object-cover" loading="lazy">
             <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
             <div class="absolute bottom-6 left-6 right-6 text-white">
               <h3 class="text-2xl font-bold mb-2">QuangHưng Mobile</h3>
@@ -1208,37 +1250,7 @@
       </div>
   </section>
 
-  <script>
-    // Toggle "Xem thêm" / "Thu gọn"
-    document.addEventListener('DOMContentLoaded', function () {
-      const toggleBtn = document.getElementById('toggleBtn');
-      const textContent = document.getElementById('textContent');
-      const toggleText = document.getElementById('toggleText');
-      const toggleIcon = document.getElementById('toggleIcon');
-      const gradientOverlay = document.getElementById('gradientOverlay');
-      let isExpanded = false;
-
-      if (toggleBtn && textContent) {
-        toggleBtn.addEventListener('click', function () {
-          isExpanded = !isExpanded;
-
-          if (isExpanded) {
-            textContent.style.maxHeight = textContent.scrollHeight + 'px';
-            toggleText.textContent = 'Thu gọn';
-            toggleIcon.classList.remove('fa-chevron-down');
-            toggleIcon.classList.add('fa-chevron-up');
-            gradientOverlay.style.opacity = '0';
-          } else {
-            textContent.style.maxHeight = '300px';
-            toggleText.textContent = 'Xem thêm';
-            toggleIcon.classList.remove('fa-chevron-up');
-            toggleIcon.classList.add('fa-chevron-down');
-            gradientOverlay.style.opacity = '1';
-          }
-        });
-      }
-    });
-  </script>
+  
 
 
 
@@ -1271,135 +1283,7 @@
     }
   </style>
 
-  <script>
-    // News Carousel Functionality
-    document.addEventListener('DOMContentLoaded', function () {
-      const carousel = document.getElementById('newsCarousel');
-      const prevBtn = document.getElementById('prevNewsBtn');
-      const nextBtn = document.getElementById('nextNewsBtn');
-
-      if (carousel && prevBtn && nextBtn) {
-        let currentIndex = 0;
-
-        function getItemsPerView() {
-          if (window.innerWidth >= 1024) return 3;
-          if (window.innerWidth >= 768) return 2;
-          return 1;
-        }
-
-        function updateCarousel() {
-          const items = carousel.children;
-          const totalItems = items.length;
-          if (totalItems === 0) return;
-          
-          const itemsPerView = getItemsPerView();
-          const itemWidth = items[0].offsetWidth;
-          const gap = 24;
-          const offset = currentIndex * (itemWidth + gap);
-          carousel.style.transform = `translateX(-${offset}px)`;
-
-          prevBtn.disabled = currentIndex === 0;
-          nextBtn.disabled = currentIndex >= totalItems - itemsPerView;
-
-          prevBtn.classList.toggle('opacity-50', prevBtn.disabled);
-          prevBtn.classList.toggle('cursor-not-allowed', prevBtn.disabled);
-          nextBtn.classList.toggle('opacity-50', nextBtn.disabled);
-          nextBtn.classList.toggle('cursor-not-allowed', nextBtn.disabled);
-        }
-
-        prevBtn.addEventListener('click', () => {
-          if (currentIndex > 0) {
-            currentIndex--;
-            updateCarousel();
-          }
-        });
-
-        nextBtn.addEventListener('click', () => {
-          const items = carousel.children;
-          const itemsPerView = getItemsPerView();
-          if (currentIndex < items.length - itemsPerView) {
-            currentIndex++;
-            updateCarousel();
-          }
-        });
-
-        window.addEventListener('resize', () => {
-          const items = carousel.children;
-          const itemsPerView = getItemsPerView();
-          if (currentIndex >= items.length - itemsPerView) {
-            currentIndex = Math.max(0, items.length - itemsPerView);
-          }
-          updateCarousel();
-        });
-
-        // Initial update after news loaded
-        setTimeout(updateCarousel, 1000);
-      }
-    });
-
-    // Smooth scroll to news section
-    document.addEventListener('DOMContentLoaded', function () {
-      // Desktop menu
-      const newsLinks = document.querySelectorAll('.scroll-to-news');
-      newsLinks.forEach(link => {
-        link.addEventListener('click', function (e) {
-          e.preventDefault();
-          const newsSection = document.getElementById('news-section');
-          if (newsSection) {
-            const offsetTop = newsSection.offsetTop - 80; // 80px for header height
-            window.scrollTo({
-              top: offsetTop,
-              behavior: 'smooth'
-            });
-          }
-        });
-      });
-
-      // Mobile menu
-      const newsMobileLinks = document.querySelectorAll('.scroll-to-news-mobile');
-      newsMobileLinks.forEach(link => {
-        link.addEventListener('click', function (e) {
-          e.preventDefault();
-
-          // Close mobile menu first
-          const mobileMenu = document.getElementById('mobile-menu');
-          const mobileMenuSidebar = document.getElementById('mobile-menu-sidebar');
-          if (mobileMenuSidebar) {
-            mobileMenuSidebar.classList.add('-translate-x-full');
-            setTimeout(() => {
-              if (mobileMenu) mobileMenu.classList.add('hidden');
-            }, 300);
-          }
-
-          // Then scroll to news section
-          setTimeout(() => {
-            const newsSection = document.getElementById('news-section');
-            if (newsSection) {
-              const offsetTop = newsSection.offsetTop - 80;
-              window.scrollTo({
-                top: offsetTop,
-                behavior: 'smooth'
-              });
-            }
-          }, 400);
-        });
-      });
-
-      // Handle direct link from other pages (e.g., news.html -> index.html#news-section)
-      if (window.location.hash === '#news-section') {
-        setTimeout(() => {
-          const newsSection = document.getElementById('news-section');
-          if (newsSection) {
-            const offsetTop = newsSection.offsetTop - 80;
-            window.scrollTo({
-              top: offsetTop,
-              behavior: 'smooth'
-            });
-          }
-        }, 100);
-      }
-    });
-  </script>
+  
 
   <style>
     .active-tab {
@@ -1490,170 +1374,14 @@
 
 
 
-  <script>
-    const chatbotToggle = document.getElementById('chatbot-toggle');
-    const chatbotWindow = document.getElementById('chatbot-window');
-    const chatbotClose = document.getElementById('chatbot-close');
+  
 
-    chatbotToggle.addEventListener('click', () => {
-      chatbotWindow.classList.toggle('hidden');
-    });
-
-    chatbotClose.addEventListener('click', () => {
-      chatbotWindow.classList.add('hidden');
-    });
-  </script>
-
-  <script>
-    // Banner Carousel Logic
-    (function () {
-      const bannerCarousel = document.getElementById('banner-carousel');
-      if (!bannerCarousel) return;
-
-      const slides = bannerCarousel.querySelectorAll('.banner-slide');
-      if (!slides || slides.length === 0) return;
-
-      const prevBtn = document.getElementById('prevBannerBtn');
-      const nextBtn = document.getElementById('nextBannerBtn');
-      const indicators = bannerCarousel.parentElement.querySelectorAll('.banner-indicator');
-
-      let currentIndex = 0;
-      let autoPlayInterval = null;
-
-      function goToSlide(index) {
-        if (index < 0) index = slides.length - 1;
-        if (index >= slides.length) index = 0;
-
-        currentIndex = index;
-
-        // Move carousel
-        const offset = -currentIndex * 100;
-        bannerCarousel.style.transform = `translateX(${offset}%)`;
-
-        // Update indicators
-        indicators.forEach((indicator, i) => {
-          if (i === currentIndex) {
-            indicator.classList.remove('bg-white/50');
-            indicator.classList.add('bg-white');
-          } else {
-            indicator.classList.remove('bg-white');
-            indicator.classList.add('bg-white/50');
-          }
-        });
-      }
-
-      function nextSlide() {
-        goToSlide(currentIndex + 1);
-      }
-
-      function prevSlide() {
-        goToSlide(currentIndex - 1);
-      }
-
-      // Event listeners for navigation buttons
-      if (nextBtn) {
-        nextBtn.addEventListener('click', () => {
-          nextSlide();
-          resetAutoPlay();
-        });
-      }
-
-      if (prevBtn) {
-        prevBtn.addEventListener('click', () => {
-          prevSlide();
-          resetAutoPlay();
-        });
-      }
-
-      // Event listeners for indicators
-      indicators.forEach((indicator, index) => {
-        indicator.addEventListener('click', () => {
-          goToSlide(index);
-          resetAutoPlay();
-        });
-      });
-
-      // Auto-play functionality
-      function startAutoPlay() {
-        autoPlayInterval = setInterval(nextSlide, 5000); // Change slide every 5 seconds
-      }
-
-      function stopAutoPlay() {
-        if (autoPlayInterval) {
-          clearInterval(autoPlayInterval);
-          autoPlayInterval = null;
-        }
-      }
-
-      function resetAutoPlay() {
-        stopAutoPlay();
-        startAutoPlay();
-      }
-
-      // Pause auto-play on hover
-      const carouselContainer = bannerCarousel.parentElement;
-      carouselContainer.addEventListener('mouseenter', stopAutoPlay);
-      carouselContainer.addEventListener('mouseleave', startAutoPlay);
-
-      // Start auto-play
-      startAutoPlay();
-
-      // Initialize first slide
-      goToSlide(0);
-    })();
-  </script>
+  
 
 
 
-  <script>
-    // Simple carousel logic (guarded)
-    (function () {
-      const carousel = document.getElementById('carousel');
-      if (!carousel) return;
-      const slides = carousel.querySelectorAll('.min-w-full');
-      if (!slides || slides.length <= 1) return; // nothing to rotate
-
-      const prevBtn = document.getElementById('prevBtn');
-      const nextBtn = document.getElementById('nextBtn');
-      let index = 0;
-      let interval = null;
-
-      function goTo(i) {
-        index = (i + slides.length) % slides.length;
-        carousel.style.transform = `translateX(-${index * 100}%)`;
-      }
-
-      function next() { goTo(index + 1); }
-      function prev() { goTo(index - 1); }
-
-      if (nextBtn) nextBtn.addEventListener('click', next);
-      if (prevBtn) prevBtn.addEventListener('click', prev);
-
-      function startAuto() { interval = setInterval(next, 4000); }
-      function stopAuto() { clearInterval(interval); }
-
-      carousel.addEventListener('mouseenter', stopAuto);
-      carousel.addEventListener('mouseleave', startAuto);
-
-      startAuto();
-    })();
-  </script>
-  <script>
-    // Deals strip scrolling
-    (function () {
-      const container = document.getElementById('deals-container');
-      const prev = document.getElementById('deals-prev');
-      const next = document.getElementById('deals-next');
-      if (!container || !prev || !next) return;
-
-      function scrollBy(amount) {
-        container.scrollBy({ left: amount, behavior: 'smooth' });
-      }
-
-      prev.addEventListener('click', () => scrollBy(-container.clientWidth / 2));
-      next.addEventListener('click', () => scrollBy(container.clientWidth / 2));
-    })();
-  </script>
+  
+  
   <!-- Mobile fixed promo button -->
   <a href="promotions.html"
     class="md:hidden fixed bottom-6 right-4 bg-red-600 text-white px-4 py-3 rounded-full shadow-lg z-50"
@@ -1726,7 +1454,7 @@
 
         container.innerHTML = wishlist.map(item => `
             <div class="flex items-center gap-4 p-4 border-b hover:bg-gray-50 transition">
-              <img src="${item.image || 'https://via.placeholder.com/100'}" alt="${item.name}" class="w-20 h-20 object-contain rounded">
+              <img src="${item.image || 'https://via.placeholder.com/100'}" alt="${item.name}" class="w-20 h-20 object-contain rounded" loading="lazy">
               <div class="flex-1">
                 <h4 class="font-bold text-gray-800">${item.name}</h4>
                 <p class="text-red-600 font-bold">${item.price || 'Liên hệ'}</p>
@@ -1853,308 +1581,24 @@
     }
   </style>
 
-  <script>
-    // Ensure fixed promo button and chatbot don't overlap on small screens.
-    // Only adjust when the promo button is actually visible (md:hidden means hidden on md+).
-    function adjustFixedStacking() {
-      const promo = document.getElementById('mobile-promo-btn');
-      const chatbot = document.getElementById('chatbot-toggle');
-      if (!promo || !chatbot) return;
-
-      const promoStyle = window.getComputedStyle(promo);
-      const promoVisible = promoStyle.display !== 'none' && promoStyle.visibility !== 'hidden' && promo.offsetParent !== null;
-
-      if (window.innerWidth <= 768 && promoVisible) {
-        // Compute a safe bottom offset: promo height + a small gap.
-        const promoRect = promo.getBoundingClientRect();
-        const gap = 16; // px
-        const base = promoRect.height || 48;
-        chatbot.style.bottom = (base + gap + 16) + 'px';
-      } else {
-        // Reset to CSS default (the class bottom-6)
-        chatbot.style.bottom = '';
-      }
-    }
-    window.addEventListener('resize', adjustFixedStacking);
-    document.addEventListener('DOMContentLoaded', adjustFixedStacking);
-  </script>
+  
 
   <!-- Image Fallback Handler -->
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      // Xử lý lỗi ảnh - thay thế bằng placeholder khi ảnh không tải được
-      const images = document.querySelectorAll('img[loading="lazy"], img[src*="unsplash.com"]');
-
-      images.forEach(img => {
-        img.addEventListener('error', function () {
-          // Tạo placeholder SVG với màu sắc phù hợp
-          const placeholder = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='600' viewBox='0 0 600 600'%3E%3Crect fill='%23f3f4f6' width='600' height='600'/%3E%3Cg fill='%239ca3af'%3E%3Cpath d='M200 250h200v100h-200z'/%3E%3Ccircle cx='250' cy='280' r='15'/%3E%3Cpath d='M200 350l50-40 40 30 60-50 50 40v60h-200z'/%3E%3C/g%3E%3Ctext x='300' y='450' font-family='Arial' font-size='20' fill='%236b7280' text-anchor='middle'%3EH%C3%ACnh %E1%BA%A3nh kh%C3%B4ng kh%E1%BA%A3 d%E1%BB%A5ng%3C/text%3E%3C/svg%3E`;
-
-          this.src = placeholder;
-          this.classList.add('opacity-50');
-
-          // Thử tải lại sau 2 giây
-          setTimeout(() => {
-            const originalSrc = this.getAttribute('data-original-src') || this.src;
-            if (originalSrc !== placeholder) {
-              this.setAttribute('data-original-src', originalSrc);
-            }
-          }, 2000);
-        });
-
-        // Thêm loading animation
-        img.addEventListener('load', function () {
-          this.classList.add('animate-fadeIn');
-        });
-      });
-
-      // Lazy loading cho ảnh thương hiệu
-      const brandImages = document.querySelectorAll('.brand-card img, .deal-card img, .product-card img');
-
-      const imageObserver = new IntersectionObserver((entries, observer) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            const img = entry.target;
-            const src = img.getAttribute('data-src') || img.src;
-
-            if (src && src !== img.src) {
-              img.src = src;
-            }
-
-            observer.unobserve(img);
-          }
-        });
-      }, {
-        rootMargin: '50px'
-      });
-
-      brandImages.forEach(img => imageObserver.observe(img));
-    });
-
-    // Preload critical images
-    const criticalImages = [
-      'https://images.unsplash.com/photo-1696446702883-74b4a7b3be1d?w=400&h=400&fit=crop',
-      'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=400&h=400&fit=crop',
-      'https://images.unsplash.com/photo-1574944985070-8f3ebc6b79d2?w=400&h=400&fit=crop'
-    ];
-
-    criticalImages.forEach(src => {
-      const link = document.createElement('link');
-      link.rel = 'preload';
-      link.as = 'image';
-      link.href = src;
-      document.head.appendChild(link);
-    });
-  </script>
+  
 
   <!-- Mobile Menu & Touch Gestures -->
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      // Mobile Menu Toggle
-      const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-      const mobileMenu = document.querySelector('.mobile-menu');
-      const mobileMenuClose = document.querySelector('.mobile-menu-close');
-
-      if (mobileMenuBtn) {
-        mobileMenuBtn.addEventListener('click', function () {
-          mobileMenu.classList.remove('hidden');
-          document.body.style.overflow = 'hidden'; // Prevent background scroll
-        });
-      }
-
-      if (mobileMenuClose) {
-        mobileMenuClose.addEventListener('click', closeMobileMenu);
-      }
-
-      // Close when clicking overlay
-      if (mobileMenu) {
-        mobileMenu.addEventListener('click', function (e) {
-          if (e.target === mobileMenu) {
-            closeMobileMenu();
-          }
-        });
-      }
-
-      function closeMobileMenu() {
-        if (mobileMenu) {
-          mobileMenu.classList.add('hidden');
-          document.body.style.overflow = ''; // Restore scroll
-        }
-      }
-
-      // Close menu on navigation
-      if (mobileMenu) {
-        const mobileNavLinks = mobileMenu.querySelectorAll('a');
-        mobileNavLinks.forEach(link => {
-          link.addEventListener('click', closeMobileMenu);
-        });
-      }
-
-      // Touch Swipe for Banner Carousel
-      const bannerCarouselContainer = document.querySelector('.banner-carousel-container');
-      if (bannerCarouselContainer) {
-        let touchStartX = 0;
-        let touchEndX = 0;
-        let touchStartTime = 0;
-
-        bannerCarouselContainer.addEventListener('touchstart', function (e) {
-          touchStartX = e.changedTouches[0].screenX;
-          touchStartTime = Date.now();
-        }, { passive: true });
-
-        bannerCarouselContainer.addEventListener('touchend', function (e) {
-          touchEndX = e.changedTouches[0].screenX;
-          const touchDuration = Date.now() - touchStartTime;
-          const swipeDistance = touchStartX - touchEndX;
-
-          // Swipe detection: at least 50px and within 300ms
-          if (Math.abs(swipeDistance) > 50 && touchDuration < 300) {
-            if (swipeDistance > 0) {
-              // Swipe left - next slide
-              document.getElementById('nextBannerBtn').click();
-            } else {
-              // Swipe right - previous slide
-              document.getElementById('prevBannerBtn').click();
-            }
-          }
-        }, { passive: true });
-      }
-
-      // Responsive font size adjustment
-      function adjustFontSize() {
-        const viewportWidth = window.innerWidth;
-        const root = document.documentElement;
-
-        if (viewportWidth < 375) {
-          root.style.fontSize = '14px';
-        } else if (viewportWidth < 768) {
-          root.style.fontSize = '15px';
-        } else {
-          root.style.fontSize = '16px';
-        }
-      }
-
-      adjustFontSize();
-      window.addEventListener('resize', adjustFontSize);
-
-      // Detect device type
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-      const isTablet = /iPad|Android/i.test(navigator.userAgent) && window.innerWidth >= 768;
-
-      if (isMobile) {
-        document.body.classList.add('is-mobile');
-      }
-      if (isTablet) {
-        document.body.classList.add('is-tablet');
-      }
-
-      // Orientation change handler
-      window.addEventListener('orientationchange', function () {
-        setTimeout(() => {
-          adjustFontSize();
-          // Refresh layout after orientation change
-          window.dispatchEvent(new Event('resize'));
-        }, 100);
-      });
-
-      // Prevent double-tap zoom on buttons
-      let lastTouchEnd = 0;
-      document.addEventListener('touchend', function (e) {
-        const now = Date.now();
-        if (now - lastTouchEnd <= 300) {
-          e.preventDefault();
-        }
-        lastTouchEnd = now;
-      }, { passive: false });
-
-      // Safe area insets for notch devices
-      if (CSS.supports('padding-top: env(safe-area-inset-top)')) {
-        document.body.style.paddingTop = 'env(safe-area-inset-top)';
-        document.body.style.paddingBottom = 'env(safe-area-inset-bottom)';
-      }
-    });
-  </script>
+  
 
   <!-- Load Header Component -->
-  <script>
-    (function () {
-      function loadHeader() {
-        const headerPlaceholder = document.getElementById('header-placeholder');
-        if (!headerPlaceholder) {
-          console.warn('Header placeholder not found');
-          return;
-        }
-
-        fetch('components/header.html')
-          .then(response => response.text())
-          .then(html => {
-            headerPlaceholder.innerHTML = html;
-            // Load header JavaScript after HTML is loaded
-            const script = document.createElement('script');
-            script.src = 'components/header.js';
-            document.body.appendChild(script);
-          })
-          .catch(error => console.error('Error loading header:', error));
-      }
-
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', loadHeader);
-      } else {
-        loadHeader();
-      }
-    })();
-  </script>
+  
 
   <!-- Footer Component -->
   <div id="footer-placeholder"></div>
 
   <!-- Load Footer Component -->
-  <script>
-    (function () {
-      function loadFooter() {
-        const footerPlaceholder = document.getElementById('footer-placeholder');
-        if (!footerPlaceholder) {
-          console.warn('Footer placeholder not found');
-          return;
-        }
-
-        fetch('components/footer.html')
-          .then(response => response.text())
-          .then(html => {
-            footerPlaceholder.innerHTML = html;
-          })
-          .catch(error => console.error('Error loading footer:', error));
-      }
-
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', loadFooter);
-      } else {
-        loadFooter();
-      }
-    })();
-  </script>
+  
   <!-- Scroll Reveal: thêm hiệu ứng reveal-on-scroll cho các section -->
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      const observerOptions = {
-        root: null,
-        rootMargin: '0px',
-        threshold: 0.15
-      };
-
-      const observer = new IntersectionObserver((entries, observer) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('is-visible');
-            observer.unobserve(entry.target);
-          }
-        });
-      }, observerOptions);
-
-      const revealElements = document.querySelectorAll('.reveal-on-scroll');
-      revealElements.forEach(el => observer.observe(el));
-    });
-  </script>
+  
 
   <!-- Product Loading Script -->
   <script>
@@ -2199,7 +1643,7 @@
               ${outOfStockBadge}
               <img src="${productImage}" alt="${product.name}"
                 class="card-image rounded-md w-full h-full object-contain transition-transform group-hover:scale-105"
-                onerror="this.src='${PLACEHOLDER_IMG}'">
+                onerror="this.src='${PLACEHOLDER_IMG}'" loading="lazy">
             </div>
             <div class="mt-auto flex flex-col gap-2">
               <h3 class="font-bold text-sm text-gray-800 line-clamp-2 min-h-[40px]">${product.name}</h3>
@@ -2281,6 +1725,7 @@
   <link rel="stylesheet" href="components/ai-chatbot.css">
   <script src="components/ai-chatbot.js"></script>
   <script src="components/floating-share.js"></script>
+  <script src="js/home.js" defer></script>
 </body>
 
 </html>

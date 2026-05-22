@@ -102,6 +102,9 @@
             <!-- Messages will be added here -->
           </div>
           
+          <!-- Suggestion Chips Container -->
+          <div class="ai-chat-suggestions" id="ai-chat-suggestions" style="display: none;"></div>
+          
           <div class="ai-chat-input-area">
             <div class="ai-chat-input-wrapper">
               <input type="text" class="ai-chat-input" id="ai-chat-input" placeholder="Nhập câu hỏi của bạn..." autocomplete="off" spellcheck="false">
@@ -120,6 +123,81 @@
     document.body.appendChild(container);
   }
   
+  // Default Suggestion Prompts
+  const DEFAULT_SUGGESTIONS = [
+    { text: '📱 Tư vấn điện thoại', icon: 'fa-mobile-alt' },
+    { text: '💰 Trả góp 0%', icon: 'fa-percentage' },
+    { text: '📍 Địa chỉ cửa hàng', icon: 'fa-map-marker-alt' },
+    { text: '🎁 Khuyến mãi mới nhất', icon: 'fa-gift' }
+  ];
+
+  // Hiển thị Suggestion Chips
+  function renderSuggestions(suggestionsList) {
+    const container = document.getElementById('ai-chat-suggestions');
+    if (!container) return;
+
+    if (!suggestionsList || suggestionsList.length === 0) {
+      container.innerHTML = '';
+      container.style.display = 'none';
+      return;
+    }
+
+    let html = '';
+    suggestionsList.forEach(s => {
+      const text = typeof s === 'string' ? s : s.text;
+      const icon = typeof s === 'string' ? 'fa-lightbulb' : (s.icon || 'fa-lightbulb');
+      html += `
+        <button class="ai-suggestion-chip" data-text="${escapeHtml(text)}">
+          <i class="fas ${icon}"></i>
+          <span>${escapeHtml(text)}</span>
+        </button>
+      `;
+    });
+
+    container.innerHTML = html;
+    container.style.display = 'flex';
+
+    // Bắt sự kiện click vào Chip
+    container.querySelectorAll('.ai-suggestion-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const text = chip.dataset.text;
+        sendMessage(text);
+      });
+    });
+  }
+
+  // Tự động phát hiện gợi ý dựa trên tin nhắn phản hồi của Bot (Client-side fallback)
+  function autoDetectSuggestions(botResponse) {
+    if (!botResponse) {
+      renderSuggestions(DEFAULT_SUGGESTIONS);
+      return;
+    }
+    const lowerText = botResponse.toLowerCase();
+
+    // 1. Nhập nhằng địa chỉ
+    if (lowerText.includes('địa chỉ các chi nhánh') || lowerText.includes('địa chỉ cửa hàng') || lowerText.includes('địa chỉ giao hàng') || lowerText.includes('địa chỉ nhận hàng')) {
+      renderSuggestions([
+        { text: '📍 Địa chỉ cửa hàng', icon: 'fa-map-marker-alt' },
+        { text: '📦 Địa chỉ giao hàng của tôi', icon: 'fa-shipping-fast' }
+      ]);
+    }
+    // 2. Hỏi tư vấn chung chung
+    else if (lowerText.includes('tầm tài chính') || lowerText.includes('hãng điện thoại') || lowerText.includes('nhu cầu chính') || lowerText.includes('tư vấn dòng điện thoại')) {
+      renderSuggestions([
+        { text: 'Dưới 5 triệu', icon: 'fa-money-bill-wave' },
+        { text: 'Từ 5 - 10 triệu', icon: 'fa-money-bill-wave' },
+        { text: 'iPhone', icon: 'fa-mobile-alt' },
+        { text: 'Samsung', icon: 'fa-mobile-alt' },
+        { text: 'Chơi game', icon: 'fa-gamepad' },
+        { text: 'Chụp ảnh đẹp', icon: 'fa-camera' }
+      ]);
+    }
+    // 3. Mặc định khác
+    else {
+      renderSuggestions(DEFAULT_SUGGESTIONS);
+    }
+  }
+
   // Load danh sách cuộc hội thoại
   async function loadConversations() {
     const userId = getUserId();
@@ -304,6 +382,9 @@
     
     renderConversationsList();
     closeSidebar();
+    
+    // Hiển thị gợi ý mặc định ban đầu
+    renderSuggestions(DEFAULT_SUGGESTIONS);
   }
   
   // Xóa một cuộc hội thoại
@@ -368,6 +449,7 @@
     
     if (!userId) {
       addBotMessage('Xin chào! Tôi là trợ lý AI của QuangHưng Mobile. 🎄\n\nTôi có thể giúp bạn tư vấn điện thoại, thông tin khuyến mãi, bảo hành và nhiều hơn nữa.\n\n💡 Đăng nhập để lưu lịch sử chat của bạn!');
+      renderSuggestions(DEFAULT_SUGGESTIONS);
       return;
     }
     
@@ -381,6 +463,7 @@
       const user = JSON.parse(localStorage.getItem('user') || '{}');
       const userName = user.ho_ten || 'bạn';
       addBotMessage(`Xin chào ${userName}! 👋\n\nTôi là trợ lý AI của QuangHưng Mobile. Lịch sử chat của bạn sẽ được lưu lại.\n\nBạn cần hỗ trợ gì?`);
+      renderSuggestions(DEFAULT_SUGGESTIONS);
     }
   }
   
@@ -449,6 +532,33 @@
         })
       });
 
+      if (response.status === 401) {
+        console.warn('Session expired or unauthorized. Clearing conversation ID and retrying as guest...');
+        currentConversationId = null;
+        const retryResponse = await fetch(`${API_URL}/chatbot/chat`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            message: message,
+            image: imageBase64,
+            userId: null,
+            conversationId: null
+          })
+        });
+        if (!retryResponse.ok) {
+          throw new Error('API error on retry');
+        }
+        const retryData = await retryResponse.json();
+        if (retryData.suggestions && Array.isArray(retryData.suggestions)) {
+          renderSuggestions(retryData.suggestions);
+        } else {
+          autoDetectSuggestions(retryData.response);
+        }
+        return retryData.response + '<br><br><small style="color:#d32f2f;"><i>(Chú ý: Phiên đăng nhập của bạn đã hết hạn, tin nhắn được gửi dưới dạng khách vãng lai và không lưu lịch sử)</i></small>';
+      }
+
       if (!response.ok) {
         throw new Error('API error');
       }
@@ -462,6 +572,13 @@
         await loadConversations();
       }
       
+      // Hiển thị gợi ý nhận từ Backend hoặc phát hiện tự động
+      if (data.suggestions && Array.isArray(data.suggestions)) {
+        renderSuggestions(data.suggestions);
+      } else {
+        autoDetectSuggestions(data.response);
+      }
+      
       return data.response;
     } catch (error) {
       console.error('AI API error:', error);
@@ -470,9 +587,9 @@
   }
   
   // Send message
-  async function sendMessage() {
+  async function sendMessage(customMessage = null) {
     const input = document.getElementById('ai-chat-input');
-    const message = input.value.trim();
+    const message = customMessage ? customMessage.trim() : input.value.trim();
 
     if (!message && !currentImageBase64) return;
 
@@ -486,10 +603,14 @@
     const payloadMessage = message;
     const payloadImage = currentImageBase64;
 
-    input.value = '';
+    if (!customMessage) {
+      input.value = '';
+    }
     removePreviewImage();
     input.disabled = true;
 
+    // Ẩn các gợi ý cũ khi đang chờ kết quả từ AI
+    renderSuggestions([]);
     showTyping();
 
     const response = await callAI(payloadMessage, payloadImage);

@@ -1,0 +1,50 @@
+version: "3.1"
+
+stories:
+  - story: path greet and ask address
+    steps:
+      - intent: greet
+      - action: utter_greet
+      - intent: ask_address
+      - action: action_clarify_address
+
+  - story: path ask store address directly
+    steps:
+      - intent: ask_address_store
+      - action: action_get_store_address
+
+  - story: path ask delivery address directly
+    steps:
+      - intent: ask_address_delivery
+      - action: action_get_delivery_address
+
+  - story: path interactive consultation flow
+    steps:
+      - intent: greet
+      - action: utter_greet
+      - intent: ask_recommendation_generic
+      - action: phone_consultation_form
+      - active_loop: phone_consultation_form
+      - slot_was_set:
+          - requested_slot: phone_brand
+      - intent: select_brand
+        entities:
+          - phone_brand: "iPhone"
+      - slot_was_set:
+          - phone_brand: "iPhone"
+      - slot_was_set:
+          - requested_slot: budget_range
+      - intent: select_budget
+        entities:
+          - budget_range: "5 đến 10 triệu"
+      - slot_was_set:
+          - budget_range: "5 đến 10 triệu"
+      - slot_was_set:
+          - requested_slot: main_usage
+      - intent: select_usage
+        entities:
+          - main_usage: "chụp ảnh"
+      - slot_was_set:
+          - main_usage: "chụp ảnh"
+      - active_loop: null
+      - action: action_submit_phone_consultation

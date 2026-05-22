@@ -595,3 +595,61 @@
     right: 20px;
   }
 }
+
+/* Suggestion Chips Container & Items */
+.ai-chat-suggestions {
+  display: flex;
+  gap: 8px;
+  padding: 10px 16px;
+  overflow-x: auto;
+  white-space: nowrap;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255, 255, 255, 0.4);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+.ai-chat-suggestions::-webkit-scrollbar {
+  display: none; /* Safari and Chrome */
+}
+
+.ai-suggestion-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(30, 60, 114, 0.06);
+  border: 1px solid rgba(30, 60, 114, 0.1);
+  border-radius: 18px;
+  color: #1e3c72;
+  font-size: 12.5px;
+  font-weight: 550;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+  outline: none !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+  user-select: none;
+}
+
+.ai-suggestion-chip:hover {
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  color: white;
+  border-color: transparent;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(30, 60, 114, 0.2);
+}
+
+.ai-suggestion-chip:active {
+  transform: translateY(0);
+}
+
+.ai-suggestion-chip i {
+  font-size: 11px;
+}
+

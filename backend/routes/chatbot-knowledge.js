@@ -2,6 +2,18 @@ const express = require('express');
 const router = express.Router();
 const { pool } = require('../config/database');
 
+// Gọi sang RAG Service để đồng bộ dữ liệu auto
+async function syncRAGKnowledge() {
+    try {
+        const response = await fetch('http://127.0.0.1:8000/api/reload-vectorstore', { method: 'POST' });
+        if (response.ok) {
+            console.log('Đã tự động đồng bộ RAG Vectorstore');
+        }
+    } catch (error) {
+        console.log('RAG service hiện không chạy, bỏ qua đồng bộ tự động.');
+    }
+}
+
 // Middleware kiểm tra admin
 const checkAdmin = (req, res, next) => {
   if (!req.session || !req.session.user || req.session.user.vai_tro !== 'admin') {
@@ -76,6 +88,8 @@ router.post('/', checkAdmin, async (req, res) => {
       [question, answer, type || 'faq', is_active !== undefined ? is_active : 1]
     );
     
+    syncRAGKnowledge(); // Tự động đồng bộ
+    
     res.json({ 
       message: 'Thêm thành công',
       id: result.insertId 
@@ -100,6 +114,8 @@ router.put('/:id', checkAdmin, async (req, res) => {
       [question, answer, type || 'faq', is_active !== undefined ? is_active : 1, req.params.id]
     );
     
+    syncRAGKnowledge(); // Tự động đồng bộ
+    
     res.json({ message: 'Cập nhật thành công' });
   } catch (error) {
     console.error('Error updating knowledge:', error);
@@ -111,6 +127,7 @@ router.put('/:id', checkAdmin, async (req, res) => {
 router.delete('/:id', checkAdmin, async (req, res) => {
   try {
     await pool.query('DELETE FROM chatbot_knowledge WHERE id = ?', [req.params.id]);
+    syncRAGKnowledge(); // Tự động đồng bộ
     res.json({ message: 'Xóa thành công' });
   } catch (error) {
     console.error('Error deleting knowledge:', error);
@@ -125,6 +142,7 @@ router.patch('/:id/toggle', checkAdmin, async (req, res) => {
       'UPDATE chatbot_knowledge SET is_active = NOT is_active WHERE id = ?',
       [req.params.id]
     );
+    syncRAGKnowledge(); // Tự động đồng bộ
     res.json({ message: 'Cập nhật trạng thái thành công' });
   } catch (error) {
     console.error('Error toggling knowledge:', error);

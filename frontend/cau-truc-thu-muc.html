@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cấu Trúc Thư Mục Dự Án - GDDA Store</title>
+    <style>
+        body {
+            font-family: 'Consolas', 'Courier New', monospace;
+            background-color: #ffffff;
+            color: #000000;
+            margin: 0;
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .directory-container {
+            border: 1px solid #000;
+            padding: 30px;
+            width: 100%;
+            max-width: 900px;
+            background-color: #fff;
+            box-shadow: 2px 2px 0px #000;
+        }
+
+        .header-title {
+            font-size: 20px;
+            font-weight: bold;
+            text-align: center;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #000;
+        }
+
+        /* Tree Styles */
+        ul.tree {
+            list-style-type: none;
+            padding-left: 0;
+            line-height: 1.8;
+            font-size: 15px;
+        }
+
+        ul.tree ul {
+            list-style-type: none;
+            padding-left: 20px;
+            border-left: 1px dashed #000;
+            margin-left: 10px;
+        }
+
+        ul.tree li {
+            position: relative;
+            padding-left: 20px;
+        }
+
+        ul.tree li::before {
+            content: "";
+            position: absolute;
+            top: 13px;
+            left: 0;
+            width: 15px;
+            border-top: 1px dashed #000;
+        }
+
+        ul.tree li:last-child {
+            border-left: 1px solid #fff; /* Xóa vệt nối chéo của node cuối */
+            margin-left: -1px;
+        }
+
+        ul.tree li:last-child::before {
+            left: 1px;
+        }
+
+        .folder {
+            font-weight: bold;
+            color: #000;
+        }
+        
+        .folder::after {
+            content: "/";
+        }
+
+        .file {
+            color: #222;
+        }
+
+        .description {
+            color: #555;
+            font-size: 13px;
+            font-style: italic;
+            margin-left: 15px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .root-node {
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="directory-container">
+        <div class="header-title">Cấu Trúc Thư Mục Hệ Thống (GDDA Store)</div>
+        
+        <div class="root-node">📁 GDDA_Project</div>
+        <ul class="tree">
+            
+            <li><span class="folder">backend</span> <span class="description">- API Server xử lý logic nghiệp vụ (Node.js)</span>
+                <ul>
+                    <li><span class="folder">config</span> <span class="description">- Chứa file cấu hình (database.js, passport.js...)</span></li>
+                    <li><span class="folder">migrations</span> <span class="description">- Chứa các file cập nhật/thêm dữ liệu SQL tự động</span></li>
+                    <li><span class="folder">routes</span> <span class="description">- Định nghĩa API Endpoints (auth.js, products.js, cart.js...)</span></li>
+                    <li><span class="file">server.js</span> <span class="description">- File entry point để khởi chạy server Express</span></li>
+                    <li><span class="file">package.json</span> <span class="description">- Chứa thông tin modules npm của backend</span></li>
+                </ul>
+            </li>
+
+            <li><span class="folder">frontend</span> <span class="description">- Giao diện người dùng Web & Admin (HTML/CSS/JS)</span>
+                <ul>
+                    <li><span class="folder">components</span> <span class="description">- Các mảnh UI dùng chung (header.html, ai-chatbot.js...)</span></li>
+                    <li><span class="folder">css</span> <span class="description">- Định dạng giao diện tĩnh cho các pages</span></li>
+                    <li><span class="folder">images</span> <span class="description">- Tài nguyên hình ảnh, banner, sản phẩm</span></li>
+                    <li><span class="folder">js</span> <span class="description">- Các mã JavaScript xử lý logic cục bộ giao diện</span></li>
+                    <li><span class="file">index.html (cùng loạt file .html khác)</span> <span class="description">- Các trang giao diện chính</span></li>
+                    <li><span class="file">so-do-*.html</span> <span class="description">- Các sơ đồ thiết kế hệ thống (hoạt động, kiến trúc, tuần tự)</span></li>
+                    <li><span class="file">tailwind.config.js</span> <span class="description">- Cấu hình framework TailwindCSS</span></li>
+                </ul>
+            </li>
+
+            <li><span class="folder">rag_service</span> <span class="description">- Microservice xử lý AI Chatbot & Gợi ý (Python)</span>
+                <ul>
+                    <li><span class="folder">chroma_db</span> <span class="description">- Thư mục chứa Vector Database dùng lưu trí nhớ bot</span></li>
+                    <li><span class="file">main.py</span> <span class="description">- Server kết nối AI App (giao tiếp với Node.js qua HTTP)</span></li>
+                    <li><span class="file">rag_engine.py</span> <span class="description">- Thuật toán RAG kết nối Groq LLM truy xuất nhúng</span></li>
+                    <li><span class="file">recommend_engine.py</span> <span class="description">- Thuật toán AI gợi ý sản phẩm dựa trên hành vi</span></li>
+                    <li><span class="file">add_knowledge.py</span> <span class="description">- File chạy kịch bản Train cho Chatbot</span></li>
+                    <li><span class="file">requirements.txt</span> <span class="description">- Danh sách module thư viện Python cần thiết</span></li>
+                </ul>
+            </li>
+            
+            <li><span class="file">init.sql</span> <span class="description">- File script gốc dựng toàn bộ cấu trúc & data cơ sở dữ liệu MySQL</span></li>
+            <li><span class="file">START_SERVER.bat</span> <span class="description">- File mã Script hỗ trợ chạy Backend và Frontend/Python cùng lúc trên Windows</span></li>
+            
+        </ul>
+    </div>
+
+</body>
+</html>

@@ -159,6 +159,18 @@ async function syncCartFromDB() {
   
   try {
     const response = await fetch(`${API_URL}/cart/${user.ma_kh}`);
+    
+    if (response.status === 401) {
+      console.warn('Session expired. Logging out user...');
+      localStorage.removeItem('user');
+      localStorage.removeItem('isLoggedIn');
+      showToast('Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.', 'warning');
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+      return;
+    }
+
     const data = await response.json();
     
     if (data.success) {

@@ -42,6 +42,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadShopSettings();
     // Load chi tiết sản phẩm từ API (ưu tiên) hoặc từ danh sách
     await loadProductDetail(productId);
+    
+    // Ghi nhận lượt click sản phẩm để cập nhật sở thích động (Shopee/TikTok Shop style)
+    trackProductClick(productId);
+    
+    // Tải hệ thống gợi ý ML mà không chặn luồng chính
+    loadRecommendations(productId);
   } catch (error) {
     console.error('Error loading product:', error);
   } finally {
@@ -51,6 +57,26 @@ document.addEventListener('DOMContentLoaded', async () => {
   
   setupScrollListener();
 });
+
+// Hàm ghi nhận lượt click sản phẩm để cập nhật sở thích động
+async function trackProductClick(productId) {
+  try {
+    const user = JSON.parse(localStorage.getItem('user') || 'null');
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    if (!isLoggedIn || !user || !user.ma_kh) return;
+
+    await fetch(`${API_URL}/interests/track-click`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: user.ma_kh,
+        productId: productId
+      })
+    });
+  } catch (error) {
+    console.error('Lỗi khi ghi nhận lượt click sản phẩm:', error);
+  }
+}
 
 // Hàm ẩn page loader
 function hidePageLoader() {
@@ -83,8 +109,8 @@ async function loadProductDetail(productId) {
         PRODUCTS = [product]; // Lưu vào mảng để các hàm khác sử dụng
         renderProductDetail(productId);
         
-        // Load thêm sản phẩm liên quan và render sau khi có dữ liệu
-        await loadRelatedProducts(product.brand);
+        // Load thêm tất cả sản phẩm và render lại phần liên quan
+        await loadRelatedProducts();
         // Render lại sản phẩm liên quan sau khi đã load xong
         renderRelatedProducts(currentProduct);
         return;
@@ -99,8 +125,8 @@ async function loadProductDetail(productId) {
   }
 }
 
-// Load sản phẩm liên quan theo brand
-async function loadRelatedProducts(brand) {
+// Load tất cả sản phẩm để thuật toán tính điểm có thể quét toàn bộ
+async function loadRelatedProducts() {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 giây timeout
   
@@ -112,13 +138,8 @@ async function loadRelatedProducts(brand) {
     
     if (response.ok) {
       const allProducts = await response.json();
-      // Lọc sản phẩm cùng brand, khác ID hiện tại
-      const related = allProducts.filter(p => 
-        p.brand === brand && p.id != currentProduct.id
-      ).slice(0, 4);
-      
-      if (related.length > 0) {
-        PRODUCTS = [currentProduct, ...related];
+      if (allProducts.length > 0) {
+        PRODUCTS = allProducts; // Lưu tất cả sản phẩm vào bộ nhớ để lọc
       }
     }
   } catch (error) {
@@ -1404,7 +1425,51 @@ async function submitReview() {
 function renderRelatedProducts(product) {
   if (!product) return;
   
-  const related = PRODUCTS.filter(p => p.id != product.id && p.brand === product.brand).slice(0, 5);
+  // Thuật toán: Tính điểm tương đồng cho các sản phẩm khác
+  const scoredProducts = PRODUCTS.filter(p => p.id != product.id).map(p => {
+    let score = 0;
+    
+    // 1. Điểm về Giá (Price Similarity)
+    if (product.price && p.price) {
+        const priceDiff = Math.abs(p.price - product.price);
+        const priceRatio = priceDiff / product.price;
+        
+        if (priceRatio <= 0.1) score += 20;      // Chênh lệch giá <= 10%
+        else if (priceRatio <= 0.2) score += 10; // Chênh lệch giá <= 20%
+        else if (priceRatio <= 0.3) score += 5;  // Chênh lệch giá <= 30%
+    }
+
+    // 2. Điểm về Hãng (Brand)
+    if (p.brand && product.brand && p.brand === product.brand) {
+        score += 15;
+    }
+
+    // 3. Điểm về Cấu hình (Specs)
+    if (p.ram && product.ram && p.ram.toString().trim() === product.ram.toString().trim()) {
+        score += 5; // Cùng dung lượng RAM
+    }
+    if (p.storage && product.storage && p.storage.toString().trim() === product.storage.toString().trim()) {
+        score += 5; // Cùng dung lượng lưu trữ (ROM)
+    }
+    
+    return { ...p, score };
+  });
+
+  // Lọc sản phẩm có điểm tương đồng (score > 0), sắp xếp giảm dần, lấy top 5
+  let related = scoredProducts
+    .filter(p => p.score >= 5)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 5);
+    
+  // Nếu thuật toán không tìm đủ 5 sản phẩm tương đồng, lấy bù thêm (ưu tiên cùng danh mục hoặc bất kỳ)
+  if (related.length < 5) {
+      const existingIds = related.map(r => r.id);
+      const fallbacks = PRODUCTS
+          .filter(p => p.id != product.id && !existingIds.includes(p.id))
+          .sort((a, b) => (a.brand === product.brand ? -1 : 1)) // Ưu tiên cùng hãng nếu phải bù thêm
+          .slice(0, 5 - related.length);
+      related = [...related, ...fallbacks];
+  }
   const container = document.getElementById('relatedProducts');
   
   if (!container) return;
@@ -1480,5 +1545,81 @@ function setupScrollListener() {
       stickyBar.classList.remove('active');
     }
   });
+}
+
+// ===== MACHINE LEARNING RECOMMENDATIONS (Khai Phá Kết Hợp / KNN) =====
+async function loadRecommendations(productId) {
+    try {
+        // Tạo container nếu chưa có
+        let recContainer = document.getElementById('ml-recommendations');
+        if (!recContainer) {
+            // Tìm nơi chèn (dưới phần đánh giá hoặc dưới thông tin sản phẩm)
+            const mainContent = document.querySelector('.container.mx-auto');
+            if(!mainContent) return;
+            
+            recContainer = document.createElement('div');
+            recContainer.id = 'ml-recommendations';
+            recContainer.className = 'mt-12 bg-white rounded-xl shadow-sm p-6 mb-8';
+            recContainer.innerHTML = `<h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center"><i class="fas fa-sparkles text-yellow-500 mr-2"></i> Gợi ý thông minh cho bạn</h2><div id="ml-rec-list" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>`;
+            mainContent.appendChild(recContainer);
+        }
+
+        const listEl = document.getElementById('ml-rec-list');
+        listEl.innerHTML = '<div class="col-span-full text-center text-gray-500 py-4"><i class="fas fa-spinner fa-spin mr-2"></i> AI Đang phân tích...</div>';
+        
+        // Gọi lên backend Node.js (Node.js sẽ gọi sang Python)
+        // Lấy userId nếu đã đăng nhập hoặc giỏ hàng hiện tại
+        let user = null;
+        if (window.secureStorage) {
+            user = window.secureStorage.getItem('user');
+        } else {
+            const userStr = localStorage.getItem('user');
+            user = userStr ? JSON.parse(userStr) : null;
+        }
+        const userId = user ? user.ma_kh : null;
+        const cartKey = getCartKey();
+        const cartStr = localStorage.getItem(cartKey);
+        const cartItems = cartStr ? JSON.parse(cartStr).map(i => 'PROD' + i.id) : [];
+
+        const response = await fetch(`${API_URL}/recommendations`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: userId, cartItems: cartItems })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success && result.data && result.data.length > 0) {
+            listEl.innerHTML = '';
+            result.data.forEach(product => {
+                const price = product.gia ? product.gia.toLocaleString('vi-VN') + 'đ' : 'Liên hệ';
+                const oldPrice = product.gia_cu ? `<del class="text-xs text-gray-400 block">${product.gia_cu.toLocaleString('vi-VN')}đ</del>` : '';
+                
+                // Mặc định ảnh nếu lỗi
+                const imgUrl = product.hinh_anh ? (product.hinh_anh.startsWith('http') ? product.hinh_anh : `../backend/${product.hinh_anh}`) : 'images/default-product.png';
+
+                listEl.innerHTML += `
+                    <a href="product-detail.html?id=${product.id}" class="group block border rounded-lg p-3 hover:shadow-lg transition-all duration-300 relative overflow-hidden bg-white">
+                        ${result.source === 'ai' ? '<span class="absolute top-2 left-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded-full z-10 shadow-sm"><i class="fas fa-magic mr-1"></i>AI Đề xuất</span>' : ''}
+                        <div class="h-40 w-full mb-3 overflow-hidden rounded-md flex items-center justify-center bg-gray-50">
+                            <img src="${imgUrl}" alt="${product.ten_san_pham}" class="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-500">
+                        </div>
+                        <h3 class="text-sm font-semibold text-gray-800 line-clamp-2 min-h-[40px] group-hover:text-blue-600 transition-colors">${product.ten_san_pham}</h3>
+                        <div class="mt-2">
+                            ${oldPrice}
+                            <span class="text-red-500 font-bold text-sm">${price}</span>
+                        </div>
+                    </a>
+                `;
+            });
+        } else {
+            recContainer.style.display = 'none'; // Ẩn luôn nếu không có gợi ý
+        }
+    } catch (error) {
+        console.warn("Lỗi khi load ML Recommendations:", error);
+        // Lỗi thì im lặng, không ảnh hưởng web
+        const recContainer = document.getElementById('ml-recommendations');
+        if (recContainer) recContainer.style.display = 'none';
+    }
 }
 

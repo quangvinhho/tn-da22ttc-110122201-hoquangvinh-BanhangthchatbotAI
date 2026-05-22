@@ -1,0 +1,90 @@
+version: "3.1"
+
+intents:
+  - greet
+  - goodbye
+  - ask_address
+  - ask_address_store
+  - ask_address_delivery
+  - ask_recommendation_generic
+  - select_brand
+  - select_budget
+  - select_usage
+  - bot_challenge
+  - out_of_scope
+
+entities:
+  - phone_brand
+  - budget_range
+  - main_usage
+
+slots:
+  phone_brand:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: phone_brand
+  budget_range:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: budget_range
+  main_usage:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: main_usage
+
+forms:
+  phone_consultation_form:
+    required_slots:
+      - phone_brand
+      - budget_range
+      - main_usage
+
+responses:
+  utter_greet:
+    - text: "Dạ, em chào bạn! Em là trợ lý ảo của cửa hàng điện thoại di động QuangHưng Mobile. Em có thể giúp gì cho mình hôm nay ạ? 😊"
+  utter_goodbye:
+    - text: "Dạ, tạm biệt bạn nhé! Rất vui được hỗ trợ bạn. Chúc bạn một ngày tốt lành! 🎄"
+  utter_iamabot:
+    - text: "Dạ, em là một trợ lý ảo thông minh (AI Chatbot) được tích hợp cùng hệ thống RAG để hỗ trợ quý khách hàng ạ!"
+  utter_ask_phone_brand:
+    - text: "Dạ, mình đang quan tâm hoặc muốn tìm dòng điện thoại của hãng nào nhất ạ? (Ví dụ: iPhone, Samsung, Xiaomi...)"
+      buttons:
+        - title: "iPhone"
+          payload: "iPhone"
+        - title: "Samsung"
+          payload: "Samsung"
+        - title: "Xiaomi"
+          payload: "Xiaomi"
+        - title: "OPPO"
+          payload: "OPPO"
+  utter_ask_budget_range:
+    - text: "Dạ, tầm ngân sách dự kiến của mình khoảng bao nhiêu ạ? (Ví dụ: Dưới 5 triệu, 5-10 triệu, trên 10 triệu...)"
+      buttons:
+        - title: "Dưới 5 triệu"
+          payload: "Dưới 5 triệu"
+        - title: "Từ 5 - 10 triệu"
+          payload: "Từ 5 - 10 triệu"
+        - title: "Trên 10 triệu"
+          payload: "Trên 10 triệu"
+  utter_ask_main_usage:
+    - text: "Dạ, nhu cầu sử dụng chính hàng ngày của mình là gì ạ? (Ví dụ: Chơi game mượt, chụp ảnh đẹp, pin trâu...)"
+      buttons:
+        - title: "Chơi game"
+          payload: "Chơi game"
+        - title: "Chụp ảnh đẹp"
+          payload: "Chụp ảnh đẹp"
+        - title: "Pin trâu"
+          payload: "Pin trâu"
+
+actions:
+  - action_call_rag
+  - action_clarify_address
+  - action_submit_phone_consultation
+  - action_get_store_address
+  - action_get_delivery_address

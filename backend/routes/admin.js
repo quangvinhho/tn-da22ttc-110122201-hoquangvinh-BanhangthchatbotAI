@@ -5,6 +5,7 @@ const { pool } = require('../config/database');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const bcrypt = require('bcryptjs'); // Thêm bcrypt để băm mật khẩu nhân viên
 
 // ==================== MIDDLEWARE XÁC THỰC ADMIN ====================
 // Các route KHÔNG cần xác thực admin (public)
@@ -44,6 +45,18 @@ const checkAdmin = (req, res, next) => {
     }
 
     console.log('✅ Admin authenticated:', req.session.user.tai_khoan);
+    next();
+};
+
+// Middleware kiểm tra quyền SuperAdmin (chỉ dành cho tính năng nhạy cảm)
+const checkSuperAdmin = (req, res, next) => {
+    if (req.session.user.quyen !== 'superadmin') {
+        return res.status(403).json({ 
+            success: false, 
+            message: 'Chỉ Chủ cửa hàng (SuperAdmin) mới có quyền thực hiện thao tác này.',
+            code: 'SUPERADMIN_REQUIRED'
+        });
+    }
     next();
 };
 
@@ -509,7 +522,7 @@ router.put('/orders/:id/cancel', async (req, res) => {
 // ==================== CUSTOMERS ====================
 
 // GET /api/admin/customers - Lấy tất cả khách hàng
-router.get('/customers', async (req, res) => {
+router.get('/customers', checkSuperAdmin, async (req, res) => {
     try {
         const [customers] = await pool.query(`
             SELECT kh.*,
@@ -533,7 +546,7 @@ router.get('/customers', async (req, res) => {
 });
 
 // GET /api/admin/customers/:id - Lấy chi tiết khách hàng
-router.get('/customers/:id', async (req, res) => {
+router.get('/customers/:id', checkSuperAdmin, async (req, res) => {
     try {
         const { id } = req.params;
         
@@ -564,7 +577,7 @@ router.get('/customers/:id', async (req, res) => {
 });
 
 // PUT /api/admin/customers/:id/status - Khóa/Mở khóa tài khoản khách hàng
-router.put('/customers/:id/status', async (req, res) => {
+router.put('/customers/:id/status', checkSuperAdmin, async (req, res) => {
     try {
         const { id } = req.params;
         const { status } = req.body;
@@ -596,7 +609,7 @@ router.put('/customers/:id/status', async (req, res) => {
 });
 
 // DELETE /api/admin/customers/:id - Xóa khách hàng
-router.delete('/customers/:id', async (req, res) => {
+router.delete('/customers/:id', checkSuperAdmin, async (req, res) => {
     try {
         const { id } = req.params;
         
@@ -767,7 +780,7 @@ router.get('/products', async (req, res) => {
 // POST /api/admin/products - Thêm sản phẩm mới (kèm thông số kỹ thuật)
 router.post('/products', async (req, res) => {
     try {
-        const { ten_sp, ma_hang, gia, gia_giam, bo_nho, so_luong_ton, mau_sac, ten_mau_sac, mo_ta_ngan, mo_ta, anh_dai_dien, cau_hinh } = req.body;
+        const { ten_sp, ma_hang, gia, gia_nhap, gia_giam, bo_nho, so_luong_ton, mau_sac, ten_mau_sac, mo_ta_ngan, mo_ta, anh_dai_dien, cau_hinh } = req.body;
         
         // Validation
         if (!ten_sp || !ten_sp.trim()) {
@@ -801,11 +814,13 @@ router.post('/products', async (req, res) => {
             }
         }
         
+        const importPrice = parseFloat(gia_nhap) || (price * 0.7); // Fallback nếu không có giá nhập
+
         // Thêm sản phẩm (ngay_cap_nhat sẽ tự động set bởi MySQL DEFAULT CURRENT_TIMESTAMP)
         const [result] = await pool.query(
-            `INSERT INTO san_pham (ten_sp, ma_hang, gia, gia_giam, bo_nho, so_luong_ton, mau_sac, mo_ta_ngan, mo_ta, anh_dai_dien) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [ten_sp, ma_hang, gia, discountPrice, bo_nho || 128, so_luong_ton || 0, colorData, mo_ta_ngan, mo_ta, anh_dai_dien]
+            `INSERT INTO san_pham (ten_sp, ma_hang, gia, gia_nhap, gia_giam, bo_nho, so_luong_ton, mau_sac, mo_ta_ngan, mo_ta, anh_dai_dien) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [ten_sp, ma_hang, gia, importPrice, discountPrice, bo_nho || 128, so_luong_ton || 0, colorData, mo_ta_ngan, mo_ta, anh_dai_dien]
         );
         
         const productId = result.insertId;
@@ -929,7 +944,7 @@ router.put('/products/:id/specs', async (req, res) => {
 router.put('/products/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { ten_sp, ma_hang, gia, gia_giam, bo_nho, so_luong_ton, mau_sac, ten_mau_sac, mo_ta_ngan, mo_ta, anh_dai_dien, cau_hinh } = req.body;
+        const { ten_sp, ma_hang, gia, gia_nhap, gia_giam, bo_nho, so_luong_ton, mau_sac, ten_mau_sac, mo_ta_ngan, mo_ta, anh_dai_dien, cau_hinh } = req.body;
         
         // Validation
         if (!ten_sp || !ten_sp.trim()) {
@@ -963,11 +978,13 @@ router.put('/products/:id', async (req, res) => {
             }
         }
         
+        const importPrice = parseFloat(gia_nhap) || (price * 0.7);
+
         // Cập nhật sản phẩm
         await pool.query(
-            `UPDATE san_pham SET ten_sp = ?, ma_hang = ?, gia = ?, gia_giam = ?, bo_nho = ?, 
+            `UPDATE san_pham SET ten_sp = ?, ma_hang = ?, gia = ?, gia_nhap = ?, gia_giam = ?, bo_nho = ?, 
              so_luong_ton = ?, mau_sac = ?, mo_ta_ngan = ?, mo_ta = ?, anh_dai_dien = ? WHERE ma_sp = ?`,
-            [ten_sp, ma_hang, gia, discountPrice, bo_nho, so_luong_ton, colorData, mo_ta_ngan, mo_ta, anh_dai_dien, id]
+            [ten_sp, ma_hang, gia, importPrice, discountPrice, bo_nho, so_luong_ton, colorData, mo_ta_ngan, mo_ta, anh_dai_dien, id]
         );
         
         // Cập nhật thông số kỹ thuật nếu có
@@ -1271,7 +1288,7 @@ router.get('/dashboard', async (req, res) => {
 // ==================== ADVANCED DASHBOARD ANALYTICS ====================
 
 // GET /api/admin/dashboard/revenue - Doanh thu theo khoảng thời gian (tuần/tháng/năm)
-router.get('/dashboard/revenue', async (req, res) => {
+router.get('/dashboard/revenue', checkSuperAdmin, async (req, res) => {
     try {
         const { period = 'week', year, month } = req.query;
         const currentYear = year || new Date().getFullYear();
@@ -1286,8 +1303,9 @@ router.get('/dashboard/revenue', async (req, res) => {
             const [dailyRevenue] = await pool.query(`
                 SELECT DATE(thoi_gian) as date, 
                        COALESCE(SUM(tong_tien), 0) as revenue,
+                       COALESCE(SUM((SELECT SUM(gia_nhap * so_luong) FROM chi_tiet_don_hang WHERE ma_don = dh.ma_don)), 0) as import_cost,
                        COUNT(*) as orders
-                FROM don_hang 
+                FROM don_hang dh
                 WHERE thoi_gian >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
                 AND trang_thai NOT IN ('cancelled')
                 GROUP BY DATE(thoi_gian)
@@ -1304,6 +1322,7 @@ router.get('/dashboard/revenue', async (req, res) => {
                 revenueData.push({
                     date: dateStr,
                     revenue: found ? parseFloat(found.revenue) : 0,
+                    profit: found ? parseFloat(found.revenue) - parseFloat(found.import_cost || 0) : 0,
                     orders: found ? found.orders : 0
                 });
             }
@@ -1333,8 +1352,9 @@ router.get('/dashboard/revenue', async (req, res) => {
             const [dailyRevenue] = await pool.query(`
                 SELECT DAY(thoi_gian) as day, 
                        COALESCE(SUM(tong_tien), 0) as revenue,
+                       COALESCE(SUM((SELECT SUM(gia_nhap * so_luong) FROM chi_tiet_don_hang WHERE ma_don = dh.ma_don)), 0) as import_cost,
                        COUNT(*) as orders
-                FROM don_hang 
+                FROM don_hang dh
                 WHERE YEAR(thoi_gian) = ? AND MONTH(thoi_gian) = ?
                 AND trang_thai NOT IN ('cancelled')
                 GROUP BY DAY(thoi_gian)
@@ -1348,6 +1368,7 @@ router.get('/dashboard/revenue', async (req, res) => {
                 revenueData.push({
                     day: i,
                     revenue: found ? parseFloat(found.revenue) : 0,
+                    profit: found ? parseFloat(found.revenue) - parseFloat(found.import_cost || 0) : 0,
                     orders: found ? found.orders : 0
                 });
             }
@@ -1380,8 +1401,9 @@ router.get('/dashboard/revenue', async (req, res) => {
             const [monthlyRevenue] = await pool.query(`
                 SELECT MONTH(thoi_gian) as month, 
                        COALESCE(SUM(tong_tien), 0) as revenue,
+                       COALESCE(SUM((SELECT SUM(gia_nhap * so_luong) FROM chi_tiet_don_hang WHERE ma_don = dh.ma_don)), 0) as import_cost,
                        COUNT(*) as orders
-                FROM don_hang 
+                FROM don_hang dh
                 WHERE YEAR(thoi_gian) = ?
                 AND trang_thai NOT IN ('cancelled')
                 GROUP BY MONTH(thoi_gian)
@@ -1438,7 +1460,7 @@ router.get('/dashboard/revenue', async (req, res) => {
 });
 
 // GET /api/admin/dashboard/inventory - Thống kê tồn kho
-router.get('/dashboard/inventory', async (req, res) => {
+router.get('/dashboard/inventory', checkSuperAdmin, async (req, res) => {
     try {
         // Tổng quan tồn kho
         const [[inventoryStats]] = await pool.query(`
@@ -1510,7 +1532,7 @@ router.get('/dashboard/inventory', async (req, res) => {
 });
 
 // GET /api/admin/dashboard/sales-analytics - Phân tích bán hàng chi tiết
-router.get('/dashboard/sales-analytics', async (req, res) => {
+router.get('/dashboard/sales-analytics', checkSuperAdmin, async (req, res) => {
     try {
         // Top sản phẩm bán chạy
         const [topProducts] = await pool.query(`
@@ -1593,7 +1615,7 @@ router.get('/dashboard/sales-analytics', async (req, res) => {
 });
 
 // GET /api/admin/dashboard/overview - Tổng quan dashboard với so sánh
-router.get('/dashboard/overview', async (req, res) => {
+router.get('/dashboard/overview', checkSuperAdmin, async (req, res) => {
     try {
         const today = new Date();
         const currentMonth = today.getMonth() + 1;
@@ -1609,23 +1631,30 @@ router.get('/dashboard/overview', async (req, res) => {
         
         // Doanh thu tháng hiển thị vs tháng trước
         const [[revenueThisMonth]] = await pool.query(`
-            SELECT COALESCE(SUM(tong_tien), 0) as total
-            FROM don_hang 
+            SELECT 
+                COALESCE(SUM(tong_tien), 0) as total,
+                COALESCE(SUM((SELECT SUM(gia_nhap * so_luong) FROM chi_tiet_don_hang WHERE ma_don = dh.ma_don)), 0) as import_cost
+            FROM don_hang dh
             WHERE YEAR(thoi_gian) = ? AND MONTH(thoi_gian) = ?
             AND trang_thai NOT IN ('cancelled')
         `, [displayYear, displayMonth]);
         
         const [[revenueLastMonth]] = await pool.query(`
-            SELECT COALESCE(SUM(tong_tien), 0) as total
-            FROM don_hang 
+            SELECT 
+                COALESCE(SUM(tong_tien), 0) as total,
+                COALESCE(SUM((SELECT SUM(gia_nhap * so_luong) FROM chi_tiet_don_hang WHERE ma_don = dh.ma_don)), 0) as import_cost
+            FROM don_hang dh
             WHERE YEAR(thoi_gian) = ? AND MONTH(thoi_gian) = ?
             AND trang_thai NOT IN ('cancelled')
         `, [prevYear, prevMonth]);
         
         // === DOANH THU TUẦN NÀY ===
         const [[revenueThisWeek]] = await pool.query(`
-            SELECT COALESCE(SUM(tong_tien), 0) as total, COUNT(*) as orders
-            FROM don_hang 
+            SELECT 
+                COALESCE(SUM(tong_tien), 0) as total, 
+                COALESCE(SUM((SELECT SUM(gia_nhap * so_luong) FROM chi_tiet_don_hang WHERE ma_don = dh.ma_don)), 0) as import_cost,
+                COUNT(*) as orders
+            FROM don_hang dh
             WHERE thoi_gian >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
             AND trang_thai NOT IN ('cancelled')
         `);
@@ -1677,6 +1706,7 @@ router.get('/dashboard/overview', async (req, res) => {
         const [[totals]] = await pool.query(`
             SELECT 
                 (SELECT COALESCE(SUM(tong_tien), 0) FROM don_hang WHERE trang_thai NOT IN ('cancelled')) as total_revenue,
+                (SELECT COALESCE(SUM(gia_nhap * so_luong), 0) FROM chi_tiet_don_hang ct JOIN don_hang dh ON ct.ma_don = dh.ma_don WHERE dh.trang_thai NOT IN ('cancelled')) as total_import_cost,
                 (SELECT COUNT(*) FROM don_hang) as total_orders,
                 (SELECT COUNT(*) FROM khach_hang) as total_customers,
                 (SELECT COUNT(*) FROM san_pham) as total_products,
@@ -1777,6 +1807,15 @@ router.get('/dashboard/overview', async (req, res) => {
                     week: parseFloat(revenueThisWeek.total),
                     weekOrders: revenueThisWeek.orders
                 },
+                profit: {
+                    current: parseFloat(revenueThisMonth.total) - parseFloat(revenueThisMonth.import_cost || 0),
+                    previous: parseFloat(revenueLastMonth.total) - parseFloat(revenueLastMonth.import_cost || 0),
+                    change: calcChange(
+                        parseFloat(revenueThisMonth.total) - parseFloat(revenueThisMonth.import_cost || 0), 
+                        parseFloat(revenueLastMonth.total) - parseFloat(revenueLastMonth.import_cost || 0)
+                    ),
+                    total: parseFloat(totals.total_revenue) - parseFloat(totals.total_import_cost || 0)
+                },
                 orders: {
                     current: ordersThisMonth.total,
                     previous: ordersLastMonth.total,
@@ -1814,7 +1853,7 @@ router.get('/dashboard/overview', async (req, res) => {
 // ==================== MONTHLY STATS FILTER ====================
 
 // GET /api/admin/dashboard/monthly-stats - Lấy thống kê theo tháng cụ thể
-router.get('/dashboard/monthly-stats', async (req, res) => {
+router.get('/dashboard/monthly-stats', checkSuperAdmin, async (req, res) => {
     try {
         const { month, year } = req.query;
         
@@ -1930,6 +1969,94 @@ router.get('/dashboard/monthly-stats', async (req, res) => {
     }
 });
 
+// GET /api/admin/dashboard/custom-stats - Lấy thống kê theo khoảng ngày
+router.get('/dashboard/custom-stats', async (req, res) => {
+    try {
+        const { startDate, endDate } = req.query;
+        
+        if (!startDate || !endDate) {
+            return res.status(400).json({ success: false, message: 'Vui lòng cung cấp startDate và endDate' });
+        }
+        
+        // Doanh thu và lợi nhuận
+        const [[revenueData]] = await pool.query(`
+            SELECT COALESCE(SUM(tong_tien), 0) as revenue,
+                   COALESCE(SUM((SELECT SUM(gia_nhap * so_luong) FROM chi_tiet_don_hang WHERE ma_don = dh.ma_don)), 0) as import_cost,
+                   COUNT(*) as orders
+            FROM don_hang dh
+            WHERE DATE(thoi_gian) >= ? AND DATE(thoi_gian) <= ?
+            AND trang_thai NOT IN ('cancelled')
+        `, [startDate, endDate]);
+        
+        const [[completedOrders]] = await pool.query(`
+            SELECT COUNT(*) as total FROM don_hang 
+            WHERE DATE(thoi_gian) >= ? AND DATE(thoi_gian) <= ? AND trang_thai IN ('completed', 'delivered')
+        `, [startDate, endDate]);
+        
+        const [[cancelledOrders]] = await pool.query(`
+            SELECT COUNT(*) as total FROM don_hang 
+            WHERE DATE(thoi_gian) >= ? AND DATE(thoi_gian) <= ? AND trang_thai = 'cancelled'
+        `, [startDate, endDate]);
+        
+        // Sản phẩm đã bán
+        const [[productsSold]] = await pool.query(`
+            SELECT COALESCE(SUM(ct.so_luong), 0) as total
+            FROM chi_tiet_don_hang ct
+            JOIN don_hang dh ON ct.ma_don = dh.ma_don
+            WHERE DATE(dh.thoi_gian) >= ? AND DATE(dh.thoi_gian) <= ?
+            AND dh.trang_thai NOT IN ('cancelled')
+        `, [startDate, endDate]);
+        
+        const [[avgOrder]] = await pool.query(`
+            SELECT COALESCE(AVG(tong_tien), 0) as avg_value
+            FROM don_hang 
+            WHERE DATE(thoi_gian) >= ? AND DATE(thoi_gian) <= ? AND trang_thai NOT IN ('cancelled') AND tong_tien > 0
+        `, [startDate, endDate]);
+        
+        // Top sản phẩm
+        const [topProducts] = await pool.query(`
+            SELECT sp.ten_sp, sp.anh_dai_dien, h.ten_hang as brand,
+                   SUM(ct.so_luong) as quantity, 
+                   SUM(ct.so_luong * ct.gia) as revenue,
+                   SUM(ct.so_luong * ct.gia_nhap) as import_cost
+            FROM chi_tiet_don_hang ct
+            JOIN don_hang dh ON ct.ma_don = dh.ma_don
+            JOIN san_pham sp ON ct.ma_sp = sp.ma_sp
+            LEFT JOIN hang_san_xuat h ON sp.ma_hang = h.ma_hang
+            WHERE DATE(dh.thoi_gian) >= ? AND DATE(dh.thoi_gian) <= ?
+            AND dh.trang_thai NOT IN ('cancelled')
+            GROUP BY ct.ma_sp, sp.ten_sp, sp.anh_dai_dien, h.ten_hang
+            ORDER BY revenue DESC
+            LIMIT 15
+        `, [startDate, endDate]);
+        
+        const isSuperAdmin = req.session.user.quyen === 'superadmin';
+
+        res.json({
+            success: true,
+            data: {
+                startDate,
+                endDate,
+                revenue: parseFloat(revenueData.revenue),
+                profit: isSuperAdmin ? parseFloat(revenueData.revenue) - parseFloat(revenueData.import_cost || 0) : undefined,
+                orders: revenueData.orders,
+                completedOrders: completedOrders.total,
+                cancelledOrders: cancelledOrders.total,
+                productsSold: productsSold.total,
+                avgOrderValue: parseFloat(avgOrder.avg_value),
+                topProducts: topProducts.map(p => ({
+                    ...p,
+                    profit: isSuperAdmin ? parseFloat(p.revenue) - parseFloat(p.import_cost || 0) : undefined,
+                    import_cost: undefined // Ẩn import_cost
+                }))
+            }
+        });
+    } catch (error) {
+        console.error('Error getting custom stats:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
 // GET /api/admin/dashboard/available-months - Lấy danh sách các tháng có dữ liệu
 router.get('/dashboard/available-months', async (req, res) => {
     try {
@@ -1984,7 +2111,7 @@ async function ensureVideoUrlColumn() {
 ensureVideoUrlColumn();
 
 // GET /api/admin/news - Lấy tất cả tin tức
-router.get('/news', async (req, res) => {
+router.get('/news', checkSuperAdmin, async (req, res) => {
     try {
         // Đảm bảo cột video_url tồn tại
         await ensureVideoUrlColumn();
@@ -2003,7 +2130,7 @@ router.get('/news', async (req, res) => {
 });
 
 // POST /api/admin/news - Thêm tin tức mới
-router.post('/news', async (req, res) => {
+router.post('/news', checkSuperAdmin, async (req, res) => {
     try {
         const { tieu_de, noi_dung, anh_dai_dien, video_url, ma_admin, loai_tin, mo_ta_ngan, thu_tu, trang_thai } = req.body;
         
@@ -2041,7 +2168,7 @@ router.post('/news', async (req, res) => {
 });
 
 // PUT /api/admin/news/:id - Cập nhật tin tức
-router.put('/news/:id', async (req, res) => {
+router.put('/news/:id', checkSuperAdmin, async (req, res) => {
     try {
         const { id } = req.params;
         const { tieu_de, noi_dung, anh_dai_dien, video_url, loai_tin, mo_ta_ngan, thu_tu, trang_thai } = req.body;
@@ -2082,7 +2209,7 @@ router.put('/news/:id', async (req, res) => {
 });
 
 // DELETE /api/admin/news/:id - Xóa tin tức
-router.delete('/news/:id', async (req, res) => {
+router.delete('/news/:id', checkSuperAdmin, async (req, res) => {
     try {
         const { id } = req.params;
         await pool.query('DELETE FROM tin_tuc WHERE ma_tintuc = ?', [id]);
@@ -2096,7 +2223,7 @@ router.delete('/news/:id', async (req, res) => {
 // ==================== CONTACT MANAGEMENT ====================
 
 // GET /api/admin/contacts - Lấy tất cả liên hệ
-router.get('/contacts', async (req, res) => {
+router.get('/contacts', checkSuperAdmin, async (req, res) => {
     try {
         const { status } = req.query;
         let query = 'SELECT * FROM lien_he';
@@ -2118,7 +2245,7 @@ router.get('/contacts', async (req, res) => {
 });
 
 // GET /api/admin/contacts/stats - Thống kê liên hệ
-router.get('/contacts/stats', async (req, res) => {
+router.get('/contacts/stats', checkSuperAdmin, async (req, res) => {
     try {
         const [[stats]] = await pool.query(`
             SELECT 
@@ -2417,7 +2544,7 @@ router.get('/notifications', async (req, res) => {
 // ==================== KHUYẾN MÃI (PROMOTIONS) ====================
 
 // GET /api/admin/promotions - Lấy tất cả khuyến mãi
-router.get('/promotions', async (req, res) => {
+router.get('/promotions', checkSuperAdmin, async (req, res) => {
     try {
         const [promotions] = await pool.query(`
             SELECT km.*,
@@ -2512,7 +2639,7 @@ router.get('/promotions/:id', async (req, res) => {
 });
 
 // POST /api/admin/promotions - Thêm khuyến mãi mới
-router.post('/promotions', async (req, res) => {
+router.post('/promotions', checkSuperAdmin, async (req, res) => {
     try {
         const { 
             code, loai_km, loai, gia_tri, mo_ta, 
@@ -2581,7 +2708,7 @@ router.post('/promotions', async (req, res) => {
 });
 
 // PUT /api/admin/promotions/:id - Cập nhật khuyến mãi
-router.put('/promotions/:id', async (req, res) => {
+router.put('/promotions/:id', checkSuperAdmin, async (req, res) => {
     try {
         const { id } = req.params;
         const { 
@@ -2630,7 +2757,7 @@ router.put('/promotions/:id', async (req, res) => {
 });
 
 // DELETE /api/admin/promotions/:id - Xóa khuyến mãi
-router.delete('/promotions/:id', async (req, res) => {
+router.delete('/promotions/:id', checkSuperAdmin, async (req, res) => {
     try {
         const { id } = req.params;
         
@@ -2913,7 +3040,7 @@ router.get('/settings', async (req, res) => {
 });
 
 // PUT /api/admin/settings - Cập nhật cài đặt shop
-router.put('/settings', async (req, res) => {
+router.put('/settings', checkSuperAdmin, async (req, res) => {
     try {
         const { hideStockFromCustomer } = req.body;
         
@@ -2938,6 +3065,104 @@ router.get('/settings/public', async (req, res) => {
             }
         });
     } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// ==================== EMPLOYEE MANAGEMENT ====================
+
+// GET /api/admin/employees - Lấy danh sách nhân viên
+router.get('/employees', checkSuperAdmin, async (req, res) => {
+    try {
+        const [employees] = await pool.query(
+            "SELECT ma_nv as ma_admin, tai_khoan, ho_ten, email, so_dt, luong_co_ban, trang_thai, quyen FROM nhan_vien ORDER BY ma_nv DESC"
+        );
+        res.json({ success: true, data: employees });
+    } catch (error) {
+        console.error('Error getting employees:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// POST /api/admin/employees - Tạo nhân viên mới
+router.post('/employees', checkSuperAdmin, async (req, res) => {
+    try {
+        const { tai_khoan, mat_khau, ho_ten, email, so_dt, luong_co_ban, trang_thai } = req.body;
+        
+        if (!tai_khoan || !mat_khau || !ho_ten) {
+            return res.status(400).json({ success: false, message: 'Vui lòng điền đầy đủ thông tin bắt buộc' });
+        }
+        
+        // Kiểm tra tài khoản hoặc email đã tồn tại trong nhan_vien và admin
+        const [existingAdmin] = await pool.query('SELECT ma_admin FROM admin WHERE tai_khoan = ? OR (email = ? AND email IS NOT NULL AND email != "")', [tai_khoan, email || '']);
+        const [existingNv] = await pool.query('SELECT ma_nv FROM nhan_vien WHERE tai_khoan = ? OR (email = ? AND email IS NOT NULL AND email != "")', [tai_khoan, email || '']);
+        
+        if (existingAdmin.length > 0 || existingNv.length > 0) {
+            return res.status(400).json({ success: false, message: 'Tài khoản hoặc email đã tồn tại trong hệ thống' });
+        }
+        
+        const salt = await bcrypt.genSalt(10);
+        const hashed_mat_khau = await bcrypt.hash(mat_khau, salt);
+        
+        await pool.query(
+            'INSERT INTO nhan_vien (tai_khoan, mat_khau, ho_ten, email, so_dt, luong_co_ban, trang_thai, quyen) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [tai_khoan, hashed_mat_khau, ho_ten, email || null, so_dt || null, luong_co_ban || 0, trang_thai || 'hoat_dong', req.body.quyen || 'nhanvien']
+        );
+        res.json({ success: true, message: 'Tạo tài khoản nhân viên thành công' });
+    } catch (error) {
+        console.error('Error creating employee:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// PUT /api/admin/employees/:id - Sửa nhân viên
+router.put('/employees/:id', checkSuperAdmin, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { tai_khoan, mat_khau, ho_ten, email, so_dt, luong_co_ban, trang_thai, quyen } = req.body;
+        
+        if (!tai_khoan || !ho_ten) {
+            return res.status(400).json({ success: false, message: 'Vui lòng điền đầy đủ thông tin bắt buộc' });
+        }
+        
+        // Kiểm tra xem ID có tồn tại trong nhan_vien không
+        const [existing] = await pool.query('SELECT ma_nv, mat_khau FROM nhan_vien WHERE ma_nv = ?', [id]);
+        if (existing.length === 0) {
+            return res.status(404).json({ success: false, message: 'Không tìm thấy nhân viên' });
+        }
+
+        // Kiểm tra tài khoản/email trùng lặp (ngoại trừ chính nó)
+        const [existingNv] = await pool.query('SELECT ma_nv FROM nhan_vien WHERE (tai_khoan = ? OR (email = ? AND email IS NOT NULL AND email != "")) AND ma_nv != ?', [tai_khoan, email || '', id]);
+        if (existingNv.length > 0) {
+            return res.status(400).json({ success: false, message: 'Tài khoản hoặc email đã tồn tại trong hệ thống' });
+        }
+        
+        let finalMatKhau = existing[0].mat_khau;
+        if (mat_khau && mat_khau.trim() !== '') {
+            const salt = await bcrypt.genSalt(10);
+            finalMatKhau = await bcrypt.hash(mat_khau, salt);
+        }
+        
+        await pool.query(
+            'UPDATE nhan_vien SET tai_khoan=?, mat_khau=?, ho_ten=?, email=?, so_dt=?, luong_co_ban=?, trang_thai=?, quyen=? WHERE ma_nv=?',
+            [tai_khoan, finalMatKhau, ho_ten, email || null, so_dt || null, luong_co_ban || 0, trang_thai || 'hoat_dong', quyen || 'nhanvien', id]
+        );
+        res.json({ success: true, message: 'Cập nhật tài khoản nhân viên thành công' });
+    } catch (error) {
+        console.error('Error updating employee:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// DELETE /api/admin/employees/:id - Xóa/Nghỉ việc nhân viên
+router.delete('/employees/:id', checkSuperAdmin, async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        await pool.query('DELETE FROM nhan_vien WHERE ma_nv = ?', [id]);
+        res.json({ success: true, message: 'Đã xóa tài khoản nhân viên thành công' });
+    } catch (error) {
+        console.error('Error deleting employee:', error);
         res.status(500).json({ success: false, message: error.message });
     }
 });

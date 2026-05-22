@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sơ đồ Tuần tự UML - Hệ thống Cửa Hàng Điện Thoại GDDA</title>
+    <!-- Nhúng thư viện Mermaid.JS -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({ 
+            startOnLoad: true, 
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#ffffff',
+                secondaryColor: '#f4f4f4',
+                tertiaryColor: '#ffffff',
+                fontFamily: 'Arial',
+                fontSize: '14px',
+                lineColor: '#000000',
+                textColor: '#000000',
+                mainBkg: '#ffffff',
+                nodeBorder: '#000000'
+            }
+        });
+    </script>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; color: #333; }
+        .header { text-align: center; margin-bottom: 40px; }
+        .header h1 { color: #222; font-size: 2.2rem; margin-bottom: 10px; }
+        .header p { color: #666; font-size: 1.1rem; }
+        .diagram-card { background: white; border-radius: 8px; border: 1px solid #ddd; padding: 30px; margin: 0 auto 40px; max-width: 1000px; }
+        .diagram-card h2 { color: #222; border-bottom: 1px solid #ccc; padding-bottom: 15px; margin-top: 0; }
+        .desc { background: #fafafa; padding: 15px; border-left: 4px solid #666; margin-bottom: 20px; color: #555; line-height: 1.6; border-radius: 4px;}
+        .mermaid { display: flex; justify-content: center; overflow-x: auto; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>SƠ ĐỒ TUẦN TỰ (SEQUENCE DIAGRAM)</h1>
+        <p>Hệ Thống Cửa Hàng Điện Thoại (GDDA Store) có tích hợp AI</p>
+    </div>
+
+    <!-- QUY TRÌNH 1 -->
+    <div class="diagram-card">
+        <h2>1. Quy trình Đăng Ký và Đăng Nhập</h2>
+        <div class="desc">Mô tả luồng tương tác khi khách hàng điền thông tin đăng ký hoặc đăng nhập. Node.js backend xử lý mã hóa mật khẩu, kiểm tra database và cấp phát Access Token.</div>
+        <div class="mermaid">
+            sequenceDiagram
+                autonumber
+                actor User as Khách Hàng
+                participant FE as Frontend (Website)
+                participant BE as Backend (Node.js)
+                participant DB as Database (MySQL)
+
+                User->>FE: Nhập thông tin (Email, Password)
+                FE->>BE: POST /api/auth/login
+                activate BE
+                BE->>DB: SELECT * FROM users WHERE email = ?
+                activate DB
+                DB-->>BE: Trả về thông tin User chứa Hash Password
+                deactivate DB
+                BE->>BE: So sánh (Bcrypt.compare)
+                BE->>BE: Tạo JWT Token (Access Token)
+                BE-->>FE: HTTP 200 OK (Kèm Token & User Info)
+                deactivate BE
+                FE->>FE: Lưu Token vào LocalStorage / Cookie
+                FE-->>User: Chuyển hướng tới Trang Chủ
+        </div>
+    </div>
+
+    <!-- QUY TRÌNH 2 -->
+    <div class="diagram-card">
+        <h2>2. Quy trình Tìm kiếm & Xem Chi tiết Sản phẩm</h2>
+        <div class="desc">Xử lý khi khách hàng gõ từ khóa tìm kiếm (Ví dụ: iPhone 16) và xem chi tiết một thiết bị điện thoại.</div>
+        <div class="mermaid">
+            sequenceDiagram
+                autonumber
+                actor User as Khách Hàng
+                participant FE as Frontend
+                participant BE as Backend
+                participant DB as Database
+
+                User->>FE: Nhập từ khóa "iPhone 16"
+                FE->>BE: GET /api/search?q=iPhone 16
+                activate BE
+                BE->>DB: Truy vấn Like %iPhone 16% 
+                activate DB
+                DB-->>BE: Danh sách sản phẩm (Tên, Ảnh, Giá)
+                deactivate DB
+                BE-->>FE: Trả về mảng JSON
+                deactivate BE
+                FE-->>User: Hiển thị danh sách kết quả tìm kiếm
+                
+                User->>FE: Click vào sản phẩm (ID: 1)
+                FE->>BE: GET /api/products/1
+                activate BE
+                BE->>DB: Lấy chi tiết thông số, cấu hình, mô tả
+                DB-->>BE: Trả về dữ liệu chi tiết
+                BE-->>FE: Phản hồi JSON chi tiết
+                deactivate BE
+                FE-->>User: Render giao diện Product Detail
+        </div>
+    </div>
+
+    <!-- QUY TRÌNH 3 -->
+    <div class="diagram-card">
+        <h2>3. Quy trình Thanh toán Đơn Hàng (Checkout & Payment)</h2>
+        <div class="desc">Chuyển giỏ hàng thành đơn đặt hàng, cập nhật tồn kho và xử lý qua cổng thanh toán VNPay/MoMo/COD.</div>
+        <div class="mermaid">
+            sequenceDiagram
+                autonumber
+                actor KH as Khách Hàng
+                participant FE as Frontend
+                participant BE as Backend
+                participant DB as Database
+                participant PG as Payment Gateway
+
+                KH->>FE: Xác nhận đặt hàng (Thông tin, Địa chỉ)
+                FE->>BE: POST /api/orders (Giỏ hàng & Address)
+                activate BE
+                BE->>DB: Kiểm tra số lượng tồn kho (Check Stock)
+                DB-->>BE: Tồn kho hợp lệ
+                BE->>DB: INSERT Bảng Orders (Trạng thái: Pending) và Order Items
+                BE->>DB: UPDATE trừ số lượng tồn kho
+                DB-->>BE: Thành công
+
+                alt Thanh toán Online (VNPAY/MoMo)
+                    BE->>PG: Tạo Payment URL / Request
+                    PG-->>BE: Trả về Redirect URL
+                    BE-->>FE: URL chuyển hướng thanh toán
+                    FE-->>KH: Chuyển sang trang Cổng thanh toán
+                    KH->>PG: Nhập thông tin thẻ và Mật khẩu
+                    PG->>BE: Webhook / IPN báo giao dịch thành công
+                    BE->>DB: UPDATE Trang thái Đơn hàng = 'Paid'
+                else Thanh toán COD
+                    BE-->>FE: Xác nhận đơn hàng COD thành công
+                end
+
+                deactivate BE
+                FE-->>KH: Trình bày màn hình Xong (Order Success)
+        </div>
+    </div>
+
+    <!-- QUY TRÌNH 4 -->
+    <div class="diagram-card">
+        <h2>4. Quy trình Chatbot AI RAG (Tư vấn Bán hàng)</h2>
+        <div class="desc">Xử lý câu hỏi thực tế của khách thông qua sức mạnh AI LLM và ChromaDB để truy xuất kiến thức cửa hàng (Chính sách, cấu hình máy).</div>
+        <div class="mermaid">
+            sequenceDiagram
+                autonumber
+                actor User as Khách hàng
+                participant FE as Chatbot UI
+                participant BE as Backend (Node.js)
+                participant Py as Python RAG Engine
+                participant DB as Vector DB (Chroma)
+                participant LLM as LLM API (Groq/OpenAI)
+
+                User->>FE: Hỏi: "iPhone 16 sạc bao lâu đầy?"
+                FE->>BE: POST /api/chatbot (message)
+                activate BE
+                BE->>Py: Chuyển Text sang Python Service
+                activate Py
+                Py->>Py: Embedding câu hỏi thành Vector
+                Py->>DB: Truy vấn Vector Similarity (Top k docs)
+                activate DB
+                DB-->>Py: Trả về Context liên quan (Manual/Knowledge)
+                deactivate DB
+                Py->>LLM: Gửi Prompt (Context + Question)
+                activate LLM
+                LLM-->>Py: Trả về câu trả lời tự nhiên
+                deactivate LLM
+                Py-->>BE: Trả về response bot
+                deactivate Py
+                BE-->>FE: JSON { reply: "..." }
+                deactivate BE
+                FE-->>User: Hiển thị tin nhắn lên khung chat
+        </div>
+    </div>
+
+    <!-- QUY TRÌNH 5 -->
+    <div class="diagram-card">
+        <h2>5. Quy trình Gợi Ý Sản Phẩm (Recommendation System)</h2>
+        <div class="desc">Dựa vào các thuật toán bằng Service Python (recommend_engine.py) để gợi ý các thiết bị hoặc phụ kiện phù hợp cho người dùng.</div>
+        <div class="mermaid">
+            sequenceDiagram
+                autonumber
+                actor User as Khách hàng
+                participant FE as Website
+                participant BE as Backend (Node.js)
+                participant Py as Python RecSys Engine
+                participant DB as MySQL DB
+
+                User->>FE: Truy cập trang chủ / Xem sản phẩm X
+                FE->>BE: GET /api/recommendations?userId=...
+                activate BE
+                BE->>Py: Gọi Microservice Python
+                activate Py
+                Py->>DB: Rút trích dữ liệu hành vi xem/mua hàng (Logs)
+                DB-->>Py: Cung cấp Log Dữ Liệu
+                Py->>Py: Tính toán thuật toán TF-IDF / Cosine Similarity...
+                Py-->>BE: List Product_IDs [3, 15, 26]
+                deactivate Py
+                BE->>DB: SELECT * FROM products WHERE id IN (3,15,26)
+                DB-->>BE: Detail các sản phẩm gợi ý
+                BE-->>FE: Trả danh sách sản phẩm gợi ý
+                deactivate BE
+                FE-->>User: Trình bày widget "Có thể bạn sẽ thích"
+        </div>
+    </div>
+
+    <!-- QUY TRÌNH 6 -->
+    <div class="diagram-card">
+        <h2>6. Quy trình Cập Nhật Tri Thức AI (Admin Dạy Chatbot)</h2>
+        <div class="desc">Ban quản trị thêm câu hỏi đáp/Tài liệu mới vào mục Chatbot Knowledge. Dữ liệu sẽ được Python đem đi Vector hóa để AI có thể tư vấn chính xác.</div>
+        <div class="mermaid">
+            sequenceDiagram
+                autonumber
+                actor Admin as Admin
+                participant FE as Admin Panel
+                participant BE as Node Backend
+                participant DB as MySQL DB
+                participant Py as Python (add_knowledge.py)
+                participant Chroma as Chroma Vector DB
+
+                Admin->>FE: Nhập Câu hỏi & Trả lời vào Form
+                FE->>BE: POST /api/admin/chatbot_knowledge
+                activate BE
+                BE->>DB: INSERT Knowledge Table (Dạng Text)
+                DB-->>BE: Done
+                BE->>Py: Gửi lệnh Trigger Update Vector
+                activate Py
+                Py->>Py: Embedding đoạn văn bản mới (QA)
+                Py->>Chroma: Cập nhật Collection Documents
+                activate Chroma
+                Chroma-->>Py: Trạng thái Index thành công
+                deactivate Chroma
+                Py-->>BE: Báo cáo đã nạp kiến thức cho AI
+                deactivate Py
+                BE-->>FE: Phản hồi tạo thành công
+                deactivate BE
+                FE-->>Admin: Hiển thị Popup Dạy Bot Xong
+        </div>
+    </div>
+
+    <!-- QUY TRÌNH 7 -->
+    <div class="diagram-card">
+        <h2>7. Quy trình Đánh Giá & Bình Luận Sản Phẩm</h2>
+        <div class="desc">Khách sau khi mua và nhận sản phẩm điện thoại sẽ tiến hành xếp hạng (Số sao) và để lại phản hồi.</div>
+        <div class="mermaid">
+            sequenceDiagram
+                autonumber
+                actor User as Khách Hàng (Đã Mua)
+                participant FE as Website Detail
+                participant BE as Backend
+                participant DB as Database
+
+                User->>FE: Bấm số sao (1-5) & Nhập Bình Luận
+                FE->>BE: POST /api/reviews
+                activate BE
+                BE->>DB: Kiểm tra quyền (Đã mua sản phẩm này chưa)
+                activate DB
+                DB-->>BE: Xác nhận hợp lệ (Has Purchased)
+                deactivate DB
+                BE->>DB: INSERT Review (User_Id, Product_ID, Rating, Comment)
+                BE->>DB: Tính toán Tái cập nhật Rating Trung Bình cho Sản phẩm
+                DB-->>BE: Success
+                BE-->>FE: Báo thành công (Record mới)
+                deactivate BE
+                FE-->>User: Load lại tab Đánh giá hiển thị bình luận vừa thêm
+        </div>
+    </div>
+
+    <!-- QUY TRÌNH 8 -->
+    <div class="diagram-card">
+        <h2>8. Quy trình Admin Duyệt và Xử Lý Đơn Hàng</h2>
+        <div class="desc">Admin quản lý từ lúc có đơn hàng chờ duyệt mới tới lúc cập nhật nó thành Đang giao và Giao thành công.</div>
+        <div class="mermaid">
+            sequenceDiagram
+                autonumber
+                actor Admin as Ban Quản Trị
+                participant FE as Trang Admin Đơn
+                participant BE as Backend
+                participant DB as Database
+                participant User as Khách Hàng (Client via Notification)
+
+                Admin->>FE: Xem chi tiết đơn hàng báo "Pending"
+                FE->>BE: Chỉnh trạng thái -> "Processing / Confirmed"
+                activate BE
+                BE->>DB: UPDATE trang thai trong DB
+                DB-->>BE: Xác nhận
+                BE-->>FE: Update UI Admin thành "Đã Xác Nhận"
+                BE-->>User: Đẩy Web Socket/Email thông báo "Đơn của bạn đã được duyệt"
+                deactivate BE
+                
+                Note over Admin, User: Vài ngày sau khi bàn giao ĐV Vận Chuyển...
+                
+                Admin->>FE: Click trạng thái -> "Delivered" (Giao thành công)
+                FE->>BE: Cập nhật "Delivered"
+                BE->>DB: Update Status
+                BE-->>User: Gửi Thông báo "Cảm ơn bạn đã mua hàng, hãy Review nhé."
+        </div>
+    </div>
+
+    <div style="text-align: center; color: #666; font-size: 0.9rem; margin-top: 30px;">
+        Bản quyền sơ đồ phân tích hệ thống thuộc về đồ án: Cửa Hàng Hệ thống GDDA (Tiêu chuẩn UML)
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sơ Đồ Kiến Trúc Hệ Thống - GDDA Store</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #ffffff;
+            color: #000000;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .architecture-diagram {
+            border: 1px solid #000;
+            padding: 30px;
+            width: 100%;
+            max-width: 900px;
+            background-color: #fff;
+        }
+
+        .layer {
+            border: 1px solid #000;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .layer-title {
+            font-weight: bold;
+            font-size: 16px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+
+        .box-container {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .box {
+            border: 1px solid #000;
+            padding: 15px 20px;
+            min-width: 120px;
+            background: #fff;
+        }
+
+        .box-title {
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .box-sub {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .routes-box {
+            border: 1px solid #000;
+            padding: 10px;
+            margin-top: 20px;
+            font-size: 13px;
+            word-spacing: 5px;
+            line-height: 1.6;
+        }
+
+        .connector {
+            text-align: center;
+            padding: 15px 0;
+            color: #000;
+        }
+
+        .connector span {
+            display: block;
+            font-size: 12px;
+            color: #555;
+            margin-bottom: 5px;
+        }
+
+        .triangle-down {
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 10px solid #000;
+            margin: 0 auto;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="architecture-diagram">
+        
+        <!-- CLIENT LAYER -->
+        <div class="layer">
+            <div class="layer-title">CLIENT LAYER</div>
+            <div class="box-container">
+                <div class="box">
+                    <div class="box-title">Customer Website</div>
+                    <div class="box-sub">(HTML/CSS/JS/Tailwind)</div>
+                </div>
+                <div class="box">
+                    <div class="box-title">Admin Dashboard</div>
+                    <div class="box-sub">(HTML/CSS/JS)</div>
+                </div>
+                <div class="box">
+                    <div class="box-title">Mobile Browser</div>
+                    <div class="box-sub">(Responsive)</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CONNECTOR 1 -->
+        <div class="connector">
+            <span>HTTP/REST API</span>
+            <div class="triangle-down"></div>
+        </div>
+
+        <!-- SERVER LAYER -->
+        <div class="layer">
+            <div class="layer-title">SERVER LAYER (Node.js + Express.js)</div>
+            <div class="box-container">
+                <div class="box" style="padding: 10px;">CORS</div>
+                <div class="box" style="padding: 10px;">Session / JWT</div>
+                <div class="box" style="padding: 10px;">Passport Auth</div>
+                <div class="box" style="padding: 10px;">Multer</div>
+                <div class="box" style="padding: 10px;">Nodemailer</div>
+            </div>
+            
+            <div class="routes-box">
+                /api/products /api/auth /api/cart /api/orders /api/payment /api/reviews /api/news /api/admin /api/search /api/address /api/notifications /api/chatbot /api/recommendations
+            </div>
+        </div>
+
+        <!-- CONNECTOR 2 (Split for Python AI & MySQL) -->
+        <div class="connector">
+            <span>HTTP/REST API (AI Service) & MySQL Protocol (Data)</span>
+            <div class="triangle-down"></div>
+        </div>
+
+        <!-- AI SERVICE LAYER (New for GDDA) -->
+        <div class="layer" style="margin-bottom: 35px;">
+            <div class="layer-title">AI RAG & RECOMMENDATION SERVICE (Python)</div>
+            <div class="box-container">
+                <div class="box">
+                    <div class="box-title">RAG Engine</div>
+                    <div class="box-sub">(chatbot_knowledge.py)</div>
+                </div>
+                <div class="box">
+                    <div class="box-title">Recommend Engine</div>
+                    <div class="box-sub">(recommend_engine.py)</div>
+                </div>
+                <div class="box">
+                    <div class="box-title">Vector Database</div>
+                    <div class="box-sub">(ChromaDB)</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DATA LAYER -->
+        <div class="layer">
+            <div class="layer-title">DATA LAYER (MySQL - QLCH)</div>
+            <div class="box-container">
+                <div class="box">khach_hang</div>
+                <div class="box">san_pham</div>
+                <div class="box">don_hang</div>
+                <div class="box">gio_hang</div>
+                <div class="box">thanh_toan</div>
+                <div class="box">danh_gia</div>
+                <div class="box">binh_luan</div>
+                <div class="box">tin_tuc</div>
+                <div class="box">khuyen_mai</div>
+                <div class="box">admin</div>
+                <div class="box">thong_bao</div>
+                <div class="box">lien_he</div>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>

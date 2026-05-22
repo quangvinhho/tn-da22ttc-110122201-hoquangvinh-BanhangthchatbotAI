@@ -2,6 +2,18 @@ const express = require('express');
 const router = express.Router();
 const { pool } = require('../config/database');
 
+// Middleware kiểm tra quyền admin cho các route nhạy cảm
+const checkAdmin = (req, res, next) => {
+  if (!req.session || !req.session.user || req.session.user.vai_tro !== 'admin') {
+    return res.status(403).json({ 
+      success: false, 
+      message: 'Bạn không có quyền thực hiện thao tác này.',
+      code: 'ADMIN_REQUIRED'
+    });
+  }
+  next();
+};
+
 // POST /api/orders - Tạo đơn hàng mới
 router.post('/', async (req, res) => {
   const connection = await pool.getConnection();
@@ -154,10 +166,14 @@ router.post('/', async (req, res) => {
 
     // Thêm chi tiết đơn hàng
     for (const item of items) {
+      // Lấy giá nhập hiện tại của sản phẩm để lưu vào chi tiết đơn hàng (khóa vốn)
+      const [[product]] = await connection.query('SELECT gia_nhap FROM san_pham WHERE ma_sp = ?', [item.id]);
+      const importPrice = product && product.gia_nhap ? product.gia_nhap : 0;
+
       await connection.query(
-        `INSERT INTO chi_tiet_don_hang (ma_don, ma_sp, so_luong, gia)
-         VALUES (?, ?, ?, ?)`,
-        [orderId, item.id, item.quantity, item.price]
+        `INSERT INTO chi_tiet_don_hang (ma_don, ma_sp, so_luong, gia, gia_nhap)
+         VALUES (?, ?, ?, ?, ?)`,
+        [orderId, item.id, item.quantity, item.price, importPrice]
       );
       
       // Giảm số lượng tồn kho
@@ -248,6 +264,23 @@ router.put('/:orderId/payment', async (req, res) => {
     const { orderId } = req.params;
     const { status, transactionId, paymentType } = req.body;
 
+    // Gia cố bảo mật: kiểm tra đơn hàng tồn tại và phân quyền sở hữu
+    const [orders] = await pool.query('SELECT ma_kh, trang_thai FROM don_hang WHERE ma_don = ?', [orderId]);
+    if (orders.length === 0) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy đơn hàng' });
+    }
+    
+    const order = orders[0];
+    if (order.ma_kh !== null) {
+      const sessionUser = req.session ? req.session.user : null;
+      const isAdmin = sessionUser && sessionUser.vai_tro === 'admin';
+      const sessionUserId = sessionUser ? sessionUser.ma_kh : null;
+      
+      if (!isAdmin && order.ma_kh != sessionUserId) {
+        return res.status(403).json({ success: false, message: 'Bạn không có quyền cập nhật thanh toán cho đơn hàng này.' });
+      }
+    }
+
     // Nếu là thanh toán đặt cọc, chỉ cập nhật bản ghi deposit
     if (paymentType === 'deposit') {
       await pool.query(
@@ -323,6 +356,19 @@ router.get('/:orderId', async (req, res) => {
 
     if (orders.length === 0) {
       return res.status(404).json({ success: false, message: 'Không tìm thấy đơn hàng' });
+    }
+
+    const order = orders[0];
+
+    // Gia cố bảo mật: kiểm tra quyền sở hữu đơn hàng đã đăng ký
+    if (order.ma_kh !== null) {
+      const sessionUser = req.session ? req.session.user : null;
+      const isAdmin = sessionUser && sessionUser.vai_tro === 'admin';
+      const sessionUserId = sessionUser ? sessionUser.ma_kh : null;
+      
+      if (!isAdmin && order.ma_kh != sessionUserId) {
+        return res.status(403).json({ success: false, message: 'Bạn không có quyền xem thông tin đơn hàng này.' });
+      }
     }
 
     // Lấy tất cả bản ghi thanh toán của đơn hàng (có thể có nhiều nếu là đặt cọc)
@@ -487,11 +533,22 @@ router.put('/:orderId/cancel', async (req, res) => {
     const order = orders[0];
     
 
-    // Kiểm tra quyền sở hữu (nếu có userId)
-    if (userId && order.ma_kh && order.ma_kh != userId) {
-      await connection.rollback();
-      connection.release();
-      return res.status(403).json({ success: false, message: 'Bạn không có quyền hủy đơn hàng này' });
+    // Kiểm tra quyền sở hữu hoặc admin từ session (gia cố bảo mật)
+    const sessionUser = req.session ? req.session.user : null;
+    const isAdmin = sessionUser && sessionUser.vai_tro === 'admin';
+    const sessionUserId = sessionUser ? (sessionUser.ma_kh || sessionUser.ma_nv) : null;
+
+    if (!isAdmin) {
+      if (!sessionUser) {
+        await connection.rollback();
+        connection.release();
+        return res.status(401).json({ success: false, message: 'Bạn cần đăng nhập để thực hiện thao tác này' });
+      }
+      if (order.ma_kh && order.ma_kh != sessionUserId) {
+        await connection.rollback();
+        connection.release();
+        return res.status(403).json({ success: false, message: 'Bạn không có quyền hủy đơn hàng này' });
+      }
     }
 
     // Chỉ cho phép hủy khi đơn hàng ở trạng thái 'pending' (chờ xử lý)
@@ -595,7 +652,7 @@ router.put('/:orderId/cancel', async (req, res) => {
 // =====================================================
 
 // PUT /api/orders/:orderId/confirm-deposit - Admin xác nhận đã nhận tiền đặt cọc
-router.put('/:orderId/confirm-deposit', async (req, res) => {
+router.put('/:orderId/confirm-deposit', checkAdmin, async (req, res) => {
   try {
     const { orderId } = req.params;
     const { adminId, note } = req.body;
@@ -662,7 +719,7 @@ router.put('/:orderId/confirm-deposit', async (req, res) => {
 });
 
 // PUT /api/orders/:orderId/complete-remaining - Admin xác nhận đã thu tiền còn lại (khi giao hàng)
-router.put('/:orderId/complete-remaining', async (req, res) => {
+router.put('/:orderId/complete-remaining', checkAdmin, async (req, res) => {
   try {
     const { orderId } = req.params;
     const { adminId } = req.body;
@@ -750,11 +807,22 @@ router.put('/:orderId/cancel-deposit', async (req, res) => {
 
     const order = orders[0];
 
-    // Kiểm tra quyền
-    if (!isAdmin && userId && order.ma_kh && order.ma_kh != userId) {
-      await connection.rollback();
-      connection.release();
-      return res.status(403).json({ success: false, message: 'Bạn không có quyền hủy đơn hàng này' });
+    // Kiểm tra quyền sở hữu hoặc admin từ session (gia cố bảo mật)
+    const sessionUser = req.session ? req.session.user : null;
+    const isUserAdmin = sessionUser && sessionUser.vai_tro === 'admin';
+    const sessionUserId = sessionUser ? (sessionUser.ma_kh || sessionUser.ma_nv) : null;
+
+    if (!isUserAdmin) {
+      if (!sessionUser) {
+        await connection.rollback();
+        connection.release();
+        return res.status(401).json({ success: false, message: 'Bạn cần đăng nhập để thực hiện thao tác này' });
+      }
+      if (order.ma_kh && order.ma_kh != sessionUserId) {
+        await connection.rollback();
+        connection.release();
+        return res.status(403).json({ success: false, message: 'Bạn không có quyền hủy đơn hàng này' });
+      }
     }
 
     // Kiểm tra trạng thái có thể hủy
@@ -848,7 +916,7 @@ router.put('/:orderId/cancel-deposit', async (req, res) => {
 });
 
 // GET /api/orders/deposit/stats - Thống kê đơn đặt cọc (cho admin)
-router.get('/deposit/stats', async (req, res) => {
+router.get('/deposit/stats', checkAdmin, async (req, res) => {
   try {
     // Tổng đơn đặt cọc
     const [totalDeposit] = await pool.query(

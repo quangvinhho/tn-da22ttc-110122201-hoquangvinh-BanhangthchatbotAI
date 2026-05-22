@@ -332,7 +332,7 @@ router.post('/admin/login', async (req, res) => {
             });
         }
 
-        // Find admin by tai_khoan OR email
+        // Tìm trong bảng admin
         const [admins] = await pool.query(
             'SELECT * FROM admin WHERE tai_khoan = ? OR email = ?', 
             [tai_khoan, tai_khoan]
@@ -345,10 +345,10 @@ router.post('/admin/login', async (req, res) => {
             });
         }
 
-        const admin = admins[0];
+        const user = admins[0];
 
         // Compare password (plain text hoặc bcrypt)
-        const isMatch = admin.mat_khau === mat_khau || await bcrypt.compare(mat_khau, admin.mat_khau).catch(() => false);
+        const isMatch = user.mat_khau === mat_khau || await bcrypt.compare(mat_khau, user.mat_khau).catch(() => false);
 
         if (!isMatch) {
             return res.status(401).json({ 
@@ -358,12 +358,12 @@ router.post('/admin/login', async (req, res) => {
         }
 
         const adminData = {
-            ma_admin: admin.ma_admin,
-            tai_khoan: admin.tai_khoan,
-            ho_ten: admin.ho_ten,
-            quyen: admin.quyen,
-            avt: admin.avt,
-            email: admin.email,
+            ma_admin: user.ma_admin, // Đã xóa isEmployee vì bây giờ auth/admin/login chỉ dành cho admin
+            tai_khoan: user.tai_khoan,
+            ho_ten: user.ho_ten,
+            quyen: user.quyen || 'admin',
+            avt: user.avt || null,
+            email: user.email,
             role: 'admin',
             vai_tro: 'admin'
         };
@@ -393,6 +393,89 @@ router.post('/admin/login', async (req, res) => {
 
     } catch (error) {
         console.error('Lỗi đăng nhập admin:', error);
+        res.status(500).json({ success: false, message: 'Lỗi server: ' + error.message });
+    }
+});
+
+// POST /api/auth/employee/login - Đăng nhập nhân viên
+router.post('/employee/login', async (req, res) => {
+    try {
+        const { username: tai_khoan, password: mat_khau } = req.body;
+
+        if (!tai_khoan || !mat_khau) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Vui lòng nhập tài khoản và mật khẩu' 
+            });
+        }
+
+        // Chỉ tìm trong bảng nhan_vien
+        const [employees] = await pool.query(
+            'SELECT * FROM nhan_vien WHERE tai_khoan = ? OR email = ?', 
+            [tai_khoan, tai_khoan]
+        );
+
+        if (employees.length === 0) {
+            return res.status(401).json({ 
+                success: false, 
+                message: 'Tài khoản hoặc mật khẩu không đúng' 
+            });
+        }
+
+        const user = employees[0];
+
+        if (user.trang_thai === 'khoa' || user.trang_thai === 'nghi_viec') {
+            return res.status(403).json({ 
+                success: false, 
+                message: 'Tài khoản nhân viên này đã bị khóa hoặc nghỉ việc.' 
+            });
+        }
+
+        // Compare password (plain text hoặc bcrypt)
+        const isMatch = user.mat_khau === mat_khau || await bcrypt.compare(mat_khau, user.mat_khau).catch(() => false);
+
+        if (!isMatch) {
+            return res.status(401).json({ 
+                success: false, 
+                message: 'Tài khoản hoặc mật khẩu không đúng' 
+            });
+        }
+
+        const employeeData = {
+            ma_admin: user.ma_nv, // Dùng chung key với admin cho tiện phân quyền dashboard
+            ma_nv: user.ma_nv,
+            tai_khoan: user.tai_khoan,
+            ho_ten: user.ho_ten,
+            quyen: user.quyen,
+            isEmployee: true,
+            role: 'admin',
+            vai_tro: 'admin'
+        };
+
+        // Lưu session an toàn với HttpOnly Cookie
+        req.session.user = employeeData;
+
+        req.session.save((err) => {
+            if (err) {
+                console.error('Lỗi lưu session:', err);
+                return res.status(500).json({ 
+                    success: false, 
+                    message: 'Lỗi lưu phiên đăng nhập' 
+                });
+            }
+            
+            console.log('✅ Employee session saved successfully:', req.sessionID);
+            
+            res.json({ 
+                success: true, 
+                message: 'Đăng nhập nhân viên thành công',
+                data: employeeData,
+                sessionId: req.sessionID
+            });
+        });
+
+    } catch (error) {
+        console.error('Lỗi đăng nhập nhân viên:', error);
         res.status(500).json({ success: false, message: 'Lỗi server: ' + error.message });
     }
 });

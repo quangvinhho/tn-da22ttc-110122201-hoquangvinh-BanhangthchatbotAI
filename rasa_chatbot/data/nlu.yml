@@ -1,0 +1,106 @@
+version: "3.1"
+
+nlu:
+  - intent: greet
+    examples: |
+      - xin chào
+      - hello shop
+      - hi
+      - chào bạn
+      - alo shop
+      - chao
+      - xin chao
+
+  - intent: goodbye
+    examples: |
+      - tạm biệt
+      - tam biet
+      - bye shop
+      - hẹn gặp lại
+      - cảm ơn shop nhé
+
+  - intent: ask_address
+    examples: |
+      - địa chỉ
+      - shop ở đâu
+      - dia chi
+      - cho mình xin địa chỉ
+      - cửa hàng ở đâu vậy
+      - chi nhánh ở đâu
+      - chi nhanh o dau
+      - cho xin dia chi
+
+  - intent: ask_address_store
+    examples: |
+      - địa chỉ cửa hàng
+      - chi nhánh cửa hàng
+      - showroom ở đâu
+      - dia chi cua hang
+      - dia chi cac chi nhanh
+      - xem địa chỉ các chi nhánh cửa hàng
+      - địa chỉ shop ở đâu
+      - dia chi shop o dau
+
+  - intent: ask_address_delivery
+    examples: |
+      - địa chỉ giao hàng
+      - địa chỉ của mình
+      - dia chi giao hang
+      - địa chỉ giao hàng của tôi
+      - dia chi giao hang cua tôi
+      - dia chi cua minh
+      - xem địa chỉ giao hàng của tôi
+      - địa chỉ nhận hàng
+      - dia chi nhan hang
+
+  - intent: ask_recommendation_generic
+    examples: |
+      - tôi muốn mua điện thoại
+      - tư vấn điện thoại giúp mình
+      - mua máy gì bây giờ
+      - tu van dien thoai
+      - có điện thoại nào tốt không
+      - tư vấn điện thoại
+      - shop bán máy gì ngon không
+      - can mua dien thoai
+
+  - intent: select_brand
+    examples: |
+      - mình thích [iPhone](phone_brand)
+      - chọn dòng [Samsung](phone_brand) nha
+      - tư vấn [Xiaomi](phone_brand) đi
+      - dòng [Oppo](phone_brand) á
+      - [iPhone](phone_brand)
+      - [Samsung](phone_brand)
+      - [Xiaomi](phone_brand)
+
+  - intent: select_budget
+    examples: |
+      - tầm [dưới 5 triệu](budget_range)
+      - khoảng [5 đến 10 triệu](budget_range)
+      - tài chính [trên 15 triệu](budget_range)
+      - [dưới 5 triệu](budget_range)
+      - [5 - 10 triệu](budget_range)
+
+  - intent: select_usage
+    examples: |
+      - mua để [chơi game mượt](main_usage)
+      - cần máy [chụp ảnh đẹp](main_usage)
+      - nhu cầu [pin trâu](main_usage)
+      - [chơi game](main_usage)
+      - [chụp ảnh](main_usage)
+      - [pin trâu](main_usage)
+
+  - intent: bot_challenge
+    examples: |
+      - bạn là ai
+      - bạn là robot phải không
+      - chatbot à
+      - who are you
+
+  - intent: out_of_scope
+    examples: |
+      - hôm nay ăn gì
+      - thời tiết thế nào
+      - đặt vé xem phim
+      - bài hát mới nhất

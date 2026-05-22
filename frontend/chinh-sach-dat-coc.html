@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chính sách đặt cọc - QuangHưng Mobile</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="components/header.css">
+    <link rel="stylesheet" href="components/ai-chatbot.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { font-family: 'Roboto', sans-serif; background: #f8fafc; }
+        .policy-sidebar { position: sticky; top: 160px; }
+        .policy-nav-item { 
+            display: block; padding: 12px 16px; color: #64748b; font-size: 14px;
+            border-left: 3px solid transparent; transition: all 0.2s;
+        }
+        .policy-nav-item:hover { background: #f1f5f9; color: #334155; }
+        .policy-nav-item.active { 
+            background: #fef2f2; color: #dc2626; border-left-color: #dc2626; font-weight: 500;
+        }
+        .policy-section { scroll-margin-top: 180px; }
+        .policy-content h2 { 
+            font-size: 1.5rem; font-weight: 700; color: #1e293b; margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem; border-bottom: 2px solid #e2e8f0;
+        }
+        .policy-content h2 .section-number {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 32px; height: 32px; background: #dc2626; color: white;
+            border-radius: 50%; font-size: 14px; margin-right: 12px;
+        }
+        .policy-content p { color: #475569; line-height: 1.8; margin-bottom: 1rem; }
+        .policy-content ul { margin: 1rem 0 1rem 1.5rem; }
+        .policy-content li { color: #475569; line-height: 1.8; margin-bottom: 0.5rem; position: relative; padding-left: 1.5rem; }
+        .policy-content li::before { content: "•"; color: #dc2626; font-weight: bold; position: absolute; left: 0; }
+        .highlight-box { background: #fffbeb; border-left: 4px solid #f59e0b; padding: 1rem 1.25rem; margin: 1.5rem 0; border-radius: 0 8px 8px 0; }
+        .highlight-box.info { background: #eff6ff; border-left-color: #3b82f6; }
+        .highlight-box.success { background: #f0fdf4; border-left-color: #22c55e; }
+        .highlight-box p { margin: 0; color: #1e293b; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div id="header-placeholder"></div>
+    <!-- Header Spacer -->
+    <div class="h-[70px]"></div>
+
+    <!-- Background Layer -->
+    <div class="w-full absolute left-0 top-[70px] -z-10 overflow-hidden h-[120px] sm:h-[160px] md:h-[200px] flex justify-center">
+        <div class="w-[200%] h-full bg-[#d70018] rounded-b-[50%] md:rounded-b-[40%] shadow-sm"></div>
+    </div>
+
+    <!-- Breadcrumb -->
+    <div class="relative z-10 transition-opacity duration-300">
+        <div class="max-w-7xl mx-auto px-4 py-3">
+            <nav class="flex items-center gap-2 text-sm text-white/90">
+                <a href="index.html" class="hover:text-white transition"><i class="fas fa-home"></i></a>
+                <i class="fas fa-chevron-right text-white/60 text-xs"></i>
+                <span class="font-medium text-white">Chính sách đặt cọc</span>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Page Header -->
+    <div class="relative z-10">
+        <div class="max-w-7xl mx-auto px-4 py-6">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center gap-4">
+                <div class="w-16 h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl flex items-center justify-center shadow-lg transform transition hover:scale-105">
+                    <i class="fas fa-hand-holding-usd text-white text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-bold text-gray-900">Chính sách đặt cọc</h1>
+                    <p class="text-gray-500 mt-1">Cập nhật lần cuối: Tháng 12/2024</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 py-2 relative z-10">
+        <div class="flex flex-col lg:flex-row gap-8">
+            
+            <!-- Sidebar Navigation -->
+            <div class="lg:w-72 flex-shrink-0">
+                <div class="policy-sidebar bg-white rounded-xl shadow-sm overflow-hidden">
+                    <div class="p-4 bg-gray-50 border-b">
+                        <h3 class="font-semibold text-gray-800 text-sm uppercase tracking-wide">Mục lục</h3>
+                    </div>
+                    <nav class="py-2">
+                        <a href="#quy-dinh-chung" class="policy-nav-item active">1. Quy định chung về đặt cọc</a>
+                        <a href="#muc-coc" class="policy-nav-item">2. Mức phí đặt cọc</a>
+                        <a href="#phuong-thuc" class="policy-nav-item">3. Phương thức thanh toán cọc</a>
+                        <a href="#huy-coc" class="policy-nav-item">4. Chính sách hủy & hoàn cọc</a>
+                        <a href="#thoi-gian" class="policy-nav-item">5. Thời gian giữ hàng</a>
+                        <a href="#lien-he" class="policy-nav-item">6. Liên hệ hỗ trợ</a>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="flex-1 bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8">
+                
+                <section id="quy-dinh-chung" class="policy-section mb-12 policy-content">
+                    <h2><span class="section-number">1</span> Quy định chung về đặt cọc</h2>
+                    <p>Chính sách đặt cọc áp dụng cho các khách hàng có nhu cầu giữ sản phẩm, đặt trước các sản phẩm mới ra mắt hoặc mua hàng từ xa với hình thức COD (Nhận hàng thanh toán) nhằm đảm bảo cam kết mua hàng.</p>
+                    <div class="highlight-box info">
+                        <p><i class="fas fa-info-circle mr-2"></i><strong>Lưu ý:</strong> Khách hàng thanh toán trước 100% qua MoMo sẽ không cần phải đặt cọc và được miễn phí vận chuyển.</p>
+                    </div>
+                </section>
+
+                <section id="muc-coc" class="policy-section mb-12 policy-content">
+                    <h2><span class="section-number">2</span> Mức phí đặt cọc</h2>
+                    <p>Mức tiền đặt cọc được tính tùy theo giá trị của sản phẩm hoặc theo quy định từng chương trình đặt trước:</p>
+                    <ul>
+                        <li>Sản phẩm dưới 5.000.000 VNĐ: Cọc 200.000 VNĐ.</li>
+                        <li>Sản phẩm từ 5.000.000 - 15.000.000 VNĐ: Cọc 500.000 VNĐ.</li>
+                        <li>Sản phẩm trên 15.000.000 VNĐ: Cọc 1.000.000 VNĐ.</li>
+                        <li><strong>Đặt trước siêu phẩm (Pre-order):</strong> Theo mức quy định riêng của từng đợt ra mắt (thông thường từ 1.000.000 VNĐ).</li>
+                    </ul>
+                </section>
+
+                <section id="phuong-thuc" class="policy-section mb-12 policy-content">
+                    <h2><span class="section-number">3</span> Phương thức thanh toán cọc</h2>
+                    <p>Khách hàng có thể đặt cọc qua các phương thức sau:</p>
+                    <ul>
+                        <li><strong>Thanh toán trực tuyến (MoMo):</strong> Thực hiện thanh toán cọc trực tiếp trên website. Tiền cọc sẽ tự động được trừ vào tổng tiền đơn hàng.</li>
+                        <li><strong>Chuyển khoản ngân hàng:</strong> Liên hệ tổng đài để nhận số tài khoản công ty. Ghi rõ nội dung chuyển khoản: <code class="bg-gray-100 px-2 py-1 rounded">Cọc DH [Mã đơn hàng] - [SĐT]</code></li>
+                        <li><strong>Tiền mặt:</strong> Khách hàng có thể đến trực tiếp các chi nhánh của QuangHưng Mobile để đặt cọc tiền mặt và nhận phiếu thu.</li>
+                    </ul>
+                </section>
+
+                <section id="huy-coc" class="policy-section mb-12 policy-content">
+                    <h2><span class="section-number">4</span> Chính sách hủy & hoàn cọc</h2>
+                    <p>QuangHưng Mobile luôn hỗ trợ quyền lợi cao nhất cho khách hàng, tuy nhiên để tránh tình trạng "bom hàng", chúng tôi quy định như sau:</p>
+                    <div class="highlight-box">
+                        <p><i class="fas fa-exclamation-triangle mr-2"></i><strong>Trường hợp KHÔNG hoàn cọc:</strong> Khách hàng thay đổi ý định mua hàng sau khi sản phẩm đã được giao cho đơn vị vận chuyển, hoặc khách hàng từ chối nhận hàng không có lý do chính đáng khi đơn vị vận chuyển giao tới.</p>
+                    </div>
+                    <div class="highlight-box success">
+                        <p><i class="fas fa-check-circle mr-2"></i><strong>Trường hợp ĐƯỢC hoàn cọc:</strong> 
+                        <br>- QuangHưng Mobile không có hàng giao đúng hẹn như đã cam kết.
+                        <br>- Sản phẩm giao đến bị lỗi ngoại quan (trầy xước, vỡ móp) hoặc sai cấu hình, sai màu sắc và khách hàng không đồng ý đổi sản phẩm khác.
+                        <br>- Khách hàng yêu cầu hủy đơn hàng trước khi QuangHưng Mobile đóng gói và bàn giao cho đơn vị vận chuyển.</p>
+                    </div>
+                </section>
+
+                <section id="thoi-gian" class="policy-section mb-12 policy-content">
+                    <h2><span class="section-number">5</span> Thời gian giữ hàng</h2>
+                    <p>Sau khi khách hàng đặt cọc giữ sản phẩm (để đến lấy trực tiếp), QuangHưng Mobile cam kết giữ hàng trong khoảng thời gian sau:</p>
+                    <ul>
+                        <li>Giữ hàng trong <strong>24 - 48 giờ</strong> đối với sản phẩm thông thường.</li>
+                        <li>Giữ hàng tối đa <strong>7 ngày</strong> đối với các chương trình Pre-order khi hàng về.</li>
+                    </ul>
+                    <p>Quá thời gian giữ hàng mà khách hàng không đến nhận hoặc không có thỏa thuận khác, đơn hàng sẽ tự động hủy và tiền cọc sẽ không được hoàn lại (áp dụng đối với giữ hàng tại shop).</p>
+                </section>
+
+                <section id="lien-he" class="policy-section mb-8 policy-content">
+                    <h2><span class="section-number">6</span> Liên hệ hỗ trợ</h2>
+                    <p>Nếu có bất kỳ thắc mắc nào về chính sách đặt cọc, quý khách vui lòng liên hệ:</p>
+                    <div class="grid md:grid-cols-2 gap-4 mt-6">
+                        <div class="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
+                            <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-phone text-red-600"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Tổng đài giải quyết khiếu nại</p>
+                                <p class="text-lg font-bold text-gray-800">1900 1234 56</p>
+                                <p class="text-xs text-gray-400">8:00 - 21:30 hàng ngày</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
+                            <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-envelope text-red-600"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Email kế toán</p>
+                                <p class="text-lg font-bold text-gray-800">ketoan@quanghungmobile.vn</p>
+                                <p class="text-xs text-gray-400">Hỗ trợ hoàn tiền cọc</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Related Policies -->
+                <div class="bg-gray-100 rounded-xl p-6 mt-8">
+                    <h3 class="font-semibold text-gray-800 mb-4">Chính sách liên quan</h3>
+                    <div class="grid md:grid-cols-3 gap-3">
+                        <a href="chinh-sach-ban-hang.html" class="flex items-center gap-3 bg-white p-4 rounded-lg hover:shadow-md transition">
+                            <i class="fas fa-shopping-cart text-blue-500"></i>
+                            <span class="text-sm font-medium text-gray-700">Chính sách bán hàng</span>
+                        </a>
+                        <a href="chinh-sach-bao-hanh.html" class="flex items-center gap-3 bg-white p-4 rounded-lg hover:shadow-md transition">
+                            <i class="fas fa-shield-alt text-green-500"></i>
+                            <span class="text-sm font-medium text-gray-700">Chính sách bảo hành</span>
+                        </a>
+                        <a href="chinh-sach-bao-mat.html" class="flex items-center gap-3 bg-white p-4 rounded-lg hover:shadow-md transition">
+                            <i class="fas fa-lock text-purple-500"></i>
+                            <span class="text-sm font-medium text-gray-700">Chính sách bảo mật</span>
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div id="footer-placeholder"></div>
+
+    <!-- Scripts -->
+    <script src="components/header.js"></script>
+    <script src="components/ai-chatbot.js"></script>
+    <script>
+        // Load Header & Footer
+        fetch('components/header.html').then(r => r.text()).then(html => {
+            document.getElementById('header-placeholder').innerHTML = html;
+            if (typeof initHeader === 'function') initHeader();
+        });
+        fetch('components/footer.html').then(r => r.text()).then(html => {
+            document.getElementById('footer-placeholder').innerHTML = html;
+        });
+
+        // Sidebar active state on scroll
+        const sections = document.querySelectorAll('.policy-section');
+        const navItems = document.querySelectorAll('.policy-nav-item');
+
+        function updateActiveNav() {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop - 200;
+                if (window.scrollY >= sectionTop) {
+                    current = section.getAttribute('id');
+                }
+            });
+            navItems.forEach(item => {
+                item.classList.remove('active');
+                if (item.getAttribute('href') === '#' + current) {
+                    item.classList.add('active');
+                }
+            });
+        }
+
+        window.addEventListener('scroll', updateActiveNav);
+        
+        // Smooth scroll
+        navItems.forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.getElementById(this.getAttribute('href').substring(1));
+                if (target) target.scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+    </script>
+    <script src="components/floating-share.js"></script>
+  <!-- Main JS - Page Loader -->
+  <script src="main.js"></script>
+</body>
+</html>

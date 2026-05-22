@@ -5,7 +5,7 @@ from typing import List, Dict, Any
 
 from langchain_classic.chains import create_sql_query_chain
 from langchain_community.utilities import SQLDatabase
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_groq import ChatGroq
 from langchain_core.prompts import PromptTemplate
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
@@ -19,15 +19,15 @@ DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_USER = os.getenv("DB_USER", "root")
 DB_PASS = os.getenv("DB_PASS", "Vinh123456789@")
 DB_NAME = os.getenv("DB_NAME", "QHUNG")
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 
 class RAGEngine:
     def __init__(self):
         # 1. Setup LLM
-        self.llm = ChatGoogleGenerativeAI(
+        self.llm = ChatGroq(
             temperature=0, 
-            google_api_key=GEMINI_API_KEY, 
-            model="gemini-2.5-flash"
+            api_key=GROQ_API_KEY, 
+            model_name="llama-3.1-8b-instant"
         )
         
         import urllib.parse
@@ -40,7 +40,7 @@ class RAGEngine:
         )
         
         # 3. Setup Vector Store for Semantic Search (RAG)
-        self.embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004", google_api_key=GEMINI_API_KEY)
+        self.embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
         self.vector_dir = "./chroma_db"
         
         # Try to load existing vector store or create a new one
@@ -50,7 +50,7 @@ class RAGEngine:
             self.vectorstore = self._initialize_vector_store()
             
     def _initialize_vector_store(self):
-        print("Đang khởi tạo Vector Store từ CSDL...")
+        print("Initializing Vector Store from DB...")
         conn = mysql.connector.connect(
             host=DB_HOST, user=DB_USER, password=DB_PASS, database=DB_NAME
         )
@@ -58,7 +58,7 @@ class RAGEngine:
         
         # Lấy thông tin sản phẩm và cấu hình
         query = """
-            SELECT sp.ma_sp, sp.ten_sp, sp.gia, sp.mo_ta_ngan, ch.ram, ch.chip, ch.pin, ch.man_hinh, ch.camera
+            SELECT sp.ma_sp, sp.ten_sp, sp.gia, sp.mo_ta_ngan, sp.anh_dai_dien, ch.ram, ch.chip, ch.pin, ch.man_hinh, ch.camera
             FROM san_pham sp
             LEFT JOIN cau_hinh ch ON sp.ma_sp = ch.ma_sp
             WHERE sp.so_luong_ton > 0
@@ -69,13 +69,13 @@ class RAGEngine:
         documents = []
         for p in products:
             # Tạo nội dung text để nhúng (embedding)
-            content = f"Sản phẩm: {p['ten_sp']}. Giá: {p['gia']} VNĐ. Mô tả: {p['mo_ta_ngan']}. "
+            content = f"Sản phẩm: {p['ten_sp']}. Giá: {p['gia']} VNĐ. Mô tả: {p['mo_ta_ngan']}. ID (ma_sp): {p['ma_sp']}. Ảnh (anh_dai_dien): {p['anh_dai_dien']}. "
             if p['ram']:
                 content += f"Cấu hình: RAM {p['ram']}, Chip {p['chip']}, Pin {p['pin']}, Màn hình {p['man_hinh']}, Camera {p['camera']}."
             
             doc = Document(
                 page_content=content,
-                metadata={"type": "product", "ma_sp": p['ma_sp'], "ten_sp": p['ten_sp'], "gia": float(p['gia'])}
+                metadata={"type": "product", "ma_sp": p['ma_sp'], "ten_sp": p['ten_sp'], "gia": float(p['gia']), "anh_dai_dien": p['anh_dai_dien']}
             )
             documents.append(doc)
             
@@ -106,7 +106,7 @@ class RAGEngine:
     def reload_vectorstore(self):
         """Xóa vector store cũ và khởi tạo lại để cập nhật dữ liệu mới"""
         import shutil
-        print("Đang tải lại Vector Store...")
+        print("Reloading Vector Store...")
         
         # Đóng kết nối / xóa vectorstore hiện tại khỏi memory
         self.vectorstore = None
@@ -116,11 +116,11 @@ class RAGEngine:
             try:
                 shutil.rmtree(self.vector_dir)
             except Exception as e:
-                print(f"Lỗi khi xóa vector store cũ: {str(e)}")
+                print(f"Error deleting old vector store: {str(e)}")
                 
         # Khởi tạo lại
         self.vectorstore = self._initialize_vector_store()
-        print("Tải lại Vector Store thành công!")
+        print("Reloaded Vector Store successfully!")
         return True
 
     def query_kpi(self, question: str) -> str:
@@ -137,7 +137,13 @@ class RAGEngine:
             elif "```" in sql_query:
                 sql_query = sql_query.split("```")[1].strip()
                 
-            # Chạy SQL
+            # Kiểm tra an toàn SQL (chống Text-to-SQL Injection / phá hoại DB)
+            forbidden_keywords = ["DROP", "DELETE", "UPDATE", "INSERT", "ALTER", "TRUNCATE", "GRANT", "REVOKE"]
+            upper_query = sql_query.upper()
+            if any(f" {keyword} " in f" {upper_query} " or upper_query.startswith(f"{keyword} ") for keyword in forbidden_keywords):
+                return "Xin lỗi, tôi phát hiện yêu cầu có nguy cơ bảo mật nên đã tự động chặn lại."
+                
+            # Chạy SQL an toàn
             result = self.db.run(sql_query)
             
             # Diễn dịch kết quả
@@ -172,25 +178,43 @@ class RAGEngine:
             history_instruction = "LƯU Ý: Người dùng chưa đăng nhập hoặc đây là phiên chat mới (không có lịch sử). Chỉ tư vấn tập trung vào câu hỏi hiện tại, không tự chế ra lịch sử."
 
         system_template = f"""
-        Bạn là trợ lý AI thông minh chuyên tư vấn điện thoại, sản phẩm công nghệ của cửa hàng QuangHung Mobile.
-        Bạn có khả năng đọc hiểu ngữ nghĩa từ dữ liệu sản phẩm (RAG) để trả lời người dùng.
-        Bạn phải luôn thân thiện, lịch sự và trả lời bằng tiếng Việt.
-        
+        Bạn là chuyên viên tư vấn bán hàng của hệ thống điện thoại QuangHung Mobile.
+        Mục tiêu của bạn là thấu hiểu NGỮ NGHĨA và Ý ĐỊNH sâu xa của khách hàng để đưa ra GỢI Ý MUA SẮM SIÊU CHÍNH XÁC (không chỉ đơn thuần là tìm kiếm keyword).
+
         {history_instruction}
         
-        Nếu thông tin vượt ngoài ngữ cảnh được cung cấp hoặc bạn không chắc chắn, hãy nói rằng bạn cần kiểm tra lại với nhân viên, KHÔNG TỰ BỊA RA THÔNG TIN SẢN PHẨM HOẶC GIÁ CẢ.
+        NGUYÊN TẮC HOẠT ĐỘNG:
+        1. THÂN THIỆN & CHĂM SÓC: Xưng hô "mình/bạn" hoặc "dạ, em/anh chị". Luôn niềm nở, lịch sự.
+        2. TƯ VẤN NGỮ NGHĨA (CHÍNH XÁC): 
+           - Khi khách hàng mô tả nhu cầu (ví dụ: "chơi game mượt", "chụp ảnh đẹp", "pin trâu", "tài chính 5 triệu"), bạn phải tự suy luận ra cấu hình tương ứng (ví dụ: cần Chip mạnh, Camera xịn, Pin > 5000mAh) rồi tìm trong Context các điện thoại đáp ứng yêu cầu đó để gợi ý.
+           - Đưa ra 2-3 sự lựa chọn tốt nhất kèm phân tích RÕ RÀNG ưu/nhược điểm từng dòng máy dựa sát vào tài chính và nhu cầu của khách.
+        3. KHÔNG BỊA ĐẶT DỮ LIỆU: Nếu trong Context RAG KHÔNG CÓ dữ liệu về điện thoại/giá cả khách hỏi, hãy nhẹ nhàng nói "Hiện tại QuangHung Mobile tạm hết hàng dòng này hoặc chưa có thông tin cụ thể, nhưng cửa hàng đang có các dòng máy tương đương sau đây..." rồi gợi ý con máy khác có trong bối cảnh.
+        4. CHỐT BÁN HÀNG: Luôn kèm một câu Call-to-action (kêu gọi hành động) ở cuối như "Bạn có muốn xem chi tiết cấu hình máy này không ạ?" hoặc "Bạn muốn ghé cửa hàng test thử máy không ạ?".
+        5. ĐỊNH DẠNG TRẢ VỀ (QUAN TRỌNG):
+           - LUÔN LUÔN TRẢ LỜI CÓ TÂM: Phải có câu chào thân thiện và giới thiệu/tư vấn bằng văn bản tự nhiên TRƯỚC KHI hiển thị thẻ sản phẩm. Đừng chỉ trả về mỗi thẻ HTML trống không.
+           - QUY TẮC ĐỊNH DẠNG: Bạn chỉ được dùng chữ thường kết hợp với thẻ HTML cơ bản (như <br>, <strong>). KHÔNG BAO GIỜ DÙNG MARKDOWN NHƯ IN ĐẬM ** **, HAY IN NGHIÊNG * *, HAY LIST -. Bắt buộc dùng HTML để định dạng.
+           - CHÚ Ý: KHI GỢI Ý ĐIỆN THOẠI, BẮT BUỘC PHẢI TRẢ VỀ MẪU HTML SAU ĐỂ HIỂN THỊ ẢNH VÀ LINK (Tuyệt đối không dùng markdown):
+           <div style="display:flex; align-items:center; margin-top:10px; margin-bottom:10px; gap:15px; border: 1px solid #ddd; padding: 10px; border-radius: 8px;">
+             <img src="{{{{Anh}}}}" alt="{{{{Ten_san_pham}}}}" style="width:80px; height:80px; object-fit:cover; border-radius:8px;">
+             <div>
+               <strong>{{{{Ten_san_pham}}}}</strong><br>
+               Giá: <span style="color:#e53935; font-weight:bold;">{{{{Gia}}}}</span><br>
+               <a href="product-detail.html?id={{{{ID}}}}" style="display:inline-block; margin-top:5px; padding:5px 10px; background-color:#1976d2; color:#fff; text-decoration:none; border-radius:4px; font-size:12px;">Xem chi tiết</a>
+             </div>
+           </div>
+           (Thay thế {{{{Anh}}}}, {{{{Ten_san_pham}}}}, {{{{Gia}}}}, {{{{ID}}}} bằng dữ liệu anh_dai_dien, ten_sp, gia, ma_sp của sản phẩm trong RAG Context).
         
         <Lịch sử trò chuyện gần nhất>
         {chat_history}
         </Lịch sử trò chuyện gần nhất>
 
-        <Thông tin sản phẩm thu thập được từ CSDL (RAG Context)>
+        <Thông tin sản phẩm & Tri thức (RAG Context)>
         {{context}}
-        </Thông tin sản phẩm thu thập được từ CSDL (RAG Context)>
+        </Thông tin sản phẩm & Tri thức (RAG Context)>
         
         Câu hỏi của khách hàng: {{question}}
         
-        Hãy đưa ra câu trả lời chi tiết, chính xác và chuyên nghiệp:
+        Hãy đưa ra câu trả lời chi tiết, chính xác và đúng ngữ nghĩa:
         """
         prompt = PromptTemplate(
             template=system_template,
@@ -200,7 +224,7 @@ class RAGEngine:
         qa_chain = RetrievalQA.from_chain_type(
             llm=self.llm,
             chain_type="stuff",
-            retriever=self.vectorstore.as_retriever(search_kwargs={"k": 4}),
+            retriever=self.vectorstore.as_retriever(search_kwargs={"k": 15}),
             chain_type_kwargs={"prompt": prompt, "document_variable_name": "context"}
         )
         

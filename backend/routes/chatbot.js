@@ -2,6 +2,48 @@ const express = require('express');
 const router = express.Router();
 const { pool } = require('../config/database');
 
+// Middleware kiểm tra phân quyền sở hữu dữ liệu chatbot (gia cố bảo mật)
+const checkChatbotAccess = async (req, res, next) => {
+  const sessionUser = req.session ? req.session.user : null;
+  let conversationId = req.params.conversationId || req.body.conversationId;
+  
+  // Chuẩn hóa conversationId
+  if (conversationId === 'null' || conversationId === 'undefined' || !conversationId) {
+    conversationId = null;
+  }
+
+  if (!sessionUser) {
+    // Khách vãng lai được phép sử dụng chatbot nhưng không được xem/sửa cuộc hội thoại của DB
+    if (conversationId) {
+      return res.status(401).json({ error: 'Bạn cần đăng nhập để thao tác cuộc hội thoại.' });
+    }
+    return next();
+  }
+  
+  const isAdmin = sessionUser.vai_tro === 'admin';
+  if (isAdmin) return next();
+  
+  // 1. Kiểm tra theo userId (nếu có)
+  const userId = req.query.userId || req.body.userId || req.params.userId;
+  if (userId && sessionUser.ma_kh != userId) {
+    return res.status(403).json({ error: 'Bạn không có quyền truy cập dữ liệu chatbot của người dùng khác.' });
+  }
+  
+  // 2. Kiểm tra theo conversationId (nếu có)
+  if (conversationId) {
+    try {
+      const [conv] = await pool.query('SELECT ma_kh FROM cuoc_hoi_thoai WHERE ma_cuoc_hoi_thoai = ?', [conversationId]);
+      if (conv.length > 0 && conv[0].ma_kh != sessionUser.ma_kh) {
+        return res.status(403).json({ error: 'Bạn không có quyền truy cập cuộc hội thoại này.' });
+      }
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+  
+  next();
+};
+
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
@@ -137,7 +179,7 @@ async function createConversation(maKh, title = 'Cuộc hội thoại mới') {
 }
 
 // API chat với AI
-router.post('/chat', async (req, res) => {
+router.post('/chat', checkChatbotAccess, async (req, res) => {
   try {
     const { message, image, userId, conversationId } = req.body;
 
@@ -167,10 +209,10 @@ router.post('/chat', async (req, res) => {
     }
 
     let userMessage;
-    let selectedModel = 'llama-3.3-70b-versatile';
+    let selectedModel = 'llama-3.1-8b-instant'; // Đổi từ llama-3.3-70b-versatile sang 8b để có limit cao hơn
 
     if (image) {
-      selectedModel = 'meta-llama/llama-4-scout-17b-16e-instruct';
+      selectedModel = 'llama-3.2-11b-vision-preview';
       userMessage = {
         role: 'user',
         content: [
@@ -187,12 +229,77 @@ router.post('/chat', async (req, res) => {
 
     let aiResponse = null;
     let matchedKeyword = false;
+    let suggestionsPayload = null;
+
+    // Đã bỏ qua Rasa theo yêu cầu của người dùng, chuyển thẳng sang LLM / RAG
 
     // 1. Kiểm tra trực tiếp các từ khóa/FAQ trong database (Keyword matching)
     if (!image && message) {
       try {
-        const [knowledgeItems] = await pool.query('SELECT question, answer FROM chatbot_knowledge WHERE is_active = 1');
         const userMsgLower = message.toLowerCase().trim();
+
+        // A. Xử lý nhập nhằng từ khóa "địa chỉ"
+        const hasAddressKeyword = userMsgLower.includes('địa chỉ') || userMsgLower.includes('dia chi') || userMsgLower.includes('ở đâu') || userMsgLower.includes('o dau');
+        const hasSpecificAddressMod = userMsgLower.includes('cửa hàng') || userMsgLower.includes('cua hang') || userMsgLower.includes('shop') || userMsgLower.includes('chi nhánh') || userMsgLower.includes('chi nhanh') || userMsgLower.includes('giao') || userMsgLower.includes('nhận') || userMsgLower.includes('ship') || userMsgLower.includes('tài khoản') || userMsgLower.includes('tai khoa');
+
+        if (hasAddressKeyword && !hasSpecificAddressMod) {
+          aiResponse = "Dạ, bạn đang cần xem <strong>Địa chỉ các chi nhánh cửa hàng</strong> của QuangHưng Mobile hay muốn xem/cập nhật <strong>Địa chỉ giao hàng</strong> trong tài khoản cá nhân của bạn ạ?";
+          suggestionsPayload = [
+            { text: '📍 Địa chỉ cửa hàng', icon: 'fa-map-marker-alt' },
+            { text: '📦 Địa chỉ giao hàng của tôi', icon: 'fa-shipping-fast' }
+          ];
+          matchedKeyword = true;
+        }
+
+        // B. Xử lý lấy thông tin "Địa chỉ giao hàng của tôi" từ database
+        if (!matchedKeyword && (userMsgLower.includes('địa chỉ giao hàng của tôi') || (hasAddressKeyword && (userMsgLower.includes('giao') || userMsgLower.includes('nhận') || userMsgLower.includes('nhan'))))) {
+          if (userId) {
+            try {
+              const [orders] = await pool.query(
+                'SELECT dia_chi_nhan FROM don_hang WHERE ma_kh = ? AND dia_chi_nhan IS NOT NULL ORDER BY thoi_gian DESC LIMIT 1',
+                [userId]
+              );
+              if (orders.length > 0) {
+                aiResponse = `Dạ, địa chỉ giao hàng gần nhất của bạn được lưu trong hệ thống là: <strong>${orders[0].dia_chi_nhan}</strong>.<br><br>Bạn có thể thay đổi địa chỉ nhận hàng này khi tiến hành thanh toán giỏ hàng ạ!`;
+              } else {
+                aiResponse = "Dạ, tài khoản của bạn hiện tại chưa có đơn hàng nào nên chưa có địa chỉ giao hàng được lưu. Khi bạn tiến hành đặt mua sản phẩm, địa chỉ giao hàng sẽ được lưu tại đây để tiện sử dụng cho lần sau ạ!";
+              }
+            } catch (dbErr) {
+              console.error('Error fetching user address:', dbErr);
+              aiResponse = "Dạ, em gặp chút lỗi khi truy cập địa chỉ giao hàng của bạn. Bạn vui lòng kiểm tra lại trong Hồ sơ cá nhân nhé!";
+            }
+          } else {
+            aiResponse = "Dạ, bạn vui lòng <strong>Đăng nhập</strong> để em kiểm tra và hiển thị địa chỉ giao hàng được lưu trong tài khoản của riêng bạn nhé! 😊";
+          }
+          suggestionsPayload = [
+            { text: '📍 Địa chỉ cửa hàng', icon: 'fa-map-marker-alt' },
+            { text: '📱 Tư vấn điện thoại', icon: 'fa-mobile-alt' }
+          ];
+          matchedKeyword = true;
+        }
+
+        // C. Xử lý từ khóa tư vấn điện thoại chung chung
+        if (!matchedKeyword) {
+          const hasConsultKeywords = userMsgLower.includes('tư vấn') || userMsgLower.includes('tu van') || userMsgLower.includes('mua điện thoại') || userMsgLower.includes('mua dien thoai') || userMsgLower.includes('mua máy') || userMsgLower.includes('mua may') || userMsgLower.includes('cần mua') || userMsgLower.includes('can mua') || userMsgLower.includes('tìm máy') || userMsgLower.includes('tim may');
+          const hasSpecificBrand = userMsgLower.includes('iphone') || userMsgLower.includes('samsung') || userMsgLower.includes('xiaomi') || userMsgLower.includes('oppo') || userMsgLower.includes('vivo') || userMsgLower.includes('realme') || userMsgLower.includes('sony');
+          const hasMoneyTerms = userMsgLower.includes('triệu') || userMsgLower.includes('trieu') || userMsgLower.includes('tr') || userMsgLower.includes('đ') || userMsgLower.includes('vnd') || /\d+/.test(userMsgLower);
+
+          if (hasConsultKeywords && !hasSpecificBrand && !hasMoneyTerms) {
+            aiResponse = "Dạ, để em tư vấn dòng điện thoại phù hợp nhất cho mình, bạn có thể chia sẻ thêm cho em một vài thông tin như:<br>1. Bạn thích hãng điện thoại nào ạ (iPhone, Samsung, Xiaomi...)?<br>2. Ngân sách dự kiến của bạn khoảng bao nhiêu ạ?<br>3. Nhu cầu chính của bạn là gì (chơi game, chụp ảnh, pin trâu...)?";
+            suggestionsPayload = [
+              { text: 'Dưới 5 triệu', icon: 'fa-money-bill-wave' },
+              { text: 'Từ 5 - 10 triệu', icon: 'fa-money-bill-wave' },
+              { text: 'iPhone', icon: 'fa-mobile-alt' },
+              { text: 'Samsung', icon: 'fa-mobile-alt' },
+              { text: 'Chơi game', icon: 'fa-gamepad' },
+              { text: 'Chụp ảnh đẹp', icon: 'fa-camera' }
+            ];
+            matchedKeyword = true;
+          }
+        }
+
+        if (!matchedKeyword) {
+          const [knowledgeItems] = await pool.query('SELECT question, answer FROM chatbot_knowledge WHERE is_active = 1');
         
         for (const item of knowledgeItems) {
           const keywords = item.question.toLowerCase().split(',').map(k => k.trim()).filter(k => k.length > 0);
@@ -219,6 +326,7 @@ router.post('/chat', async (req, res) => {
              }
           }
           if (matchedKeyword) break;
+         }
         }
       } catch (err) {
         console.error('Lỗi khi kiểm tra từ khóa trực tiếp:', err);
@@ -228,6 +336,9 @@ router.post('/chat', async (req, res) => {
     // 2. Nếu không có hình ảnh và chưa match được keyword từ database, thử gọi sang Python RAG Service
     if (!image && !matchedKeyword) {
       try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // Tăng lên 15 giây cho Python RAG vì mô hình HuggingFace chạy local cần chút thời gian xử lý
+
         const pyResponse = await fetch('http://127.0.0.1:8000/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -236,26 +347,34 @@ router.post('/chat', async (req, res) => {
             userId: userId,
             conversationId: currentConversationId,
             history: history.slice(0, -1) // Truyền lịch sử trừ tin nhắn hiện tại
-          })
+          }),
+          signal: controller.signal
         });
+
+        clearTimeout(timeoutId);
 
         if (pyResponse.ok) {
           const pyData = await pyResponse.json();
-          aiResponse = pyData.response;
-          console.log('Got response from Python RAG Service');
+          if (pyData.intent === "ERROR" || (pyData.response && (pyData.response.includes("chưa được cấu hình khóa API") || pyData.response.includes("khóa API (API Key) không hợp lệ")))) {
+            console.log('Python RAG returned API Key error, falling back to direct Groq call');
+            aiResponse = null;
+          } else {
+            aiResponse = pyData.response;
+            console.log('Got response from Python RAG Service');
+          }
         } else {
           console.log('Python RAG Service returned error, falling back to direct Groq call');
         }
       } catch (err) {
-        console.log('Python RAG Service is not running, falling back to direct Groq call:', err.message);
+        console.log('Python RAG Service timeout or not running, falling back to direct Groq call:', err.message);
       }
     }
 
     // 2. Nếu Python RAG thất bại hoặc đang xử lý hình ảnh, dùng Groq trực tiếp
     if (!aiResponse) {
-      // Lấy danh sách sản phẩm từ database để AI có thể gợi ý
+      // Lấy danh sách sản phẩm từ database để AI có thể gợi ý (Giới hạn 15 sản phẩm để tránh lỗi Rate Limit của Groq)
       const products = await getProductsFromDB();
-      const productContext = createProductContext(products);
+      const productContext = createProductContext(products.slice(0, 15));
     
     let historyInstruction = "";
     if (history.length > 0 && userId) {
@@ -304,7 +423,8 @@ router.post('/chat', async (req, res) => {
     res.json({
       response: aiResponse,
       conversationId: currentConversationId,
-      isNewConversation
+      isNewConversation,
+      suggestions: suggestionsPayload
     });
 
   } catch (error) {
@@ -314,7 +434,7 @@ router.post('/chat', async (req, res) => {
 });
 
 // Lấy tin nhắn của một cuộc hội thoại - ĐẶT TRƯỚC route có :userId
-router.get('/messages/:conversationId', async (req, res) => {
+router.get('/messages/:conversationId', checkChatbotAccess, async (req, res) => {
   try {
     const { conversationId } = req.params;
     const limit = parseInt(req.query.limit) || 50;
@@ -343,7 +463,7 @@ router.get('/messages/:conversationId', async (req, res) => {
 });
 
 // Lấy danh sách cuộc hội thoại của user - dùng query param
-router.get('/conversations', async (req, res) => {
+router.get('/conversations', checkChatbotAccess, async (req, res) => {
   try {
     const userId = req.query.userId;
     const limit = parseInt(req.query.limit) || 20;
@@ -376,7 +496,7 @@ router.get('/conversations', async (req, res) => {
 });
 
 // Tạo cuộc hội thoại mới
-router.post('/conversations', async (req, res) => {
+router.post('/conversations', checkChatbotAccess, async (req, res) => {
   try {
     const { userId, title } = req.body;
     
@@ -403,7 +523,7 @@ router.post('/conversations', async (req, res) => {
 });
 
 // Đổi tên cuộc hội thoại
-router.put('/conversations/:conversationId', async (req, res) => {
+router.put('/conversations/:conversationId', checkChatbotAccess, async (req, res) => {
   try {
     const { conversationId } = req.params;
     const { title } = req.body;
@@ -421,7 +541,7 @@ router.put('/conversations/:conversationId', async (req, res) => {
 });
 
 // Xóa một cuộc hội thoại
-router.delete('/conversations/:conversationId', async (req, res) => {
+router.delete('/conversations/:conversationId', checkChatbotAccess, async (req, res) => {
   try {
     const { conversationId } = req.params;
     
@@ -435,7 +555,7 @@ router.delete('/conversations/:conversationId', async (req, res) => {
 });
 
 // Xóa tất cả cuộc hội thoại của user - dùng query param
-router.delete('/conversations-all', async (req, res) => {
+router.delete('/conversations-all', checkChatbotAccess, async (req, res) => {
   try {
     const userId = req.query.userId;
     
@@ -453,7 +573,7 @@ router.delete('/conversations-all', async (req, res) => {
 });
 
 // API cũ để tương thích ngược
-router.get('/history/:userId', async (req, res) => {
+router.get('/history/:userId', checkChatbotAccess, async (req, res) => {
   try {
     const { userId } = req.params;
     const limit = parseInt(req.query.limit) || 50;
@@ -483,7 +603,7 @@ router.get('/history/:userId', async (req, res) => {
   }
 });
 
-router.delete('/history/:userId', async (req, res) => {
+router.delete('/history/:userId', checkChatbotAccess, async (req, res) => {
   try {
     const { userId } = req.params;
     await pool.query('DELETE FROM cuoc_hoi_thoai WHERE ma_kh = ?', [userId]);

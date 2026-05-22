@@ -1,4 +1,7 @@
-// Sử dụng API_URL đã được khai báo ở admin.html
+// Sử dụng API_URL đã được khai báo ở admin.html (fallback nếu chưa có)
+if (typeof API_URL === 'undefined') {
+    window.API_URL = 'http://localhost:3000/api';
+}
 
 // Show/hide loading overlay
 function showLoading() {

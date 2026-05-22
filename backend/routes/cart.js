@@ -2,12 +2,67 @@ const express = require('express');
 const router = express.Router();
 const { pool } = require('../config/database');
 
+// Middleware kiểm soát quyền truy cập giỏ hàng (gia cố bảo mật)
+const checkCartAccess = async (req, res, next) => {
+  if (!req.session || !req.session.user) {
+    return res.status(401).json({ 
+      success: false, 
+      message: 'Vui lòng đăng nhập để thực hiện thao tác này.',
+      code: 'AUTH_REQUIRED'
+    });
+  }
+  
+  const sessionUser = req.session.user;
+  const isAdmin = sessionUser.vai_tro === 'admin';
+  
+  // 1. Kiểm tra theo userId (nếu có)
+  const userId = req.params.userId || req.body.userId;
+  if (userId) {
+    if (!isAdmin && sessionUser.ma_kh != userId) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Bạn không có quyền truy cập giỏ hàng này.',
+        code: 'ACCESS_DENIED'
+      });
+    }
+    return next();
+  }
+  
+  // 2. Kiểm tra theo cartItemId (nếu có)
+  const cartItemId = req.params.cartItemId || req.body.cartItemId;
+  if (cartItemId) {
+    try {
+      const [cartOwner] = await pool.query(
+        `SELECT gh.ma_kh FROM chi_tiet_gio_hang ct 
+         JOIN gio_hang gh ON ct.ma_gio_hang = gh.ma_gio_hang 
+         WHERE ct.ma_ct = ?`,
+        [cartItemId]
+      );
+      
+      if (cartOwner.length > 0) {
+        if (!isAdmin && cartOwner[0].ma_kh != sessionUser.ma_kh) {
+          return res.status(403).json({ 
+            success: false, 
+            message: 'Bạn không có quyền thay đổi sản phẩm này trong giỏ hàng.',
+            code: 'ACCESS_DENIED'
+          });
+        }
+      }
+      return next();
+    } catch (e) {
+      return res.status(500).json({ success: false, message: e.message });
+    }
+  }
+  
+  next();
+};
+
 // ============================================
 // CÁC ROUTE CỤ THỂ PHẢI ĐẶT TRƯỚC ROUTE CÓ PARAMS
 // ============================================
 
 // GET /api/cart/debug/:userId - Debug giỏ hàng
-router.get('/debug/:userId', async (req, res) => {
+router.get('/debug/:userId', checkCartAccess, async (req, res) => {
   try {
     const { userId } = req.params;
     
@@ -41,7 +96,7 @@ router.get('/debug/:userId', async (req, res) => {
 });
 
 // POST /api/cart/cleanup/:userId - Dọn dẹp giỏ hàng trùng lặp
-router.post('/cleanup/:userId', async (req, res) => {
+router.post('/cleanup/:userId', checkCartAccess, async (req, res) => {
   const connection = await pool.getConnection();
   try {
     const { userId } = req.params;
@@ -126,7 +181,7 @@ router.post('/cleanup/:userId', async (req, res) => {
 });
 
 // DELETE /api/cart/remove/:cartItemId - Xóa theo cartItemId
-router.delete('/remove/:cartItemId', async (req, res) => {
+router.delete('/remove/:cartItemId', checkCartAccess, async (req, res) => {
   const connection = await pool.getConnection();
   try {
     const { cartItemId } = req.params;
@@ -210,7 +265,7 @@ router.delete('/remove/:cartItemId', async (req, res) => {
 });
 
 // DELETE /api/cart/clear/:userId - Xóa toàn bộ giỏ hàng
-router.delete('/clear/:userId', async (req, res) => {
+router.delete('/clear/:userId', checkCartAccess, async (req, res) => {
   try {
     const { userId } = req.params;
     
@@ -241,7 +296,7 @@ router.delete('/clear/:userId', async (req, res) => {
 });
 
 // PUT /api/cart/update - Cập nhật số lượng
-router.put('/update', async (req, res) => {
+router.put('/update', checkCartAccess, async (req, res) => {
   try {
     const { cartItemId, quantity } = req.body;
     
@@ -277,7 +332,7 @@ router.put('/update', async (req, res) => {
 });
 
 // POST /api/cart - Thêm sản phẩm vào giỏ hàng
-router.post('/', async (req, res) => {
+router.post('/', checkCartAccess, async (req, res) => {
   try {
     const { userId, productId, quantity = 1, productInfo } = req.body;
     
@@ -416,7 +471,7 @@ router.post('/', async (req, res) => {
 // ============================================
 
 // GET /api/cart/:userId - Lấy giỏ hàng của user
-router.get('/:userId', async (req, res) => {
+router.get('/:userId', checkCartAccess, async (req, res) => {
   try {
     const { userId } = req.params;
     
@@ -511,7 +566,7 @@ router.get('/:userId', async (req, res) => {
 });
 
 // DELETE /api/cart/:userId/:productId - Xóa sản phẩm khỏi giỏ theo userId và productId
-router.delete('/:userId/:productId', async (req, res) => {
+router.delete('/:userId/:productId', checkCartAccess, async (req, res) => {
   try {
     const { userId, productId } = req.params;
     

@@ -13,21 +13,11 @@ function initHeader() {
     const userAvatar = document.getElementById('user-avatar');
     const userName = document.getElementById('user-name');
     const dropdownUserName = document.getElementById('dropdown-user-name');
-    const notificationBellContainer = document.getElementById('notification-bell-container');
-    const notificationBellContainerMobile = document.getElementById('notification-bell-container-mobile');
     
     if (isLoggedIn && user) {
       // Ẩn nút đăng nhập, hiện thông tin user
       if (loginBtn) { loginBtn.classList.add('hidden'); loginBtn.style.setProperty('display', 'none', 'important'); }
       if (userInfo) { userInfo.classList.remove('hidden'); userInfo.style.setProperty('display', 'block', 'important'); }
-      
-      // Hiện chuông thông báo
-      if (notificationBellContainer) {
-        notificationBellContainer.classList.remove('hidden');
-      }
-      if (notificationBellContainerMobile) {
-        notificationBellContainerMobile.classList.remove('hidden');
-      }
       
       // Lưu userInfo vào localStorage cho notification bell
       localStorage.setItem('userInfo', JSON.stringify({
@@ -38,18 +28,7 @@ function initHeader() {
       }));
       
       // Khởi tạo notification bell nếu chưa có
-      if (typeof NotificationBell !== 'undefined') {
-        if (!window.notificationBell) {
-          window.notificationBell = new NotificationBell({
-            apiUrl: API_BASE_URL,
-            containerId: 'notification-bell-container'
-          });
-        } else {
-          window.notificationBell.refresh();
-        }
-      } else if (typeof initNotificationBell === 'function') {
-        initNotificationBell();
-      }
+      // (Đã thay thế bằng dropdown badge)
       
       // Load số thông báo chưa đọc cho dropdown menu
       loadDropdownNotificationCount(user.ma_kh);
@@ -74,14 +53,6 @@ function initHeader() {
       // Hiện nút đăng nhập, ẩn thông tin user
       if (loginBtn) { loginBtn.classList.remove('hidden'); loginBtn.style.removeProperty('display'); }
       if (userInfo) { userInfo.classList.add('hidden'); userInfo.style.setProperty('display', 'none', 'important'); }
-      
-      // Ẩn chuông thông báo
-      if (notificationBellContainer) {
-        notificationBellContainer.classList.add('hidden');
-      }
-      if (notificationBellContainerMobile) {
-        notificationBellContainerMobile.classList.add('hidden');
-      }
       
       // Xóa userInfo
       localStorage.removeItem('userInfo');

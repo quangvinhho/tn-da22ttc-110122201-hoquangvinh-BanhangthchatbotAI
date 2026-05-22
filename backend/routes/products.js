@@ -3,6 +3,32 @@ const express = require('express');
 const router = express.Router();
 const { pool } = require('../config/database');
 
+// Simple In-memory Caching Middleware (Lưu RAM)
+const memoryCache = {};
+const cacheMiddleware = (durationMin) => {
+    return (req, res, next) => {
+        const key = req.originalUrl || req.url;
+        const cachedData = memoryCache[key];
+        
+        if (cachedData && cachedData.expiry > Date.now()) {
+            return res.json(cachedData.data);
+        }
+        
+        const originalJson = res.json;
+        res.json = (body) => {
+            // Chỉ lưu cache khi thành công
+            if (res.statusCode >= 200 && res.statusCode < 300 && body.success) {
+                memoryCache[key] = {
+                    data: body,
+                    expiry: Date.now() + durationMin * 60 * 1000
+                };
+            }
+            originalJson.call(res, body);
+        };
+        next();
+    };
+};
+
 // Map ảnh mặc định theo hãng - sử dụng ảnh sản phẩm thực tế
 const brandImageMap = {
     'Apple': 'images/iphone-17-pro-max-256.jpg',
@@ -908,7 +934,7 @@ function mapProductToFrontendWithDB(row) {
 // ==================== ROUTES CHO TRANG INDEX (ĐẶT TRƯỚC /:id) ====================
 
 // GET /api/products/best-sellers - Lấy top 5 sản phẩm bán chạy nhất (cho trang index)
-router.get('/best-sellers', async (req, res) => {
+router.get('/best-sellers', cacheMiddleware(5), async (req, res) => {
     try {
         const limit = parseInt(req.query.limit) || 5;
         
@@ -949,7 +975,7 @@ router.get('/best-sellers', async (req, res) => {
 });
 
 // GET /api/products/featured - Lấy sản phẩm nổi bật (có bán chạy hoặc mới nhất)
-router.get('/featured', async (req, res) => {
+router.get('/featured', cacheMiddleware(5), async (req, res) => {
     try {
         const limit = parseInt(req.query.limit) || 5;
         
@@ -1007,7 +1033,7 @@ router.get('/featured', async (req, res) => {
 
 // GET /api/products/daily-deals - Lấy 5 sản phẩm bán chậm nhất (GIÁ SỐC MỖI NGÀY)
 // Sản phẩm thay đổi theo ngày dựa trên seed từ ngày hiện tại
-router.get('/daily-deals', async (req, res) => {
+router.get('/daily-deals', cacheMiddleware(5), async (req, res) => {
     try {
         const limit = parseInt(req.query.limit) || 5;
         
@@ -1174,40 +1200,6 @@ router.get('/:id', async (req, res) => {
         const mappedProduct = mapProductToFrontendWithDB(product);
         
         res.json(mappedProduct);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// POST /api/products - Thêm sản phẩm mới
-router.post('/', async (req, res) => {
-    try {
-        const data = req.body;
-        const [result] = await pool.query('INSERT INTO san_pham SET ?', data);
-        res.status(201).json({ id: result.insertId, message: 'Đã thêm sản phẩm' });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// PUT /api/products/:id - Cập nhật sản phẩm
-router.put('/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const data = req.body;
-        await pool.query('UPDATE san_pham SET ? WHERE id = ?', [data, id]);
-        res.json({ message: `Đã cập nhật sản phẩm ${id}` });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// DELETE /api/products/:id - Xóa sản phẩm
-router.delete('/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        await pool.query('DELETE FROM san_pham WHERE id = ?', [id]);
-        res.json({ message: `Đã xóa sản phẩm ${id}` });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

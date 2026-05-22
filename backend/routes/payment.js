@@ -8,6 +8,7 @@
 const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
+const { pool } = require('../config/database');
 
 // MoMo Configuration từ .env
 const MOMO_CONFIG = {
@@ -214,15 +215,25 @@ router.post('/momo/ipn', async (req, res) => {
       // Thanh toán thành công
       console.log(`✅ Đơn hàng ${orderId} thanh toán thành công qua MoMo`);
       
-      // TODO: Cập nhật trạng thái đơn hàng trong database
-      // await updateOrderStatus(orderId, 'paid', transId);
+      // Cập nhật trạng thái đơn hàng và thanh toán
+      await pool.query(
+        `UPDATE thanh_toan SET trang_thai = 'success', thoi_gian = NOW() WHERE ma_don = ? AND phuong_thuc = ?`,
+        [orderId, 'MOMO']
+      );
+      await pool.query(
+        `UPDATE don_hang SET trang_thai = 'confirmed' WHERE ma_don = ?`,
+        [orderId]
+      );
       
     } else {
       // Thanh toán thất bại
       console.log(`❌ Đơn hàng ${orderId} thanh toán thất bại: ${message}`);
       
-      // TODO: Cập nhật trạng thái đơn hàng
-      // await updateOrderStatus(orderId, 'payment_failed', null);
+      // Cập nhật trạng thái thanh toán
+      await pool.query(
+        `UPDATE thanh_toan SET trang_thai = 'failed', thoi_gian = NOW() WHERE ma_don = ? AND phuong_thuc = ?`,
+        [orderId, 'MOMO']
+      );
     }
 
     // Phản hồi MoMo (bắt buộc)

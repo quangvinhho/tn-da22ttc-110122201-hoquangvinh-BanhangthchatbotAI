@@ -41,10 +41,19 @@ class SecureStorage {
   // Mã hóa XOR đơn giản (đủ để chống F12 thông thường)
   encrypt(text) {
     if (!text) return '';
+    
+    // Đảm bảo tương thích hoàn toàn với ký tự Unicode (Tiếng Việt) trước khi XOR và Base64
+    let safeText;
+    try {
+      safeText = unescape(encodeURIComponent(text));
+    } catch (e) {
+      safeText = text;
+    }
+
     const key = this.secretKey;
     let result = '';
-    for (let i = 0; i < text.length; i++) {
-      result += String.fromCharCode(text.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+    for (let i = 0; i < safeText.length; i++) {
+      result += String.fromCharCode(safeText.charCodeAt(i) ^ key.charCodeAt(i % key.length));
     }
     return btoa(result); // Base64 encode
   }
@@ -59,7 +68,13 @@ class SecureStorage {
       for (let i = 0; i < text.length; i++) {
         result += String.fromCharCode(text.charCodeAt(i) ^ key.charCodeAt(i % key.length));
       }
-      return result;
+      
+      // Khôi phục chuỗi Unicode ban đầu
+      try {
+        return decodeURIComponent(escape(result));
+      } catch (e) {
+        return result;
+      }
     } catch (e) {
       console.error('Decrypt error');
       return '';
@@ -105,3 +120,60 @@ class SecureStorage {
 
 // Export instance
 window.secureStorage = new SecureStorage();
+
+// =========================================================================
+// MONKEYPATCH LOCALSTORAGE - TỰ ĐỘNG MÃ HÓA/GIẢI MÃ TƯƠNG THÍCH NGƯỢC
+// =========================================================================
+
+// Tự động giải mã khi gọi localStorage.getItem('user') hoặc 'adminData' hoặc 'employeeData' để tương thích ngược với các file JS cũ gọi raw
+const originalGetItem = localStorage.getItem;
+localStorage.getItem = function(key) {
+  const value = originalGetItem.call(localStorage, key);
+  if (!value) return value;
+  
+  if (key === 'user' || key === 'adminData' || key === 'employeeData') {
+    const trimmed = value.trim();
+    // Nếu bắt đầu bằng '{' hoặc '[' hoặc 'null', nó là dữ liệu thô (chưa mã hóa)
+    if (trimmed.startsWith('{') || trimmed.startsWith('[') || value === 'null') {
+      return value;
+    }
+    // Ngược lại, thử giải mã bằng secureStorage
+    try {
+      if (window.secureStorage) {
+        const decrypted = window.secureStorage.decrypt(value);
+        // Kiểm tra xem sau giải mã có phải JSON hợp lệ không
+        if (decrypted && (decrypted.trim().startsWith('{') || decrypted.trim().startsWith('['))) {
+          return decrypted;
+        }
+      }
+    } catch (e) {
+      console.error('Lỗi tự động giải mã key:', key, e);
+    }
+  }
+  return value;
+};
+
+// Tự động mã hóa khi gọi localStorage.setItem('user') hoặc 'adminData' hoặc 'employeeData' để tương thích ngược với các file JS cũ gọi raw
+const originalSetItem = localStorage.setItem;
+localStorage.setItem = function(key, value) {
+  if ((key === 'user' || key === 'adminData' || key === 'employeeData') && value) {
+    const trimmed = String(value).trim();
+    // Nếu value đã là chuỗi đã mã hóa (Base64 và không bắt đầu bằng { hoặc [) thì không mã hóa nữa
+    if (!trimmed.startsWith('{') && !trimmed.startsWith('[') && trimmed !== 'null') {
+      originalSetItem.call(localStorage, key, value);
+      return;
+    }
+    try {
+      // value là JSON string thô, mã hóa nó
+      if (window.secureStorage) {
+        const encrypted = window.secureStorage.encrypt(trimmed);
+        originalSetItem.call(localStorage, key, encrypted);
+        return;
+      }
+    } catch (e) {
+      console.error('Lỗi tự động mã hóa key:', key, e);
+    }
+  }
+  originalSetItem.call(localStorage, key, value);
+};
+

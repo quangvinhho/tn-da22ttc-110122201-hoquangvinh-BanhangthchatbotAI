@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <title>Đăng nhập Nhân viên - QuangHưng Mobile</title>
+  <meta name="robots" content="noindex, nofollow">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Be Vietnam Pro', 'sans-serif'] },
+        }
+      }
+    }
+  </script>
+  <style>
+    * { font-family: 'Be Vietnam Pro', sans-serif; }
+    /* Form inputs and animations */
+    .input-field { transition: all 0.3s ease; }
+    .input-field:focus-within { border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
+    .input-field:focus-within i.input-icon { color: #3b82f6; }
+    
+    .glass-panel {
+      background: rgba(15, 23, 42, 0.5);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 min-h-screen flex items-center justify-center">
+
+  <div class="flex w-full h-screen">
+    <!-- Left Panel: Background Image -->
+    <div class="hidden lg:flex w-1/2 relative bg-slate-900 items-end justify-center">
+      <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('images/store_bg.png');"></div>
+      <!-- Subtle overlay -->
+      <div class="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/10 to-transparent"></div>
+      
+      <!-- Content overlay -->
+      <div class="relative z-10 w-full p-12 glass-panel">
+        <div class="flex items-center gap-4 mb-4">
+          <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg">
+            <i class="fas fa-shield-halved text-white text-xl"></i>
+          </div>
+          <h1 class="text-3xl font-bold text-white tracking-tight">QuangHưng Mobile</h1>
+        </div>
+        <p class="text-slate-300 text-lg leading-relaxed max-w-lg">
+          Hệ thống quản lý bán hàng. Giám sát doanh thu, quản lý sản phẩm và xử lý đơn hàng chuyên nghiệp, mượt mà và bảo mật tuyệt đối.
+        </p>
+      </div>
+    </div>
+
+    <!-- Right Panel: Login Form -->
+    <div class="w-full lg:w-1/2 flex items-center justify-center p-8 bg-white overflow-y-auto shadow-2xl relative z-20">
+      <div class="w-full max-w-md">
+        <!-- Badge -->
+        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-600 text-xs font-bold uppercase tracking-wider mb-8">
+          <i class="fas fa-lock"></i>
+          <span>Cổng nhân viên</span>
+        </div>
+
+        <h2 class="text-4xl font-extrabold text-slate-800 mb-2 tracking-tight">Đăng nhập</h2>
+        <p class="text-slate-500 mb-10 text-base">Vui lòng nhập thông tin để truy cập hệ thống</p>
+
+        <form id="login-form" autocomplete="off">
+          <!-- Username -->
+          <div class="mb-6">
+            <label class="block text-sm font-bold text-slate-700 mb-2">Tài khoản</label>
+            <div class="input-field relative flex items-center bg-slate-50 border-2 border-slate-200 rounded-xl overflow-hidden">
+              <i class="fas fa-user input-icon absolute left-4 text-slate-400 text-lg transition-colors"></i>
+              <input type="text" id="username" placeholder="Nhập tài khoản nhân viên" required autocomplete="off" class="w-full bg-transparent py-4 pl-12 pr-4 text-slate-700 font-medium focus:outline-none">
+            </div>
+          </div>
+
+          <!-- Password -->
+          <div class="mb-6">
+            <label class="block text-sm font-bold text-slate-700 mb-2">Mật khẩu</label>
+            <div class="input-field relative flex items-center bg-slate-50 border-2 border-slate-200 rounded-xl overflow-hidden">
+              <i class="fas fa-lock input-icon absolute left-4 text-slate-400 text-lg transition-colors"></i>
+              <input type="password" id="password" placeholder="Nhập mật khẩu" required autocomplete="new-password" class="w-full bg-transparent py-4 pl-12 pr-12 text-slate-700 font-medium focus:outline-none">
+              <button type="button" class="absolute right-4 text-slate-400 hover:text-emerald-500 transition-colors" onclick="togglePassword()">
+                <i class="fas fa-eye" id="eye-icon"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Remember me -->
+          <div class="flex items-center justify-between mb-8">
+            <label class="flex items-center gap-3 cursor-pointer group">
+              <div class="relative flex items-center justify-center w-5 h-5">
+                <input type="checkbox" id="remember" class="peer sr-only">
+                <div class="w-5 h-5 border-2 border-slate-300 rounded peer-checked:bg-emerald-600 peer-checked:border-emerald-600 transition-all bg-white"></div>
+                <i class="fas fa-check absolute text-white text-xs opacity-0 peer-checked:opacity-100 transition-opacity"></i>
+              </div>
+              <span class="text-sm font-medium text-slate-600 group-hover:text-slate-800 transition-colors">Ghi nhớ đăng nhập</span>
+            </label>
+          </div>
+
+          <!-- Submit Button -->
+          <button type="submit" id="submit-btn" class="w-full py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-500/30 transform transition-all hover:-translate-y-0.5 focus:outline-none flex items-center justify-center gap-2 text-base">
+            <i class="fas fa-right-to-bracket"></i>
+            <span>Đăng nhập hệ thống</span>
+          </button>
+        </form>
+
+        <div class="flex items-center my-6">
+          <div class="flex-1 h-px bg-slate-200"></div>
+          <span class="px-4 text-xs font-semibold text-slate-400 uppercase tracking-widest">Hoặc</span>
+          <div class="flex-1 h-px bg-slate-200"></div>
+        </div>
+
+        <!-- Google Login -->
+        <button type="button" onclick="loginWithGoogle()" class="w-full py-4 bg-white border-2 border-slate-200 hover:bg-slate-50 text-slate-700 font-bold rounded-xl shadow-sm transform transition-all hover:-translate-y-0.5 focus:outline-none flex items-center justify-center gap-3 text-base">
+          <svg class="w-5 h-5" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+          </svg>
+          <span>Đăng nhập với Google</span>
+        </button>
+
+        <div class="mt-10 p-4 bg-amber-50 rounded-xl border border-amber-100 flex items-start gap-3">
+          <i class="fas fa-shield-halved text-amber-500 mt-0.5 text-lg"></i>
+          <p class="text-sm text-amber-800 font-medium leading-relaxed">
+            Khu vực bảo mật. Mọi hành vi truy cập trái phép đều sẽ bị ghi nhận bởi hệ thống.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/secure-storage.js"></script>
+  <script>
+    if (window.location.protocol === 'file:') {
+        alert("LỖI BẢO MẬT TRÌNH DUYỆT:\n\nBạn đang mở file trực tiếp (file:///). Trình duyệt sẽ CHẶN tính năng đăng nhập.\n\nVui lòng truy cập bằng đường dẫn: http://localhost:3000/employee-login.html");
+    }
+    const API_URL = window.location.hostname === '127.0.0.1' ? 'http://127.0.0.1:3000/api' : 'http://localhost:3000/api';
+
+    // Kiểm tra nếu đã đăng nhập thì chuyển đến trang admin
+    document.addEventListener('DOMContentLoaded', async function() {
+      // Xử lý callback từ Google OAuth
+      const urlParams = new URLSearchParams(window.location.search);
+      
+      if (urlParams.get('google_success') === 'true') {
+        // Google OAuth thành công — session đã được lưu server-side
+        showSuccess('Đăng nhập Google thành công!');
+        
+        // Đợi 300ms để user thấy thông báo, sau đó redirect luôn
+        setTimeout(() => {
+          console.log('🔄 Redirecting to admin.html after Google OAuth success...');
+          window.location.href = 'admin.html';
+        }, 300);
+        return;
+      }
+      
+      // Xử lý lỗi từ Google OAuth
+      if (urlParams.get('error') === 'not_admin') {
+        showError('Email này không có quyền truy cập trang quản trị!');
+        // Xóa params khỏi URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      } else if (urlParams.get('error') === 'google_failed') {
+        showError('Đăng nhập Google thất bại. Vui lòng thử lại!');
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+      
+      // Kiểm tra đã đăng nhập admin chưa (verify qua server)
+      try {
+        const checkRes = await fetch(`${API_URL}/auth/check`, { credentials: 'include' });
+        if (checkRes.ok) {
+          const checkData = await checkRes.json();
+          if (checkData.isAuthenticated && checkData.user && checkData.user.vai_tro === 'admin') {
+            window.location.href = 'admin.html';
+            return;
+          }
+        }
+      } catch(e) {
+        // Server chưa chạy — kiểm tra localStorage fallback
+        const adminData = localStorage.getItem('adminData');
+        if (adminData) {
+          window.location.href = 'admin.html';
+          return;
+        }
+      }
+      
+      // Load remember me
+      const remembered = localStorage.getItem('adminRemember');
+      if (remembered) {
+        try {
+          const data = JSON.parse(remembered);
+          document.getElementById('username').value = data.username || '';
+          document.getElementById('remember').checked = true;
+        } catch(e) {}
+      }
+    });
+
+    // Đăng nhập bằng Google
+    function loginWithGoogle() {
+      window.location.href = `${API_URL}/auth/admin/google`;
+    }
+
+    function togglePassword() {
+      const input = document.getElementById('password');
+      const icon = document.getElementById('eye-icon');
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.replace('fa-eye', 'fa-eye-slash');
+      } else {
+        input.type = 'password';
+        icon.classList.replace('fa-eye-slash', 'fa-eye');
+      }
+    }
+
+    function showError(message) {
+      // Tạo toast thông báo lỗi
+      const existing = document.querySelector('.login-toast');
+      if (existing) existing.remove();
+      
+      const toast = document.createElement('div');
+      toast.className = 'login-toast fixed top-6 right-6 px-6 py-4 rounded-xl text-white font-medium z-50 flex items-center gap-3 bg-gradient-to-r from-red-500 to-red-600 shadow-xl shadow-red-500/30';
+      toast.style.animation = 'slideInRight 0.3s ease';
+      toast.innerHTML = `<i class="fas fa-exclamation-circle text-lg"></i>${message}`;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 4000);
+    }
+
+    function showSuccess(message) {
+      const existing = document.querySelector('.login-toast');
+      if (existing) existing.remove();
+      
+      const toast = document.createElement('div');
+      toast.className = 'login-toast fixed top-6 right-6 px-6 py-4 rounded-xl text-white font-medium z-50 flex items-center gap-3 bg-gradient-to-r from-emerald-500 to-emerald-600 shadow-xl shadow-emerald-500/30';
+      toast.style.animation = 'slideInRight 0.3s ease';
+      toast.innerHTML = `<i class="fas fa-check-circle text-lg"></i>${message}`;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 4000);
+    }
+    
+    // Thêm animation cho toast
+    const style = document.createElement('style');
+    style.innerHTML = `
+      @keyframes slideInRight {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+    `;
+    document.head.appendChild(style);
+
+    // Xử lý submit form
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value.trim();
+      const remember = document.getElementById('remember').checked;
+      const btn = document.getElementById('submit-btn');
+
+      if (!username || !password) {
+        showError('Vui lòng nhập đầy đủ tài khoản và mật khẩu!');
+        return;
+      }
+
+      // Xử lý remember me
+      if (remember) {
+        localStorage.setItem('adminRemember', JSON.stringify({ username }));
+      } else {
+        localStorage.removeItem('adminRemember');
+      }
+
+      // Vô hiệu hóa nút trong khi chờ
+      const originalBtnContent = btn.innerHTML;
+      btn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i><span>Đang xử lý...</span>`;
+      btn.disabled = true;
+      btn.style.opacity = '0.7';
+
+      try {
+        const response = await fetch(`${API_URL}/auth/employee/login`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ username, password }),
+          credentials: 'include' // Quan trọng để lưu cookie session
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          showSuccess('Đăng nhập thành công! Đang chuyển hướng...');
+          
+          // Lưu thông tin admin vào localStorage (fallback frontend)
+          localStorage.setItem('adminToken', data.token);
+          localStorage.setItem('adminData', JSON.stringify(data.admin));
+          localStorage.setItem('isAdmin', 'true');
+          localStorage.setItem('isLoggedIn', 'true');
+          
+          setTimeout(() => {
+            window.location.href = 'admin.html';
+          }, 1000);
+        } else {
+          showError(data.error || 'Tài khoản hoặc mật khẩu không chính xác!');
+          btn.innerHTML = originalBtnContent;
+          btn.disabled = false;
+          btn.style.opacity = '1';
+        }
+      } catch (error) {
+        console.error('Login error:', error);
+        showError('Không thể kết nối đến máy chủ. Vui lòng thử lại sau!');
+        btn.innerHTML = originalBtnContent;
+        btn.disabled = false;
+        btn.style.opacity = '1';
+      }
+    });
+  </script>
+</body>
+</html>

@@ -174,6 +174,19 @@ function initHeader() {
   // ===== USER AUTHENTICATION =====
   checkUserLogin();
   
+  // Kiểm tra popup sở thích sau khi load trang (nếu đã đăng nhập)
+  setTimeout(() => {
+      let user = null;
+      if (window.secureStorage) {
+        user = window.secureStorage.getItem('user');
+      } else {
+        user = JSON.parse(localStorage.getItem('user') || 'null');
+      }
+      if (user && user.ma_kh) {
+          checkAndShowInterestsPopup(user);
+      }
+  }, 1500); // Đợi trang load xong
+  
   // Lắng nghe thay đổi localStorage
   window.addEventListener('storage', function(e) {
     if (e.key === 'user' || e.key === 'isLoggedIn') {
@@ -301,6 +314,23 @@ async function syncCartFromDB() {
   
   try {
     const response = await fetch(`${API_URL}/cart/${user.ma_kh}`);
+    
+    if (response.status === 401) {
+      console.warn('Session expired. Logging out user...');
+      localStorage.removeItem('user');
+      localStorage.removeItem('isLoggedIn');
+      if (window.secureStorage) {
+        window.secureStorage.removeItem('user');
+      }
+      if (typeof showToast === 'function') {
+        showToast('Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.', 'warning');
+      }
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+      return;
+    }
+
     const data = await response.json();
     
     if (data.success) {
@@ -610,6 +640,245 @@ document.addEventListener('DOMContentLoaded', async function() {
 });
 
 // ============================================
+// INTERESTS POPUP (AI RECOMMENDATION)
+// ============================================
+
+async function checkAndShowInterestsPopup(user) {
+    if (!user || !user.ma_kh) return;
+    
+    // Đã hiển thị popup trong phiên này rồi thì thôi
+    if (sessionStorage.getItem('interests_popup_shown')) return;
+    
+    try {
+        const res = await fetch(`http://localhost:3000/api/interests/check-user/${user.ma_kh}`);
+        const data = await res.json();
+        
+        if (data.success && !data.hasInterests) {
+            showInterestsPopup(user.ma_kh);
+            sessionStorage.setItem('interests_popup_shown', 'true');
+        }
+    } catch (error) {
+        console.error('Lỗi kiểm tra sở thích:', error);
+    }
+}
+
+async function showInterestsPopup(userId) {
+    // Xóa modal cũ nếu có
+    const existingModal = document.getElementById('interests-modal');
+    if (existingModal) existingModal.remove();
+    
+    // Lấy default interests
+    let defaultInterests = [];
+    try {
+        const res = await fetch('http://localhost:3000/api/interests/default');
+        const data = await res.json();
+        if (data.success) {
+            defaultInterests = data.data;
+        }
+    } catch (e) {
+        console.error(e);
+        return;
+    }
+
+    // Icon mapping cho mỗi sở thích
+    const iconMap = {
+        'apple': '🍎', 'samsung': '📱', 'xiaomi': '🔥',
+        'oppo': '✨', 'gaming': '🎮', 'camera': '📸',
+        'battery': '🔋', 'luxury': '💎', 'budget': '💰'
+    };
+
+    // Inject CSS animation
+    if (!document.getElementById('interests-popup-styles')) {
+        const style = document.createElement('style');
+        style.id = 'interests-popup-styles';
+        style.textContent = `
+            @keyframes interestModalIn { 
+                from { opacity: 0; transform: scale(0.9) translateY(20px); } 
+                to { opacity: 1; transform: scale(1) translateY(0); } 
+            }
+            @keyframes interestBgIn { from { opacity: 0; } to { opacity: 1; } }
+            @keyframes chipBounce { 0%,100% { transform: scale(1); } 50% { transform: scale(0.95); } }
+            .interests-modal-bg { animation: interestBgIn 0.3s ease; }
+            .interests-modal-card { animation: interestModalIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+            .interest-card { 
+                transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); 
+                cursor: pointer; user-select: none; position: relative; overflow: hidden;
+            }
+            .interest-card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px -5px rgba(0,0,0,0.1); }
+            .interest-card.selected { 
+                border-color: #dc2626 !important; background: linear-gradient(135deg, #fef2f2, #fee2e2) !important;
+                box-shadow: 0 4px 15px -3px rgba(220, 38, 38, 0.3);
+            }
+            .interest-card.selected .interest-check { opacity: 1; transform: scale(1); }
+            .interest-card.selected .interest-emoji { transform: scale(1.15); }
+            .interest-check { 
+                position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; 
+                background: #dc2626; border-radius: 50%; display: flex; align-items: center; 
+                justify-content: center; opacity: 0; transform: scale(0.5); 
+                transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+            }
+            .interest-emoji { font-size: 28px; transition: transform 0.25s ease; display: block; line-height: 1; }
+            .interest-progress { 
+                height: 4px; background: #f3f4f6; border-radius: 9999px; overflow: hidden; 
+            }
+            .interest-progress-bar { 
+                height: 100%; background: linear-gradient(90deg, #dc2626, #f43f5e); border-radius: 9999px;
+                transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    const modal = document.createElement('div');
+    modal.id = 'interests-modal';
+    modal.className = 'fixed inset-0 bg-black/60 flex items-center justify-center z-[100] backdrop-blur-sm interests-modal-bg';
+    
+    let cardsHtml = defaultInterests.map(interest => `
+        <div class="interest-card bg-white border-2 border-gray-200 rounded-2xl p-4 flex flex-col items-center gap-2 min-w-[100px]" data-val="${interest.id}" data-label="${interest.label}">
+            <div class="interest-check"><i class="fas fa-check text-white text-xs"></i></div>
+            <span class="interest-emoji">${iconMap[interest.id] || '📦'}</span>
+            <span class="text-xs font-semibold text-gray-700 text-center leading-tight">${interest.label}</span>
+        </div>
+    `).join('');
+    
+    modal.innerHTML = `
+      <div class="interests-modal-card bg-white rounded-3xl w-full max-w-xl mx-4 shadow-2xl overflow-hidden">
+        <!-- Header gradient -->
+        <div class="bg-gradient-to-r from-red-600 via-red-500 to-pink-500 px-8 py-6 text-center relative overflow-hidden">
+          <div class="absolute inset-0 opacity-10">
+            <div class="absolute -right-8 -top-8 w-32 h-32 bg-white rounded-full"></div>
+            <div class="absolute -left-4 -bottom-4 w-24 h-24 bg-white rounded-full"></div>
+          </div>
+          <div class="relative z-10">
+            <div class="w-14 h-14 bg-white/20 backdrop-blur rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg">
+              <i class="fas fa-sparkles text-white text-2xl"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-white mb-1">Chào mừng bạn! 👋</h3>
+            <p class="text-red-100 text-sm">Hãy cho chúng tôi biết sở thích của bạn để nhận gợi ý sản phẩm tốt nhất</p>
+          </div>
+        </div>
+        
+        <!-- Body -->
+        <div class="px-8 py-6">
+          <!-- Progress bar -->
+          <div class="mb-5">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm font-semibold text-gray-700">Đã chọn: <span id="interests-count" class="text-red-600">0</span> sở thích</span>
+              <span class="text-xs text-gray-400">Chọn ít nhất 1</span>
+            </div>
+            <div class="interest-progress">
+              <div class="interest-progress-bar" id="interests-progress-bar" style="width: 0%"></div>
+            </div>
+          </div>
+          
+          <!-- Interest cards grid -->
+          <div class="grid grid-cols-3 sm:grid-cols-3 gap-3 mb-6" id="interests-container">
+            ${cardsHtml}
+          </div>
+          
+          <!-- Action buttons -->
+          <div class="flex gap-3">
+            <button id="btn-skip-interests" class="flex-1 px-4 py-3.5 border-2 border-gray-200 rounded-2xl font-semibold text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-all text-sm flex items-center justify-center gap-2">
+              <i class="fas fa-magic text-purple-400"></i>
+              Để AI tự đoán
+            </button>
+            <button id="btn-save-interests" class="flex-1 px-4 py-3.5 bg-gradient-to-r from-red-600 to-red-500 text-white rounded-2xl font-semibold hover:from-red-700 hover:to-red-600 transition-all shadow-lg shadow-red-500/25 text-sm flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none" disabled>
+              <i class="fas fa-check-circle"></i>
+              Xác nhận
+            </button>
+          </div>
+          
+          <p class="text-center text-xs text-gray-400 mt-4">
+            <i class="fas fa-shield-alt mr-1"></i> Bạn có thể thay đổi sở thích bất cứ lúc nào
+          </p>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Xử lý chọn card
+    const cards = modal.querySelectorAll('.interest-card');
+    const saveBtn = document.getElementById('btn-save-interests');
+    const countEl = document.getElementById('interests-count');
+    const progressBar = document.getElementById('interests-progress-bar');
+    let selectedInterests = [];
+    const maxInterests = defaultInterests.length;
+    
+    cards.forEach(card => {
+        card.addEventListener('click', () => {
+            const label = card.getAttribute('data-label');
+            if (selectedInterests.includes(label)) {
+                selectedInterests = selectedInterests.filter(i => i !== label);
+                card.classList.remove('selected');
+            } else {
+                selectedInterests.push(label);
+                card.classList.add('selected');
+                // Quick bounce
+                card.style.animation = 'chipBounce 0.3s ease';
+                setTimeout(() => card.style.animation = '', 300);
+            }
+            // Update UI
+            countEl.textContent = selectedInterests.length;
+            progressBar.style.width = (selectedInterests.length / maxInterests * 100) + '%';
+            saveBtn.disabled = selectedInterests.length === 0;
+        });
+    });
+    
+    // Lưu sở thích
+    saveBtn.addEventListener('click', async () => {
+        if (selectedInterests.length === 0) return;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang lưu...';
+        saveBtn.disabled = true;
+        try {
+            await fetch('http://localhost:3000/api/interests/user', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, interests: selectedInterests })
+            });
+            // Lưu cờ sessionStorage để chống lặp popup lập tức ở phiên hiện tại
+            sessionStorage.setItem('interests_popup_shown', 'true');
+            showToast('Đã lưu sở thích thành công! 🎉', 'success');
+            modal.remove();
+            if (typeof window.loadRecommendations === 'function') {
+                window.loadRecommendations();
+            }
+        } catch (e) {
+            console.error(e);
+            showToast('Lỗi khi lưu sở thích', 'error');
+            saveBtn.innerHTML = '<i class="fas fa-check-circle"></i> Xác nhận';
+            saveBtn.disabled = false;
+        }
+    });
+    
+    // Bỏ qua (AI Generate)
+    const skipBtn = document.getElementById('btn-skip-interests');
+    skipBtn.addEventListener('click', async () => {
+        skipBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang phân tích...';
+        skipBtn.disabled = true;
+        try {
+            await fetch('http://localhost:3000/api/interests/ai-generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId })
+            });
+            // Lưu cờ sessionStorage để chống lặp popup lập tức ở phiên hiện tại
+            sessionStorage.setItem('interests_popup_shown', 'true');
+            showToast('AI đã phân tích sở thích từ lịch sử của bạn! 🤖', 'success');
+            modal.remove();
+            if (typeof window.loadRecommendations === 'function') {
+                window.loadRecommendations();
+            }
+        } catch (e) {
+            console.error(e);
+            // Kể cả khi lỗi, lưu cờ sessionStorage và đóng modal để giữ trải nghiệm mượt mà cho người dùng
+            sessionStorage.setItem('interests_popup_shown', 'true');
+            modal.remove();
+        }
+    });
+}
+
+// ============================================
 // EXPORT TO WINDOW
 // ============================================
 
@@ -627,4 +896,5 @@ window.toggleMobileSubmenu = toggleMobileSubmenu;
 window.isLoggedIn = isLoggedIn;
 window.showLoginRequiredModal = showLoginRequiredModal;
 window.closeLoginModal = closeLoginModal;
+window.checkAndShowInterestsPopup = checkAndShowInterestsPopup;
 

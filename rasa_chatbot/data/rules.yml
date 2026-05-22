@@ -1,0 +1,53 @@
+version: "3.1"
+
+rules:
+  - rule: Say hello whenever user greets
+    steps:
+      - intent: greet
+      - action: utter_greet
+
+  - rule: Say goodbye whenever user leaves
+    steps:
+      - intent: goodbye
+      - action: utter_goodbye
+
+  - rule: Support bot identification
+    steps:
+      - intent: bot_challenge
+      - action: utter_iamabot
+
+  - rule: Direct ambiguous address questions to custom clarification action
+    steps:
+      - intent: ask_address
+      - action: action_clarify_address
+
+  - rule: Handle physical store address request
+    steps:
+      - intent: ask_address_store
+      - action: action_get_store_address
+
+  - rule: Handle user personal delivery address request
+    steps:
+      - intent: ask_address_delivery
+      - action: action_get_delivery_address
+
+  - rule: Activate consultation form when generic consultation is requested
+    steps:
+      - intent: ask_recommendation_generic
+      - action: phone_consultation_form
+      - active_loop: phone_consultation_form
+
+  - rule: Submit consultation form and trigger recommendation action
+    condition:
+      - active_loop: phone_consultation_form
+    steps:
+      - action: phone_consultation_form
+      - active_loop: null
+      - slot_was_set:
+          - requested_slot: null
+      - action: action_submit_phone_consultation
+
+  - rule: Handle all out-of-scope or fallback queries using RAG action
+    steps:
+      - intent: out_of_scope
+      - action: action_call_rag

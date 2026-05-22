@@ -8,6 +8,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="js/secure-storage.js"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -448,6 +449,14 @@
             <span class="text-sm font-medium">Liên hệ</span>
             <span class="ml-auto bg-emerald-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold shadow-sm" id="new-contact-count">0</span>
           </a>
+          <a href="#" onclick="showSection('employees')" class="sidebar-item flex items-center px-3 py-2.5 text-slate-100 group" id="nav-employees">
+            <div class="sidebar-icon"><i class="fas fa-user-shield text-sm"></i></div>
+            <span class="text-sm font-medium">Nhân viên</span>
+          </a>
+          <a href="#" onclick="showSection('interests')" class="sidebar-item flex items-center px-3 py-2.5 text-slate-100 group" id="nav-interests">
+            <div class="sidebar-icon"><i class="fas fa-heart text-sm"></i></div>
+            <span class="text-sm font-medium">Sở thích KH</span>
+          </a>
         </div>
       </nav>
       
@@ -491,7 +500,7 @@
           </div>
           <div class="flex items-center gap-3">
             <!-- Nút cài đặt hiển thị tồn kho -->
-            <button onclick="openSettingsModal()" class="p-3 rounded-xl bg-slate-600 hover:bg-slate-500 text-slate-200 transition-colors relative" title="Cài đặt">
+            <button id="settings-btn" onclick="openSettingsModal()" class="p-3 rounded-xl bg-slate-600 hover:bg-slate-500 text-slate-200 transition-colors relative" title="Cài đặt">
               <i class="fas fa-cog"></i>
             </button>
             <button class="p-3 rounded-xl bg-slate-600 hover:bg-slate-500 text-slate-200 transition-colors relative">
@@ -512,7 +521,7 @@
         <!-- ==================== DASHBOARD SECTION ==================== -->
         <div id="section-dashboard" class="section-content active">
           <!-- Row 1: Stat Cards -->
-          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mb-6">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5 mb-6">
             <!-- Tổng doanh thu -->
             <div class="stat-card bg-white rounded-2xl shadow-lg border border-slate-100 p-5">
               <div class="flex items-start justify-between">
@@ -532,6 +541,31 @@
                 <div class="flex items-center justify-between">
                   <span class="text-xs text-slate-400">So sánh:</span>
                   <span class="text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1 bg-emerald-100 text-emerald-600" id="revenue-change">
+                    <i class="fas fa-arrow-up text-[10px]"></i><span>0%</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Lợi nhuận -->
+            <div class="stat-card bg-white rounded-2xl shadow-lg border border-slate-100 p-5" id="profit-card">
+              <div class="flex items-start justify-between">
+                <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center shadow-lg shadow-green-500/30">
+                  <i class="fas fa-hand-holding-usd text-white text-xl"></i>
+                </div>
+                <div class="text-right">
+                  <p class="text-xs text-slate-500 font-medium mb-1">Lợi nhuận tháng này</p>
+                  <p class="text-2xl font-extrabold text-green-600" id="stat-profit">0đ</p>
+                </div>
+              </div>
+              <div class="mt-3 pt-3 border-t border-slate-100">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-xs text-slate-400">Tháng trước:</span>
+                  <span class="text-xs font-semibold text-slate-600" id="profit-last-month">0đ</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-xs text-slate-400">So sánh:</span>
+                  <span class="text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1 bg-emerald-100 text-emerald-600" id="profit-change">
                     <i class="fas fa-arrow-up text-[10px]"></i><span>0%</span>
                   </span>
                 </div>
@@ -610,34 +644,54 @@
             </div>
           </div>
 
-          <!-- Row 1.5: Bộ lọc tháng -->
+          <!-- Row 1.5: Bộ lọc thống kê -->
           <div class="chart-card rounded-2xl shadow-lg p-5 mb-6">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
                 <h3 class="text-lg font-bold text-slate-700 flex items-center gap-2">
                   <i class="fas fa-filter text-blue-500"></i>
-                  Xem doanh thu theo tháng
+                  Thống kê chi tiết
                 </h3>
-                <p class="text-sm text-slate-400 mt-1">Chọn tháng để xem chi tiết doanh thu và sản phẩm đã bán</p>
+                <p class="text-sm text-slate-400 mt-1">Chọn khoảng thời gian để xem doanh thu, lợi nhuận và sản phẩm đã bán</p>
               </div>
-              <div class="flex items-center gap-3">
-                <select id="filter-month" class="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer">
-                  <option value="1">Tháng 1</option>
-                  <option value="2">Tháng 2</option>
-                  <option value="3">Tháng 3</option>
-                  <option value="4">Tháng 4</option>
-                  <option value="5">Tháng 5</option>
-                  <option value="6">Tháng 6</option>
-                  <option value="7">Tháng 7</option>
-                  <option value="8">Tháng 8</option>
-                  <option value="9">Tháng 9</option>
-                  <option value="10">Tháng 10</option>
-                  <option value="11">Tháng 11</option>
-                  <option value="12">Tháng 12</option>
+              <div class="flex flex-wrap items-center gap-3">
+                <select id="filter-type" onchange="toggleFilterType()" class="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer">
+                  <option value="today">Hôm nay</option>
+                  <option value="yesterday">Hôm qua</option>
+                  <option value="this_week">Tuần này</option>
+                  <option value="this_month">Tháng này</option>
+                  <option value="month" selected>Chọn tháng</option>
+                  <option value="custom">Tùy chọn ngày</option>
                 </select>
-                <select id="filter-year" class="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer">
-                </select>
-                <button onclick="loadMonthlyStats()" class="btn-primary px-5 py-2.5 rounded-xl text-white text-sm font-medium flex items-center gap-2">
+                
+                <!-- Nhóm chọn tháng -->
+                <div id="filter-month-group" class="flex items-center gap-3">
+                    <select id="filter-month" class="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer">
+                      <option value="1">Tháng 1</option>
+                      <option value="2">Tháng 2</option>
+                      <option value="3">Tháng 3</option>
+                      <option value="4">Tháng 4</option>
+                      <option value="5">Tháng 5</option>
+                      <option value="6">Tháng 6</option>
+                      <option value="7">Tháng 7</option>
+                      <option value="8">Tháng 8</option>
+                      <option value="9">Tháng 9</option>
+                      <option value="10">Tháng 10</option>
+                      <option value="11">Tháng 11</option>
+                      <option value="12">Tháng 12</option>
+                    </select>
+                    <select id="filter-year" class="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer">
+                    </select>
+                </div>
+
+                <!-- Nhóm chọn ngày tùy chọn -->
+                <div id="filter-custom-group" class="hidden items-center gap-3">
+                    <input type="date" id="filter-start-date" class="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <span class="text-slate-400">-</span>
+                    <input type="date" id="filter-end-date" class="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <button onclick="loadCustomStats()" class="btn-primary px-5 py-2.5 rounded-xl text-white text-sm font-medium flex items-center gap-2">
                   <i class="fas fa-search"></i>
                   Xem
                 </button>
@@ -654,16 +708,20 @@
               <div class="flex items-center justify-between mb-4">
                 <h3 class="text-lg font-bold text-slate-700 flex items-center gap-2">
                   <i class="fas fa-chart-bar text-blue-500"></i>
-                  Thống kê tháng <span id="selected-month-label" class="text-blue-600"></span>
+                  Thống kê khoảng thời gian <span id="selected-month-label" class="text-blue-600"></span>
                 </h3>
                 <button onclick="hideMonthlyStats()" class="p-2 hover:bg-white rounded-lg transition-colors">
                   <i class="fas fa-times text-slate-400"></i>
                 </button>
               </div>
-              <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
                 <div class="bg-white rounded-xl p-4 shadow-sm">
                   <p class="text-xs text-slate-500 mb-1">Doanh thu</p>
                   <p class="text-xl font-bold text-blue-600" id="monthly-revenue">0đ</p>
+                </div>
+                <div class="bg-white rounded-xl p-4 shadow-sm" id="custom-profit-card">
+                  <p class="text-xs text-slate-500 mb-1">Lợi nhuận</p>
+                  <p class="text-xl font-bold text-green-600" id="monthly-profit">0đ</p>
                 </div>
                 <div class="bg-white rounded-xl p-4 shadow-sm">
                   <p class="text-xs text-slate-500 mb-1">Số đơn hàng</p>
@@ -682,7 +740,7 @@
               <div class="mt-4">
                 <h4 class="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
                   <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
-                  Top sản phẩm bán chạy trong tháng
+                  Top sản phẩm bán chạy
                 </h4>
                 <div class="overflow-y-auto max-h-64 bg-white rounded-xl p-3" id="monthly-products-list">
                   <div class="text-center py-6 text-slate-400">Chọn tháng để xem</div>
@@ -1576,6 +1634,305 @@
       
       </section>
 
+  <!-- ==================== EMPLOYEES SECTION ==================== -->
+  <!-- ==================== INTERESTS SECTION ==================== -->
+  <div id="section-interests" class="section-content">
+    <div class="flex justify-between items-center mb-6">
+      <div>
+        <h2 class="text-2xl font-bold text-slate-800">Cá nhân hóa người dùng</h2>
+        <p class="text-slate-500 text-sm mt-1">Theo dõi, phân tích sở thích và lịch sử xem sản phẩm của khách hàng để tối ưu hóa AI gợi ý.</p>
+      </div>
+    </div>
+
+    <!-- Premium Sub-tab Headers -->
+    <div class="flex border-b border-slate-200 mb-6 gap-6">
+      <button onclick="switchInterestsTab('preferences')" id="tab-btn-preferences" class="pb-3 text-sm font-semibold border-b-2 border-blue-500 text-blue-600 transition duration-200">
+        <i class="fas fa-heart mr-2"></i>Sở thích Khách hàng
+      </button>
+      <button onclick="switchInterestsTab('viewhistory')" id="tab-btn-viewhistory" class="pb-3 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition duration-200">
+        <i class="fas fa-history mr-2"></i>Lịch sử click chuột Sản phẩm
+      </button>
+    </div>
+
+    <!-- Tab 1: Preferences Container -->
+    <div id="interests-preferences-container" class="space-y-4">
+      <div class="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden">
+        <div class="p-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <span class="text-sm text-slate-500">Tổng: <strong id="interests-total" class="text-slate-800">0</strong> bản ghi</span>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50 text-slate-600 text-xs uppercase tracking-wider">
+                <th class="px-5 py-3 font-semibold">ID</th>
+                <th class="px-5 py-3 font-semibold">Khách hàng</th>
+                <th class="px-5 py-3 font-semibold">Email</th>
+                <th class="px-5 py-3 font-semibold">Từ khóa sở thích</th>
+                <th class="px-5 py-3 font-semibold">Kiểu tạo</th>
+                <th class="px-5 py-3 font-semibold">Ngày tạo</th>
+                <th class="px-5 py-3 font-semibold text-center">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="interests-table-body" class="divide-y divide-slate-100">
+              <tr><td colspan="7" class="text-center py-8 text-slate-400"><i class="fas fa-spinner fa-spin mr-2"></i>Đang tải...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 2: View History Container -->
+    <div id="interests-viewhistory-container" class="space-y-4 hidden">
+      <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+        <!-- Search bar -->
+        <div class="relative w-full md:w-80">
+          <input type="text" id="viewhistory-search" oninput="searchViewHistory()" placeholder="Tìm khách hàng hoặc sản phẩm..." class="w-full px-4 py-2.5 pl-10 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+          <i class="fas fa-search absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
+        </div>
+        <!-- Clear all button -->
+        <button onclick="clearAllViewHistory()" class="px-4 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-xl text-sm font-semibold flex items-center gap-2 transition duration-200">
+          <i class="fas fa-trash-alt"></i>Xóa toàn bộ lịch sử
+        </button>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden">
+        <div class="p-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <span class="text-sm text-slate-500">Tổng: <strong id="viewhistory-total" class="text-slate-800">0</strong> lượt click chuột</span>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50 text-slate-600 text-xs uppercase tracking-wider">
+                <th class="px-5 py-3 font-semibold">Khách hàng</th>
+                <th class="px-5 py-3 font-semibold">Email</th>
+                <th class="px-5 py-3 font-semibold">Sản phẩm</th>
+                <th class="px-5 py-3 font-semibold">Hình ảnh</th>
+                <th class="px-5 py-3 font-semibold">Số lần click chuột</th>
+                <th class="px-5 py-3 font-semibold">Cập nhật cuối</th>
+                <th class="px-5 py-3 font-semibold text-center">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="viewhistory-table-body" class="divide-y divide-slate-100">
+              <tr><td colspan="7" class="text-center py-8 text-slate-400"><i class="fas fa-spinner fa-spin mr-2"></i>Đang tải...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function loadAdminInterests() {
+      try {
+        const res = await fetch(`${API_URL}/interests/admin/user-interests`);
+        const data = await res.json();
+        const tbody = document.getElementById('interests-table-body');
+        const totalEl = document.getElementById('interests-total');
+        
+        if (!data.success || !data.data || data.data.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-slate-400"><i class="fas fa-heart-broken mr-2"></i>Chưa có dữ liệu sở thích</td></tr>';
+          totalEl.textContent = '0';
+          return;
+        }
+        
+        totalEl.textContent = data.data.length;
+        tbody.innerHTML = data.data.map(item => {
+          const dateStr = new Date(item.ngay_tao).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+          const typeBadge = item.kieu_tao === 'manual'
+            ? '<span class="px-2.5 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-medium"><i class="fas fa-user mr-1"></i>Tự chọn</span>'
+            : '<span class="px-2.5 py-1 bg-purple-100 text-purple-700 text-xs rounded-full font-medium"><i class="fas fa-robot mr-1"></i>AI tạo</span>';
+          return `<tr class="hover:bg-slate-50 transition">
+            <td class="px-5 py-3 text-sm text-slate-500">#${item.ma_st_kh}</td>
+            <td class="px-5 py-3 text-sm font-semibold text-slate-800">${item.ho_ten || 'N/A'}</td>
+            <td class="px-5 py-3 text-sm text-slate-500">${item.email || 'N/A'}</td>
+            <td class="px-5 py-3"><span class="px-3 py-1 bg-red-50 text-red-600 text-sm rounded-full font-medium border border-red-200">${item.tu_khoa}</span></td>
+            <td class="px-5 py-3">${typeBadge}</td>
+            <td class="px-5 py-3 text-sm text-slate-500">${dateStr}</td>
+            <td class="px-5 py-3 text-center">
+              <button onclick="deleteAdminInterest(${item.ma_st_kh})" class="p-2 bg-red-50 hover:bg-red-100 text-red-500 rounded-lg transition" title="Xóa">
+                <i class="fas fa-trash-alt text-xs"></i>
+              </button>
+            </td>
+          </tr>`;
+        }).join('');
+      } catch (e) {
+        console.error('Lỗi load interests:', e);
+        document.getElementById('interests-table-body').innerHTML = '<tr><td colspan="7" class="text-center py-8 text-red-400"><i class="fas fa-exclamation-triangle mr-2"></i>Lỗi kết nối server</td></tr>';
+      }
+    }
+    
+    async function deleteAdminInterest(id) {
+      if (!confirm('Bạn có chắc muốn xóa sở thích này?')) return;
+      try {
+        const res = await fetch(`${API_URL}/interests/admin/user-interests/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Đã xóa sở thích khách hàng', 'success');
+          loadAdminInterests();
+        } else {
+          showToast('Lỗi: ' + data.message, 'error');
+        }
+      } catch (e) {
+        showToast('Lỗi kết nối server', 'error');
+      }
+    }
+
+    let allViewHistory = [];
+
+    function switchInterestsTab(tabId) {
+      const prefContainer = document.getElementById('interests-preferences-container');
+      const viewContainer = document.getElementById('interests-viewhistory-container');
+      const prefTabBtn = document.getElementById('tab-btn-preferences');
+      const viewTabBtn = document.getElementById('tab-btn-viewhistory');
+
+      if (tabId === 'preferences') {
+        prefContainer.classList.remove('hidden');
+        viewContainer.classList.add('hidden');
+        prefTabBtn.className = "pb-3 text-sm font-semibold border-b-2 border-blue-500 text-blue-600 transition duration-200";
+        viewTabBtn.className = "pb-3 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition duration-200";
+        loadAdminInterests();
+      } else {
+        prefContainer.classList.add('hidden');
+        viewContainer.classList.remove('hidden');
+        prefTabBtn.className = "pb-3 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition duration-200";
+        viewTabBtn.className = "pb-3 text-sm font-semibold border-b-2 border-blue-500 text-blue-600 transition duration-200";
+        loadAdminViewHistory();
+      }
+    }
+
+    async function loadAdminViewHistory() {
+      try {
+        const res = await fetch(`${API_URL}/interests/admin/view-history`);
+        const data = await res.json();
+        const tbody = document.getElementById('viewhistory-table-body');
+        const totalEl = document.getElementById('viewhistory-total');
+        
+        if (!data.success || !data.data || data.data.length === 0) {
+          allViewHistory = [];
+          tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-slate-400"><i class="fas fa-history mr-2"></i>Chưa có lịch sử xem sản phẩm</td></tr>';
+          totalEl.textContent = '0';
+          return;
+        }
+        
+        allViewHistory = data.data;
+        renderViewHistory(allViewHistory);
+      } catch (e) {
+        console.error('Lỗi load view history:', e);
+        document.getElementById('viewhistory-table-body').innerHTML = '<tr><td colspan="7" class="text-center py-8 text-red-400"><i class="fas fa-exclamation-triangle mr-2"></i>Lỗi kết nối server</td></tr>';
+      }
+    }
+
+    function renderViewHistory(list) {
+      const tbody = document.getElementById('viewhistory-table-body');
+      const totalEl = document.getElementById('viewhistory-total');
+      
+      totalEl.textContent = list.length;
+      tbody.innerHTML = list.map(item => {
+        const dateStr = new Date(item.ngay_cap_nhat).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        return `<tr class="hover:bg-slate-50 transition">
+          <td class="px-5 py-3 text-sm font-semibold text-slate-800">${item.ho_ten || 'N/A'}</td>
+          <td class="px-5 py-3 text-sm text-slate-500">${item.email || 'N/A'}</td>
+          <td class="px-5 py-3 text-sm font-medium text-slate-700">${item.ten_sp}</td>
+          <td class="px-5 py-3">
+            <img src="${item.anh_dai_dien || 'images/placeholder.svg'}" class="w-12 h-12 rounded-lg object-cover border border-slate-100 shadow-sm" onerror="this.src='images/placeholder.svg'">
+          </td>
+          <td class="px-5 py-3 text-sm font-bold text-blue-600">${item.so_lan_xem}</td>
+          <td class="px-5 py-3 text-sm text-slate-500">${dateStr}</td>
+          <td class="px-5 py-3 text-center">
+            <button onclick="deleteAdminViewHistory(${item.ma_kh}, ${item.ma_sp})" class="p-2 bg-red-50 hover:bg-red-100 text-red-500 rounded-lg transition" title="Xóa">
+              <i class="fas fa-trash-alt text-xs"></i>
+            </button>
+          </td>
+        </tr>`;
+      }).join('');
+    }
+
+    function searchViewHistory() {
+      const query = document.getElementById('viewhistory-search').value.toLowerCase().trim();
+      if (!query) {
+        renderViewHistory(allViewHistory);
+        return;
+      }
+      
+      const filtered = allViewHistory.filter(item => 
+        (item.ho_ten && item.ho_ten.toLowerCase().includes(query)) ||
+        (item.email && item.email.toLowerCase().includes(query)) ||
+        (item.ten_sp && item.ten_sp.toLowerCase().includes(query))
+      );
+      renderViewHistory(filtered);
+    }
+
+    async function deleteAdminViewHistory(userId, productId) {
+      if (!confirm('Bạn có chắc muốn xóa lịch sử xem này?')) return;
+      try {
+        const res = await fetch(`${API_URL}/interests/admin/view-history/${userId}/${productId}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Đã xóa lịch sử xem', 'success');
+          loadAdminViewHistory();
+        } else {
+          showToast('Lỗi: ' + data.message, 'error');
+        }
+      } catch (e) {
+        showToast('Lỗi kết nối server', 'error');
+      }
+    }
+
+    async function clearAllViewHistory() {
+      if (!confirm('CẢNH BÁO: Bạn có chắc chắn muốn xóa TOÀN BỘ lịch sử xem sản phẩm của tất cả khách hàng? Hành động này không thể hoàn tác!')) return;
+      try {
+        const res = await fetch(`${API_URL}/interests/admin/view-history/clear`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Đã xóa toàn bộ lịch sử xem', 'success');
+          loadAdminViewHistory();
+        } else {
+          showToast('Lỗi: ' + data.message, 'error');
+        }
+      } catch (e) {
+        showToast('Lỗi kết nối server', 'error');
+      }
+    }
+  </script>
+
+  <!-- ==================== EMPLOYEES SECTION ==================== -->
+  <div id="section-employees" class="section-content">
+    <div class="flex justify-between items-center mb-6">
+      <div>
+        <h2 class="text-2xl font-bold text-slate-800">Quản lý Nhân viên</h2>
+        <p class="text-slate-500 text-sm mt-1">Thêm, xóa tài khoản quản trị viên</p>
+      </div>
+      <button onclick="openEmployeeModal()" class="btn-primary px-5 py-2.5 rounded-xl text-white font-medium flex items-center gap-2 shadow-lg shadow-blue-500/30 transition-all hover:scale-105">
+        <i class="fas fa-plus"></i> Thêm Nhân viên
+      </button>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 text-sm">
+              <th class="py-4 px-6 font-semibold">Tài khoản</th>
+              <th class="py-4 px-6 font-semibold">Họ tên</th>
+              <th class="py-4 px-6 font-semibold">Điện thoại</th>
+              <th class="py-4 px-6 font-semibold">Lương cơ bản</th>
+              <th class="py-4 px-6 font-semibold">Trạng thái</th>
+              <th class="py-4 px-6 font-semibold">Vai trò</th>
+              <th class="py-4 px-6 font-semibold text-right">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="employees-table-body" class="divide-y divide-slate-100">
+            <!-- Rendered by JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
       </main>
     </div>
   </div>
@@ -1589,7 +1946,7 @@
         <h3 class="text-lg font-bold text-white" id="product-modal-title">Thêm Sản phẩm mới</h3>
         <button onclick="closeProductModal()" class="text-white/80 hover:text-white"><i class="fas fa-times text-xl"></i></button>
       </div>
-      <form id="product-form" class="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+      <form id="product-form" data-autosave-id="product" class="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
         <input type="hidden" id="product-id">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <!-- Cột trái -->
@@ -1616,10 +1973,14 @@
                 </select>
               </div>
             </div>
-            <div class="grid grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <label class="block text-sm font-semibold text-slate-700 mb-2">Giá gốc <span class="text-red-500">*</span></label>
                 <input type="number" id="product-price" required min="0" class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="VD: 34990000">
+              </div>
+              <div id="product-import-price-wrapper">
+                <label class="block text-sm font-semibold text-slate-700 mb-2">Giá nhập (Vốn) <i class="fas fa-lock text-xs text-amber-500" title="Chỉ chủ cửa hàng thấy"></i></label>
+                <input type="number" id="product-import-price" min="0" class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="VD: 24000000">
               </div>
               <div>
                 <label class="block text-sm font-semibold text-slate-700 mb-2">Giá giảm</label>
@@ -1723,7 +2084,7 @@
         <h3 class="text-lg font-bold text-white" id="brand-modal-title">Thêm hãng sản xuất</h3>
         <button onclick="closeBrandModal()" class="text-white/80 hover:text-white"><i class="fas fa-times text-xl"></i></button>
       </div>
-      <form id="brand-form" class="p-6 space-y-4">
+      <form id="brand-form" data-autosave-id="brand" class="p-6 space-y-4">
         <input type="hidden" id="brand-id">
         <div>
           <label class="block text-sm font-semibold text-slate-700 mb-2">Tên hãng <span class="text-red-500">*</span></label>
@@ -1752,7 +2113,7 @@
         <h3 class="text-lg font-bold text-white" id="promotion-modal-title">Thêm Khuyến mãi</h3>
         <button onclick="closePromotionModal()" class="text-white/80 hover:text-white"><i class="fas fa-times text-xl"></i></button>
       </div>
-      <form id="promotion-form" class="p-6 space-y-4">
+      <form id="promotion-form" data-autosave-id="promotion" class="p-6 space-y-4">
         <input type="hidden" id="promotion-id">
         <div class="grid grid-cols-2 gap-4">
           <div>
@@ -1835,7 +2196,7 @@
         <h3 class="text-lg font-bold text-white" id="news-modal-title">Thêm Tin tức</h3>
         <button onclick="closeNewsModal()" class="text-white/80 hover:text-white"><i class="fas fa-times text-xl"></i></button>
       </div>
-      <form id="news-form" class="p-6 overflow-y-auto max-h-[calc(90vh-140px)] space-y-4">
+      <form id="news-form" data-autosave-id="news" class="p-6 overflow-y-auto max-h-[calc(90vh-140px)] space-y-4">
         <input type="hidden" id="news-id">
         <div>
           <label class="block text-sm font-semibold text-slate-700 mb-2">Tiêu đề <span class="text-red-500">*</span></label>
@@ -2127,9 +2488,68 @@
     </div>
   </div>
 
+  <!-- Modal Nhân Viên -->
+  <div id="employee-modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md my-8 relative animate-[fadeSlideIn_0.3s_ease-out]">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-blue-500 to-blue-600 rounded-t-2xl">
+        <h3 class="text-lg font-bold text-white">Thêm Nhân viên mới</h3>
+        <button onclick="closeEmployeeModal()" class="text-white/80 hover:text-white"><i class="fas fa-times text-xl"></i></button>
+      </div>
+      <div class="p-6">
+        <form id="employee-form" onsubmit="saveEmployee(event)">
+          <input type="hidden" id="emp-id" value="">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Tài khoản <span class="text-red-500">*</span></label>
+              <input type="text" id="emp-username" required class="w-full px-4 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Họ và tên <span class="text-red-500">*</span></label>
+              <input type="text" id="emp-fullname" required class="w-full px-4 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Mật khẩu <span class="text-red-500" id="emp-password-req">*</span></label>
+                <input type="password" id="emp-password" required class="w-full px-4 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" placeholder="Nhập mật khẩu">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                <input type="email" id="emp-email" class="w-full px-4 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Điện thoại</label>
+                <input type="text" id="emp-phone" class="w-full px-4 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Lương cơ bản (VNĐ)</label>
+                <input type="number" id="emp-salary" value="0" min="0" class="w-full px-4 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Quyền hạn <span class="text-red-500">*</span></label>
+              <select id="emp-role" required class="w-full px-4 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition bg-white">
+                <option value="nhanvien">Nhân viên (Chỉ xem/xử lý đơn)</option>
+                <option value="superadmin">Chủ cửa hàng (Toàn quyền)</option>
+              </select>
+            </div>
+          </div>
+          <div class="mt-6 flex justify-end gap-3">
+            <button type="button" onclick="closeEmployeeModal()" class="px-4 py-2 border border-slate-300 rounded-xl font-medium text-slate-700 hover:bg-slate-100 transition-colors">Hủy</button>
+            <button type="submit" class="px-5 py-2 btn-primary text-white rounded-xl font-medium shadow-lg shadow-blue-500/30">Lưu lại</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <script>
     // ==================== GLOBAL VARIABLES ====================
-    const API_URL = 'http://localhost:3000/api';
+    if (window.location.protocol === 'file:') {
+        alert("LỖI BẢO MẬT TRÌNH DUYỆT:\n\nBạn đang mở file trực tiếp (file:///). Trình duyệt sẽ CHẶN tính năng đăng nhập.\n\nVui lòng truy cập bằng đường dẫn: http://localhost:3000/admin.html");
+    }
+    const API_URL = window.location.hostname === '127.0.0.1' ? 'http://127.0.0.1:3000/api' : 'http://localhost:3000/api';
 
     // Helper: Override fetch để TẤT CẢ API calls đều gửi session cookie
     let _isRedirecting = false; // Tránh hiện nhiều alert khi đang redirect
@@ -2253,13 +2673,43 @@
             document.getElementById('admin-name').textContent = admin.ho_ten;
           }
           if (admin.quyen) {
-            document.getElementById('admin-role').textContent = admin.quyen === 'super_admin' ? 'Super Admin' : 'Quản trị viên';
+            document.getElementById('admin-role').textContent = admin.quyen === 'superadmin' ? 'Super Admin' : 'Quản trị viên';
           }
           if (admin.avt) {
             const avatarEl = document.getElementById('admin-avatar');
             if (avatarEl) {
               avatarEl.innerHTML = `<img src="${admin.avt}" alt="Admin" class="w-full h-full object-cover" onerror="this.style.display='none'; this.parentElement.innerHTML='${(admin.ho_ten || 'AD').charAt(0).toUpperCase()}'">`;
             }
+          }
+          
+          // === RBAC: Ẩn tính năng nhạy cảm với Nhân viên ===
+          if (admin.quyen !== 'superadmin') {
+            const hiddenNavs = [
+              'nav-dashboard',
+              'nav-chatbot',
+              'nav-inventory',
+              'nav-customers',
+              'nav-promotions',
+              'nav-news',
+              'nav-employees',
+              'nav-contacts',
+              'nav-interests',
+              'settings-btn',
+              'profit-card',
+              'product-import-price-wrapper'
+            ];
+            hiddenNavs.forEach(id => {
+              const el = document.getElementById(id);
+              if (el) el.style.display = 'none';
+            });
+            // Ẩn nội dung dashboard đang hiện mặc định
+            const dashboardSection = document.getElementById('dashboard-section');
+            if (dashboardSection) dashboardSection.classList.add('hidden');
+            
+            // Chuyển trang mặc định về đơn hàng
+            setTimeout(() => {
+              switchTab('orders');
+            }, 100);
           }
         } catch(e) {
           console.error('Error parsing admin data:', e);
@@ -2324,7 +2774,7 @@
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { display: false }
+            legend: { display: true, position: 'top', labels: { boxWidth: 12, padding: 15, font: { size: 12 } } }
           }
         };
 
@@ -2348,6 +2798,21 @@
             pointBorderWidth: 2,
             pointRadius: 4,
             pointHoverRadius: 6
+          },
+          {
+            label: 'Lợi nhuận',
+            data: [],
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: '#10b981',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            hidden: adminInfo && adminInfo.quyen !== 'superadmin' // Ẩn với nhân viên
           }]
         },
         options: {
@@ -2363,7 +2828,10 @@
           plugins: {
             tooltip: {
               callbacks: {
-                label: ctx => `Doanh thu: ${formatCurrency(ctx.raw)}`
+                label: ctx => {
+                    const label = ctx.dataset.label;
+                    return `${label}: ${formatCurrency(ctx.raw)}`;
+                }
               }
             }
           }
@@ -2600,12 +3068,80 @@
       }
     }
     
-    async function loadMonthlyStats() {
-      const month = document.getElementById('filter-month').value;
-      const year = document.getElementById('filter-year').value;
+    function toggleFilterType() {
+      const type = document.getElementById('filter-type').value;
+      const monthGroup = document.getElementById('filter-month-group');
+      const customGroup = document.getElementById('filter-custom-group');
       
-      if (!month || !year) {
-        showToast('Vui lòng chọn tháng và năm', 'error');
+      if (type === 'month') {
+        monthGroup.classList.remove('hidden');
+        monthGroup.classList.add('flex');
+        customGroup.classList.add('hidden');
+        customGroup.classList.remove('flex');
+      } else if (type === 'custom') {
+        monthGroup.classList.add('hidden');
+        monthGroup.classList.remove('flex');
+        customGroup.classList.remove('hidden');
+        customGroup.classList.add('flex');
+      } else {
+        monthGroup.classList.add('hidden');
+        monthGroup.classList.remove('flex');
+        customGroup.classList.add('hidden');
+        customGroup.classList.remove('flex');
+      }
+    }
+
+    function getFilterDateRange() {
+      const type = document.getElementById('filter-type').value;
+      const now = new Date();
+      let start, end;
+      
+      const formatDate = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+
+      if (type === 'today') {
+        start = formatDate(now);
+        end = start;
+      } else if (type === 'yesterday') {
+        const yesterday = new Date(now);
+        yesterday.setDate(now.getDate() - 1);
+        start = formatDate(yesterday);
+        end = start;
+      } else if (type === 'this_week') {
+        const firstDay = new Date(now.setDate(now.getDate() - now.getDay() + 1));
+        const lastDay = new Date(now.setDate(now.getDate() - now.getDay() + 7));
+        start = formatDate(firstDay);
+        end = formatDate(lastDay);
+      } else if (type === 'this_month') {
+        now.setDate(1); // Reset again to safely get first day
+        start = formatDate(now);
+        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        end = formatDate(lastDay);
+      } else if (type === 'month') {
+        const month = document.getElementById('filter-month').value;
+        const year = document.getElementById('filter-year').value;
+        if (!month || !year) return null;
+        start = `${year}-${String(month).padStart(2, '0')}-01`;
+        const lastDay = new Date(year, month, 0);
+        end = formatDate(lastDay);
+      } else if (type === 'custom') {
+        start = document.getElementById('filter-start-date').value;
+        end = document.getElementById('filter-end-date').value;
+        if (!start || !end) return null;
+      }
+
+      return { startDate: start, endDate: end };
+    }
+
+    async function loadCustomStats() {
+      const range = getFilterDateRange();
+      
+      if (!range || !range.startDate || !range.endDate) {
+        showToast('Vui lòng chọn hoặc nhập đầy đủ ngày bắt đầu và kết thúc', 'error');
         return;
       }
       
@@ -2614,15 +3150,28 @@
         document.getElementById('monthly-stats-section').classList.remove('hidden');
         document.getElementById('monthly-products-list').innerHTML = '<div class="text-center py-6 text-slate-400"><i class="fas fa-spinner fa-spin mr-2"></i>Đang tải...</div>';
         
-        const res = await fetch(`${API_URL}/admin/dashboard/monthly-stats?month=${month}&year=${year}`);
+        const res = await fetch(`${API_URL}/admin/dashboard/custom-stats?startDate=${range.startDate}&endDate=${range.endDate}`);
         const data = await res.json();
         
         if (data.success) {
           // Update label
-          document.getElementById('selected-month-label').textContent = `${month}/${year}`;
+          const type = document.getElementById('filter-type').value;
+          const typeLabels = {
+            today: 'Hôm nay', yesterday: 'Hôm qua', this_week: 'Tuần này', this_month: 'Tháng này', month: 'Tháng đã chọn', custom: 'Tùy chọn'
+          };
+          const label = type === 'custom' || type === 'month' ? `(${range.startDate} đến ${range.endDate})` : typeLabels[type];
+          document.getElementById('selected-month-label').textContent = label;
           
           // Update stats
           document.getElementById('monthly-revenue').textContent = formatCurrency(data.data.revenue);
+          if (data.data.profit !== undefined) {
+             document.getElementById('monthly-profit').textContent = formatCurrency(data.data.profit);
+             if (adminInfo && adminInfo.quyen !== 'superadmin') {
+                document.getElementById('custom-profit-card').style.display = 'none';
+             } else {
+                document.getElementById('custom-profit-card').style.display = 'block';
+             }
+          }
           document.getElementById('monthly-orders').textContent = data.data.orders;
           document.getElementById('monthly-products-sold').textContent = data.data.productsSold;
           document.getElementById('monthly-avg-order').textContent = formatCurrency(data.data.avgOrderValue);
@@ -2633,12 +3182,12 @@
           // Scroll to section
           document.getElementById('monthly-stats-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
           
-          showToast(`Đã tải thống kê tháng ${month}/${year}`, 'success');
+          showToast(`Đã tải thống kê chi tiết`, 'success');
         } else {
           showToast('Lỗi: ' + data.message, 'error');
         }
       } catch (error) {
-        console.error('Error loading monthly stats:', error);
+        console.error('Error loading custom stats:', error);
         showToast('Không thể kết nối server', 'error');
         document.getElementById('monthly-products-list').innerHTML = '<div class="text-center py-6 text-red-400"><i class="fas fa-exclamation-triangle mr-2"></i>Lỗi tải dữ liệu</div>';
       }
@@ -2664,7 +3213,8 @@
           </div>
           <div class="text-right">
             <p class="text-sm font-bold text-emerald-600">${formatCurrency(p.revenue)}</p>
-            <p class="text-xs text-slate-400">${p.quantity} SP</p>
+            ${p.profit !== undefined ? `<p class="text-xs font-semibold text-green-500 mt-1">LN: ${formatCurrency(p.profit)}</p>` : ''}
+            <p class="text-xs text-slate-400 mt-0.5">${p.quantity} SP</p>
           </div>
         </div>
       `).join('');
@@ -2676,10 +3226,10 @@
     
     function resetToCurrentMonth() {
       const currentDate = new Date();
-      document.getElementById('filter-month').value = currentDate.getMonth() + 1;
-      document.getElementById('filter-year').value = currentDate.getFullYear();
+      document.getElementById('filter-type').value = 'this_month';
+      toggleFilterType();
       hideMonthlyStats();
-      showToast('Đã reset về tháng hiện tại', 'info');
+      showToast('Đã reset bộ lọc', 'info');
     }
 
     async function loadRevenueData(period) {
@@ -2695,6 +3245,7 @@
         if (data.success) {
           let labels = data.data.labels;
           let revenueData = data.data.revenueData.map(d => d.revenue);
+          let profitData = data.data.revenueData.map(d => d.profit || 0);
 
           // Filter data based on period
           if (period === 'quarter') {
@@ -2702,15 +3253,23 @@
             const startMonth = Math.max(0, currentMonth - 2);
             labels = labels.slice(startMonth, currentMonth + 1);
             revenueData = revenueData.slice(startMonth, currentMonth + 1);
+            profitData = profitData.slice(startMonth, currentMonth + 1);
           } else if (period === 'halfyear') {
             const currentMonth = new Date().getMonth();
             const startMonth = Math.max(0, currentMonth - 5);
             labels = labels.slice(startMonth, currentMonth + 1);
             revenueData = revenueData.slice(startMonth, currentMonth + 1);
+            profitData = profitData.slice(startMonth, currentMonth + 1);
           }
 
           revenueChart.data.labels = labels;
           revenueChart.data.datasets[0].data = revenueData;
+          if (revenueChart.data.datasets[1]) {
+             revenueChart.data.datasets[1].data = profitData;
+             if (adminInfo && adminInfo.quyen !== 'superadmin') {
+                revenueChart.data.datasets[1].hidden = true;
+             }
+          }
           revenueChart.update();
 
           // Update display
@@ -2732,6 +3291,18 @@
       document.getElementById('stat-revenue').textContent = formatCurrency(data.revenue.current);
       document.getElementById('revenue-last-month').textContent = formatCurrency(data.revenue.previous);
       updateChangeIndicator('revenue-change', data.revenue.change);
+
+      // Profit tháng này (Nếu có)
+      if (data.profit) {
+        document.getElementById('stat-profit').textContent = formatCurrency(data.profit.current);
+        document.getElementById('profit-last-month').textContent = formatCurrency(data.profit.previous);
+        updateChangeIndicator('profit-change', data.profit.change);
+        
+        // Hide profit card if user is not superadmin
+        if (adminInfo && adminInfo.quyen !== 'superadmin') {
+          document.getElementById('profit-card').style.display = 'none';
+        }
+      }
 
       // Revenue tuần
       document.getElementById('stat-revenue-week').textContent = formatCurrency(data.revenue.week || 0);
@@ -2967,11 +3538,21 @@
       // Hide all sections
       document.querySelectorAll('.section-content').forEach(s => s.classList.remove('active'));
       // Show selected section
-      document.getElementById(`section-${sectionId}`).classList.add('active');
+      const targetSection = document.getElementById(`section-${sectionId}`);
+      if(targetSection) targetSection.classList.add('active');
 
       // Update sidebar
       document.querySelectorAll('.sidebar-item').forEach(item => item.classList.remove('active'));
-      document.getElementById(`nav-${sectionId}`).classList.add('active');
+      const targetNav = document.getElementById(`nav-${sectionId}`);
+      if(targetNav) targetNav.classList.add('active');
+
+      // Load specific data
+      if (sectionId === 'employees') {
+        loadEmployees();
+      }
+      if (sectionId === 'interests') {
+        loadAdminInterests();
+      }
 
       // Update page title
       const titles = {
@@ -2986,7 +3567,9 @@
         news: 'Quản lý Tin tức',
         'chatbot-rag': 'Quản lý Chatbot Knowledge',
         notifications: 'Quản lý Thông báo',
-        contacts: 'Quản lý Liên hệ'
+        contacts: 'Quản lý Liên hệ',
+        employees: 'Quản lý Nhân viên',
+        interests: 'Sở thích Khách hàng'
       };
       document.getElementById('page-title').innerHTML = `<span class="w-2 h-8 bg-gradient-to-b from-blue-500 to-blue-600 rounded-full"></span>${titles[sectionId] || 'Tổng quan'}`;
     }
@@ -2998,9 +3581,66 @@
       loadRevenueData(period);
     }
 
-    function editProduct(productId) {
+    async function editProduct(productId) {
       showSection('products');
-      // TODO: Open edit modal for product
+      const product = allProducts.find(p => p.ma_sp === productId);
+      if (!product) return;
+
+      document.getElementById('edit-product-id').value = product.ma_sp;
+      document.getElementById('edit-product-name').value = product.ten_sp;
+      document.getElementById('edit-product-price').value = product.gia;
+      document.getElementById('edit-product-stock').value = product.so_luong_ton;
+      document.getElementById('edit-product-desc').value = product.mo_ta_ngan || '';
+      document.getElementById('edit-product-image').value = product.anh_dai_dien || '';
+
+      document.getElementById('product-edit-modal').classList.remove('hidden');
+    }
+
+    function closeProductEditModal() {
+      document.getElementById('product-edit-modal').classList.add('hidden');
+    }
+
+    async function updateProduct(event) {
+      event.preventDefault();
+      const btn = document.getElementById('btn-update-product');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Đang lưu...';
+      btn.disabled = true;
+
+      const productId = document.getElementById('edit-product-id').value;
+      const data = {
+        ten_sp: document.getElementById('edit-product-name').value,
+        gia: document.getElementById('edit-product-price').value,
+        so_luong_ton: document.getElementById('edit-product-stock').value,
+        mo_ta_ngan: document.getElementById('edit-product-desc').value,
+        anh_dai_dien: document.getElementById('edit-product-image').value,
+        // Dữ liệu dummy để test, lý tưởng nên fetch toàn bộ thông tin gốc nếu không muốn bị ghi đè
+        ma_hang: 1, 
+        bo_nho: 128
+      };
+
+      try {
+        const res = await fetch(`${API_URL}/admin/products/${productId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        
+        if (result.success) {
+          showToast('Cập nhật sản phẩm thành công', 'success');
+          closeProductEditModal();
+          // Load lại danh sách, ở đây có thể gọi loadProducts() hoặc window.location.reload()
+          window.location.reload(); 
+        } else {
+          showToast(result.message || 'Lỗi cập nhật', 'error');
+        }
+      } catch (error) {
+        showToast('Lỗi kết nối máy chủ', 'error');
+      } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      }
     }
 
     // ==================== UTILITY FUNCTIONS ====================
@@ -3712,6 +4352,7 @@
         allBrands.map(b => `<option value="${b.ma_hang}">${b.ten_hang}</option>`).join('');
       document.getElementById('product-modal').classList.remove('hidden');
       document.getElementById('product-modal').classList.add('flex');
+      setTimeout(() => { adminAutoSave.promptRestore('product', document.getElementById('product-form'), document.getElementById('product-form').parentElement); }, 100);
     }
 
     function closeProductModal() {
@@ -3871,6 +4512,7 @@
       const brand = document.getElementById('product-brand').value;
       const price = document.getElementById('product-price').value;
       const discountPrice = document.getElementById('product-discount-price').value;
+      const importPrice = document.getElementById('product-import-price').value;
       const stock = document.getElementById('product-stock').value || 0;
       const storage = document.getElementById('product-storage').value;
       const colors = document.getElementById('product-colors').value;
@@ -3904,6 +4546,7 @@
         ten_sp: name,
         ma_hang: brand,
         gia: parseFloat(price),
+        gia_nhap: importPrice ? parseFloat(importPrice) : null,
         gia_giam: discountPrice ? parseFloat(discountPrice) : null,
         so_luong_ton: parseInt(stock),
         bo_nho: storage,
@@ -3944,6 +4587,7 @@
           }
           
           alert(id ? 'Cập nhật Sản phẩm thành công!' : 'Thêm Sản phẩm thành công!');
+          adminAutoSave.clearDraft('product');
           closeProductModal();
           loadProducts();
         } else {
@@ -3979,6 +4623,7 @@
         document.getElementById('product-name').value = product.ten_sp || '';
         document.getElementById('product-brand').value = product.ma_hang || '';
         document.getElementById('product-price').value = product.gia || '';
+        document.getElementById('product-import-price').value = product.gia_nhap || '';
         document.getElementById('product-discount-price').value = product.gia_giam || '';
         document.getElementById('product-stock').value = product.so_luong_ton || 0;
         document.getElementById('product-storage').value = product.bo_nho || '128GB';
@@ -4756,6 +5401,7 @@
       
       document.getElementById('news-modal').classList.remove('hidden');
       document.getElementById('news-modal').classList.add('flex');
+      setTimeout(() => { adminAutoSave.promptRestore('news', document.getElementById('news-form'), document.getElementById('news-form').parentElement); }, 100);
     }
 
     function closeNewsModal() {
@@ -4842,6 +5488,7 @@
         
         if (data.success) {
           alert(id ? 'Cập nhật Tin tức thành công!' : 'Đăng Tin tức thành công!');
+          adminAutoSave.clearDraft('news');
           closeNewsModal();
           loadNews();
         } else {
@@ -5391,6 +6038,7 @@
         case 'news': loadNews(); break;
         case 'notifications': loadNotifications(); break;
         case 'contacts': loadContacts(); break;
+        case 'interests': loadAdminInterests(); break;
       }
     };
 
@@ -5608,6 +6256,165 @@
       }
     }
     
+    // ==================== EMPLOYEES LOGIC ====================
+    let allEmployees = [];
+
+    async function loadEmployees() {
+      if (adminInfo?.quyen !== 'superadmin') return; // Security guard
+      
+      try {
+        const res = await fetch(`${API_URL}/admin/employees`);
+        const data = await res.json();
+        
+        if (data.success) {
+          allEmployees = data.data;
+          const tbody = document.getElementById('employees-table-body');
+          if(!tbody) return;
+          
+          tbody.innerHTML = allEmployees.map(emp => `
+            <tr class="hover:bg-slate-50 transition-colors">
+              <td class="py-4 px-6">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs">
+                    ${emp.ho_ten ? emp.ho_ten.charAt(0).toUpperCase() : 'A'}
+                  </div>
+                  <span class="font-medium text-slate-800">${emp.tai_khoan}</span>
+                </div>
+              </td>
+              <td class="py-4 px-6 text-slate-600">${emp.ho_ten}</td>
+              <td class="py-4 px-6 text-slate-600">${emp.so_dt || '-'}</td>
+              <td class="py-4 px-6 text-slate-600 font-medium">${parseInt(emp.luong_co_ban || 0).toLocaleString('vi-VN')} đ</td>
+              <td class="py-4 px-6">
+                <span class="px-2.5 py-1 text-xs font-medium rounded-full border ${emp.trang_thai === 'hoat_dong' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'}">
+                  ${emp.trang_thai === 'hoat_dong' ? 'Hoạt động' : 'Đã nghỉ việc'}
+                </span>
+              </td>
+              <td class="py-4 px-6">
+                <span class="px-2.5 py-1 text-xs font-medium rounded-full border ${emp.quyen === 'superadmin' ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-blue-50 text-blue-700 border-blue-200'}">
+                  ${emp.quyen === 'superadmin' ? '<i class="fas fa-crown mr-1"></i>Chủ cửa hàng' : '<i class="fas fa-user mr-1"></i>Nhân viên'}
+                </span>
+              </td>
+              <td class="py-4 px-6 text-right">
+                <div class="flex items-center justify-end gap-2">
+                  <button onclick="editEmployee(${emp.ma_admin})" class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors" title="Sửa thông tin">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button onclick="deleteEmployee(${emp.ma_admin})" class="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors" title="Xóa tài khoản/Cho nghỉ việc">
+                    <i class="fas fa-user-minus"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `).join('');
+        }
+      } catch (e) {
+        console.error('Error loading employees:', e);
+      }
+    }
+
+    function openEmployeeModal() {
+      document.getElementById('employee-form').reset();
+      document.getElementById('emp-id').value = '';
+      document.getElementById('emp-password').required = true;
+      document.getElementById('emp-password').placeholder = 'Nhập mật khẩu';
+      document.getElementById('emp-password-req').style.display = 'inline';
+      document.querySelector('#employee-modal h3').textContent = 'Thêm Nhân viên mới';
+      document.getElementById('employee-modal').classList.remove('hidden');
+      document.getElementById('employee-modal').classList.add('flex');
+    }
+
+    function editEmployee(id) {
+      const emp = allEmployees.find(e => e.ma_admin === id);
+      if (!emp) return;
+      
+      document.getElementById('employee-form').reset();
+      document.getElementById('emp-id').value = emp.ma_admin;
+      document.getElementById('emp-username').value = emp.tai_khoan;
+      document.getElementById('emp-fullname').value = emp.ho_ten;
+      document.getElementById('emp-email').value = emp.email || '';
+      document.getElementById('emp-phone').value = emp.so_dt || '';
+      document.getElementById('emp-salary').value = emp.luong_co_ban || 0;
+      document.getElementById('emp-role').value = emp.quyen || 'nhanvien';
+      
+      // Khong bat buoc nhap mat khau khi sua
+      document.getElementById('emp-password').required = false;
+      document.getElementById('emp-password').placeholder = 'Để trống nếu không đổi';
+      document.getElementById('emp-password-req').style.display = 'none';
+      
+      document.querySelector('#employee-modal h3').textContent = 'Cập nhật Nhân viên';
+      document.getElementById('employee-modal').classList.remove('hidden');
+      document.getElementById('employee-modal').classList.add('flex');
+    }
+
+    function closeEmployeeModal() {
+      document.getElementById('employee-modal').classList.add('hidden');
+      document.getElementById('employee-modal').classList.remove('flex');
+    }
+
+    async function saveEmployee(e) {
+      e.preventDefault();
+      const btn = e.target.querySelector('button[type="submit"]');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
+      btn.disabled = true;
+
+      const empId = document.getElementById('emp-id').value;
+      const isUpdate = empId !== '';
+
+      const bodyData = {
+        tai_khoan: document.getElementById('emp-username').value,
+        ho_ten: document.getElementById('emp-fullname').value,
+        mat_khau: document.getElementById('emp-password').value,
+        email: document.getElementById('emp-email').value,
+        so_dt: document.getElementById('emp-phone').value,
+        luong_co_ban: document.getElementById('emp-salary').value,
+        trang_thai: 'hoat_dong',
+        quyen: document.getElementById('emp-role').value
+      };
+
+      try {
+        const url = isUpdate ? `${API_URL}/admin/employees/${empId}` : `${API_URL}/admin/employees`;
+        const method = isUpdate ? 'PUT' : 'POST';
+        
+        const res = await fetch(url, {
+          method: method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(bodyData)
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+          showToast(isUpdate ? 'Cập nhật nhân viên thành công!' : 'Thêm nhân viên thành công!', 'success');
+          closeEmployeeModal();
+          loadEmployees();
+        } else {
+          showToast(data.message || 'Có lỗi xảy ra', 'error');
+        }
+      } catch (err) {
+        showToast('Lỗi kết nối máy chủ', 'error');
+      } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      }
+    }
+
+    async function deleteEmployee(id) {
+      if (!confirm('Bạn có chắc chắn muốn xóa tài khoản này không? Hành động này không thể hoàn tác.')) return;
+      
+      try {
+        const res = await fetch(`${API_URL}/admin/employees/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Đã xóa nhân viên', 'success');
+          loadEmployees();
+        } else {
+          showToast(data.message || 'Có lỗi xảy ra', 'error');
+        }
+      } catch (err) {
+        showToast('Lỗi kết nối máy chủ', 'error');
+      }
+    }
+    
     // Load settings sẽ được gọi từ loadDashboardData (không gọi riêng để tránh race condition auth)
   </script>
   
@@ -5658,6 +6465,63 @@
       </div>
     </div>
   </div>
+  <!-- Edit Product Modal -->
+  <div id="product-edit-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="bg-gradient-to-r from-emerald-500 to-teal-600 px-6 py-4 flex items-center justify-between shrink-0">
+        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+          <i class="fas fa-edit"></i> Cập nhật sản phẩm
+        </h3>
+        <button onclick="closeProductEditModal()" class="text-white/80 hover:text-white transition">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+      
+      <div class="p-6 overflow-y-auto flex-1">
+        <form id="edit-product-form" onsubmit="updateProduct(event)">
+          <input type="hidden" id="edit-product-id">
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="col-span-2">
+              <label class="block text-sm font-medium text-slate-700 mb-1">Tên sản phẩm *</label>
+              <input type="text" id="edit-product-name" required class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition outline-none">
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Giá bán (VNĐ) *</label>
+              <input type="number" id="edit-product-price" required min="0" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition outline-none">
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Số lượng tồn kho *</label>
+              <input type="number" id="edit-product-stock" required min="0" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition outline-none">
+            </div>
+            
+            <div class="col-span-2">
+              <label class="block text-sm font-medium text-slate-700 mb-1">Đường dẫn ảnh</label>
+              <input type="text" id="edit-product-image" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition outline-none" placeholder="VD: dt/iphone-15.jpg">
+            </div>
+            
+            <div class="col-span-2">
+              <label class="block text-sm font-medium text-slate-700 mb-1">Mô tả ngắn</label>
+              <textarea id="edit-product-desc" rows="3" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition outline-none"></textarea>
+            </div>
+          </div>
+          
+          <div class="mt-6 flex justify-end gap-3 pt-4 border-t border-slate-100">
+            <button type="button" onclick="closeProductEditModal()" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl transition">
+              Hủy
+            </button>
+            <button type="submit" id="btn-update-product" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl shadow-lg shadow-emerald-500/30 transition flex items-center gap-2">
+              <i class="fas fa-save"></i> Lưu thay đổi
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+<script src="js/admin-autosave.js"></script>
 <script src="chatbot-knowledge.js"></script>
 </body>
 </html>

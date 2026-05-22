@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sơ Đồ Hoạt Động - Hệ Thống Cửa Hàng Điện Thoại GDDA</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f4f4;
+            padding: 20px;
+            color: #333;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            padding: 30px;
+        }
+        h1 { text-align: center; color: #222; margin-bottom: 5px; font-size: 2.2em; }
+        .subtitle { text-align: center; color: #666; margin-bottom: 30px; }
+        .toc {
+            background: #fafafa;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 40px;
+        }
+        .toc h2 { color: #333; margin-bottom: 10px; }
+        .toc ul { list-style: none; }
+        .toc li { padding: 6px 0; border-bottom: 1px solid #eee; }
+        .toc li:last-child { border-bottom: none; }
+        .toc a { color: #0056b3; text-decoration: none; }
+        .toc a:hover { text-decoration: underline; }
+        .diagram-section { margin-bottom: 50px; page-break-inside: avoid; }
+        .diagram-title {
+            background: #eee;
+            color: #333;
+            padding: 12px 20px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            margin-bottom: 15px;
+            font-size: 1.6em;
+        }
+        .diagram-description {
+            background: #fafafa;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .diagram {
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 30px;
+            overflow-x: auto;
+        }
+        .activity-diagram {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            min-width: 600px;
+        }
+        
+        .start-end {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: black;
+            font-size: 0.9em;
+            gap: 8px;
+        }
+
+        .activity-diagram > .start-end:first-of-type::before {
+            content: '';
+            display: block;
+            width: 28px;
+            height: 28px;
+            background: black;
+            border-radius: 50%;
+        }
+
+        .activity-diagram > .start-end:last-of-type {
+            flex-direction: column-reverse;
+        }
+
+        .activity-diagram > .start-end:last-of-type::after {
+            content: '';
+            display: block;
+            width: 20px;
+            height: 20px;
+            background: black;
+            border-radius: 50%;
+            box-shadow: 0 0 0 3px white, 0 0 0 4.5px black;
+            margin: 5px;
+        }
+
+        .activity {
+            background: white;
+            color: black;
+            border: 1px solid black;
+            padding: 12px 25px;
+            border-radius: 20px;
+            min-width: 200px;
+            text-align: center;
+            font-size: 0.95em;
+        }
+
+        .decision {
+            width: 80px;
+            height: 80px;
+            background: white;
+            border: 1px solid black;
+            transform: rotate(45deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            margin: 15px 0;
+        }
+
+        .decision-text {
+            transform: rotate(-45deg);
+            text-align: center;
+            font-size: 0.85em;
+            width: 100px;
+            position: absolute;
+        }
+
+        .arrow {
+            width: 1px;
+            height: 35px;
+            background: black;
+            position: relative;
+        }
+
+        .arrow::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 7px solid black;
+        }
+
+        .arrow-label {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.85em;
+            color: black;
+            white-space: nowrap;
+        }
+        .parallel-split {
+            width: 250px;
+            height: 4px;
+            background: black;
+        }
+        .parallel-container {
+            display: flex;
+            gap: 40px;
+            justify-content: center;
+            align-items: flex-start;
+        }
+        .parallel-branch {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+        .note {
+            background: #fafafa;
+            border: 1px dashed #666;
+            padding: 10px 15px;
+            font-size: 0.9em;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        @media print {
+            body { background: white; padding: 0; }
+            .container { border: none; }
+            .diagram-section { page-break-after: always; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 SƠ ĐỒ HOẠT ĐỘNG DA GDDA</h1>
+        <div class="subtitle">Hệ Thống Bán Lẻ Điện Thoại & Cửa Hàng Điện Tử Tích Hợp AI</div>
+
+        <!-- Mục lục -->
+        <div class="toc">
+            <h2>📋 Danh Sách Sơ Đồ Hoạt Động (10 Core Flows)</h2>
+            <ul>
+                <li><a href="#diagram1">1. Đăng Ký & Đăng Nhập Hệ Thống</a></li>
+                <li><a href="#diagram2">2. Tìm Kiếm & Lọc Sản Phẩm (Điện Thoại)</a></li>
+                <li><a href="#diagram3">3. Quản Lý Giỏ Hàng</a></li>
+                <li><a href="#diagram4">4. Thanh Toán Đơn Hàng (Checkout)</a></li>
+                <li><a href="#diagram5">5. Tư Vấn Bằng AI Chatbot RAG</a></li>
+                <li><a href="#diagram6">6. Gợi Ý Sản Phẩm Thông Minh (Recommend Engine)</a></li>
+                <li><a href="#diagram7">7. Quản Lý Tài Khoản & Theo Dõi Đơn Hàng</a></li>
+                <li><a href="#diagram8">8. Đọc Tin Tức & Cập Nhật Khuyến Mãi</a></li>
+                <li><a href="#diagram9">9. Đánh Giá Sản Phẩm (Reviews)</a></li>
+                <li><a href="#diagram10">10. Quản Lý Của Admin (Sản Phẩm, Đơn, Chatbot Knowledge)</a></li>
+            </ul>
+        </div>
+
+        <!-- Sơ đồ 1 -->
+        <div class="diagram-section" id="diagram1">
+            <h2 class="diagram-title">1. Đăng Ký & Đăng Nhập Hệ Thống</h2>
+            <div class="diagram-description">
+                <strong>Mô tả:</strong> Luồng xử lý người dùng tham gia ứng dụng. Hỗ trợ tạo tài khoản và xác thực.
+            </div>
+            <div class="diagram">
+                <div class="activity-diagram">
+                    <div class="start-end">Bắt đầu</div>
+                    <div class="arrow"></div>
+                    <div class="decision">
+                        <div class="decision-text">Hành<br>động?</div>
+                    </div>
+                    <div class="parallel-split"></div>
+                    <div class="parallel-container">
+                        <div class="parallel-branch">
+                            <div class="activity">Đăng ký</div>
+                            <div class="arrow"></div>
+                            <div class="activity">Điền Tên, Email, Mật khẩu</div>
+                            <div class="arrow"></div>
+                            <div class="activity">Hệ thống xử lý & Valid API</div>
+                            <div class="arrow"></div>
+                            <div class="activity">Lưu Database</div>
+                        </div>
+                        <div class="parallel-branch">
+                            <div class="activity">Đăng nhập</div>
+                            <div class="arrow"></div>
+                            <div class="activity">Nhập Email & Password</div>
+                            <div class="arrow"></div>
+                            <div class="activity">Kiểm tra thông tin</div>
+                        </div>
+                    </div>
+                    <div class="parallel-split"></div>
+                    <div class="arrow"></div>
+                    <div class="activity">Cấp Token (Session/Passport)</div>
+                    <div class="arrow"></div>
+                    <div class="activity">Chuyển hướng trang chủ / Chức năng</div>
+                    <div class="arrow"></div>
+                    <div class="start-end">Kết thúc</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sơ đồ 2 -->
+        <div class="diagram-section" id="diagram2">
+            <h2 class="diagram-title">2. Tìm Kiếm & Lọc Sản Phẩm</h2>
+            <div class="diagram-description">
+                <strong>Mô tả:</strong> Khách hàng tìm kiếm các loại máy (iPhone, Samsung, OPPO) và xem chi tiết cấu hình.
+            </div>
+            <div class="diagram">
+                <div class="activity-diagram">
+                    <div class="start-end">Bắt đầu</div>
+                    <div class="arrow"></div>
+                    <div class="activity">Khách hàng nhập từ khóa tìm kiếm (VD: "iPhone 16")</div>
+                    <div class="arrow"></div>
+                    <div class="activity">Hệ thống gọi Route /search & /products</div>
+                    <div class="arrow"></div>
+                    <div class="activity">Trả về danh sách sản phẩm</div>
+                    <div class="arrow"></div>
+                    <div class="activity">Khách click xem chi tiết sản phẩm</div>
+                    <div class="arrow"></div>
+                    <div class="activity">Hiển thị giá, ảnh, cấu hình (product-detail.html)</div>
+                    <div class="arrow"></div>
+                    <div class="start-end">Kết thúc</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sơ đồ 3 -->
+        <div class="diagram-section" id="diagram3">
+            <h2 class="diagram-title">3. Quản Lý Giỏ Hàng</h2>
+            <div class="diagram-description">
+                <strong>Mô tả:</strong> Thêm, sửa, xóa sản phẩm trong giỏ hàng trước khi đặt.
+            </div>
+            <div class="diagram">
+                <div class="activity-diagram">
+                    <div class="start-end">Bắt đầu</div>
+                    <div class="arrow"></div>
+                    <div class="activity">Khách đang ở trang chi tiết sản phẩm</div>
+                    <div class="arrow"></div>
+                    <div class="decision">
+                        <div class="decision-text">Chọn<br>Thao tác</div>
+                    </div>
+                    <div class="arrow"><span class="arrow-label">Thêm vào giỏ</span></div>
+                    <div class="activity">Lưu sản phẩm vào Cart State (localStorage/Session)</div>
+                    <div class="arrow"></div>
+                    <div class="activity">Vào trang Giỏ hàng (cart.html)</div>
+                    <div class="arrow"></div>
+                    <div class="activity">Sửa số lượng / Áp dụng mã giảm giá</div>
+                    <div class="arrow"></div>
+                    <div class="activity">Cập nhật Tổng tiền</div>
+                    <div class="arrow"></div>
+                    <div class="start-end">Kết thúc</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sơ đồ 4: Thanh toán -->
+        <div class="diagram-section" id="diagram4">
+            <h2 class="diagram-title">4. Thanh Toán Đơn Hàng (Checkout)</h2>
+            <div class="diagram-description">
+                <strong>Mô tả:</strong> Chuyển hóa giỏ hàng thành đơn hàng hoàn chỉnh (checkout.js, payment.js).
+            </div>
+            <div class="diagram">
+                <div class="activity-diagram">
+                    <div class="start-end">Bắt đầu</div>
+                    <div class="arrow"></div>
+                    <div class="activity">Từ giỏ hàng nhấn "Tiến hành thanh toán"</div>
+                    <div class="arrow"></div>
+                    <div class="activity">Nhập địa chỉ giao hàng & SĐT</div>
+                    <div class="arrow"></div>
+                    <div class="decision">
+                        <div class="decision-text">Phương thức<br>thanh toán?</div>
+                    </div>
+                    <div class="parallel-split"></div>
+                    <div class="parallel-container">
+                        <div class="parallel-branch">
+                            <div class="activity">COD</div>
+                            <div class="arrow"></div>
+                            <div class="activity">Xác nhận nhận hàng trả tiền</div>
+                        </div>
+                        <div class="parallel-branch">
+                            <div class="activity">Ví điện tử / Thẻ</div>
+                            <div class="arrow"></div>
+                            <div class="activity">Chuyển hướng Payment Gateway</div>
+                            <div class="arrow"></div>
+                            <div class="activity">Xác nhận API callback</div>
+                        </div>
+                    </div>
+                    <div class="parallel-split"></div>
+                    <div class="arrow"></div>
+                    <div class="activity">Tạo DB record Đơn Hàng (Pending)</div>
+                    <div class="arrow"></div>
+                    <div class="activity">Trừ tồn kho & Xóa giỏ hàng</div>
+                    <div class="arrow"></div>
+                    <div class="activity">Chuyển trang Thành Công (order-success.html)</div>
+                    <div class="arrow"></div>
+                    <div class="start-end">Kết thúc</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sơ đồ 5: Chatbot RAG -->
+        <div class="diagram-section" id="diagram5">
+            <h2 class="diagram-title">5. Tư Vấn Bằng AI Chatbot RAG</h2>
+            <div class="diagram-description">
+                <strong>Mô tả:</strong> Hệ thống sử dụng Engine Python ChromaDB lấy tri thức cửa hàng để tư vấn điện thoại.
+            </div>
+            <div class="diagram">
+                <div class="activity-diagram">
+                    <div class="start-end">Bắt đầu</div>
+                    <div class="arrow"></div>
+                    <div class="activity">Khách nhắn tin ("iPhone 16 pin bao lâu?")</div>
+                    <div class="arrow"></div>
+                    <div class="activity">Node backend gọi API tới Python Service (rag_engine)</div>
+                    <div class="arrow"></div>
+                    <div class="activity">Vector Hóa truy vấn</div>
+                    <div class="arrow"></div>
+                    <div class="activity">Lọc thông tin từ ChromaDB (Knowledge base)</div>
+                    <div class="arrow"></div>
+                    <div class="activity">Gửi Context + Prompt tới LLM</div>
+                    <div class="arrow"></div>
+                    <div class="activity">Tạo sinh câu trả lời tự nhiên</div>
+                    <div class="arrow"></div>
+                    <div class="activity">Trả kết quả ra khung chat UI</div>
+                    <div class="arrow"></div>
+                    <div class="start-end">Kết thúc</div>
+                    <div class="note">🤖 Công nghệ: Python, ChromaDB, RAG</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sơ đồ 6: Recommendation -->
+        <div class="diagram-section" id="diagram6">
+            <h2 class="diagram-title">6. Gợi Ý Sản Phẩm Thông Minh (Recommend Engine)</h2>
+            <div class="diagram-description">
+                <strong>Mô tả:</strong> Gợi ý điện thoại, ốp lưng, sạc dựa trên lịch sử mua/xem (recommend_engine.py).
+            </div>
+            <div class="diagram">
+                <div class="activity-diagram">
+                    <div class="start-end">Bắt đầu</div>
+                    <div class="arrow"></div>
+                    <div class="activity">Truy cập Trang chủ / Trang sản phẩm</div>
+                    <div class="arrow"></div>
+                    <div class="activity">Gửi ID User / Lịch sử Session (Local)</div>
+                    <div class="arrow"></div>
+                    <div class="activity">Server gọi Recommend Engine Python</div>
+                    <div class="arrow"></div>
+                    <div class="activity">Phân tích Collaborative / Content-based</div>
+                    <div class="arrow"></div>
+                    <div class="activity">Trả ra danh sách ID sản phẩm phù hợp</div>
+                    <div class="arrow"></div>
+                    <div class="activity">Render UI ở mục "Có thể bạn sẽ thích"</div>
+                    <div class="arrow"></div>
+                    <div class="start-end">Kết thúc</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sơ đồ 7: User Profile -->
+        <div class="diagram-section" id="diagram7">
+            <h2 class="diagram-title">7. Quản Lý Tài Khoản & Theo Dõi Đơn Hàng</h2>
+            <div class="diagram-description">
+                <strong>Mô tả:</strong> Khách kiểm tra các đơn đã mua, thay đổi thông tin.
+            </div>
+            <div class="diagram">
+                <div class="activity-diagram">
+                    <div class="start-end">Bắt đầu</div>
+                    <div class="arrow"></div>
+                    <div class="activity">Vào trang Profile (profile.html)</div>
+                    <div class="arrow"></div>
+                    <div class="decision">
+                        <div class="decision-text">Hành<br>động?</div>
+                    </div>
+                    <div class="parallel-split"></div>
+                    <div class="parallel-container">
+                        <div class="parallel-branch">
+                            <div class="activity">Sửa Thông tin</div>
+                            <div class="arrow"></div>
+                            <div class="activity">Cập nhật Avatar / SĐT</div>
+                        </div>
+                        <div class="parallel-branch">
+                            <div class="activity">Theo dõi Đơn</div>
+                            <div class="arrow"></div>
+                            <div class="activity">Xem trạng thái (Đang giao/Hoàn thành)</div>
+                        </div>
+                    </div>
+                    <div class="parallel-split"></div>
+                    <div class="arrow"></div>
+                    <div class="start-end">Kết thúc</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sơ đồ 8: News -->
+        <div class="diagram-section" id="diagram8">
+            <h2 class="diagram-title">8. Đọc Tin Tức Công Nghệ & Khuyến Mãi</h2>
+            <div class="diagram-description">
+                <strong>Mô tả:</strong> Module đọc báo, cập nhật tin iPhone 17, Oppo mới.
+            </div>
+            <div class="diagram">
+                <div class="activity-diagram">
+                    <div class="start-end">Bắt đầu</div>
+                    <div class="arrow"></div>
+                    <div class="activity">Truy cập Trang Tin Tức (news.html)</div>
+                    <div class="arrow"></div>
+                    <div class="activity">Lọc theo danh mục (Tech News / Khuyến mãi)</div>
+                    <div class="arrow"></div>
+                    <div class="activity">Nhấp vào bài viết</div>
+                    <div class="arrow"></div>
+                    <div class="activity">Tải Chi Tiết (news-detail.html)</div>
+                    <div class="arrow"></div>
+                    <div class="start-end">Kết thúc</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sơ đồ 9: Reviews -->
+        <div class="diagram-section" id="diagram9">
+            <h2 class="diagram-title">9. Đánh Giá Sản Phẩm (Reviews)</h2>
+            <div class="diagram-description">
+                <strong>Mô tả:</strong> Khách hàng bình luận, gắn đánh giá sao sau khi mua.
+            </div>
+            <div class="diagram">
+                <div class="activity-diagram">
+                    <div class="start-end">Bắt đầu</div>
+                    <div class="arrow"></div>
+                    <div class="activity">Đơn hàng hoàn thành</div>
+                    <div class="arrow"></div>
+                    <div class="activity">Vào góc review ở Product Detail</div>
+                    <div class="arrow"></div>
+                    <div class="activity">Chọn số sao & Nhập text đánh giá</div>
+                    <div class="arrow"></div>
+                    <div class="activity">Lưu vào DB bằng Route (reviews.js)</div>
+                    <div class="arrow"></div>
+                    <div class="activity">Tính lại điểm Rate trung bình của sản phẩm</div>
+                    <div class="arrow"></div>
+                    <div class="start-end">Kết thúc</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sơ đồ 10: Admin -->
+        <div class="diagram-section" id="diagram10">
+            <h2 class="diagram-title">10. Quản Lý Của Admin Tích Hợp AI</h2>
+            <div class="diagram-description">
+                <strong>Mô tả:</strong> CMS quản lý toàn diện (Sản phẩm, đơn hàng, AI training - chatbot_knowledge, thêm dữ liệu RAG).
+            </div>
+            <div class="diagram">
+                <div class="activity-diagram">
+                    <div class="start-end">Bắt đầu</div>
+                    <div class="arrow"></div>
+                    <div class="activity">Đăng nhập Admin (admin-login.html)</div>
+                    <div class="arrow"></div>
+                    <div class="activity">Truy cập Dashboard (admin.html)</div>
+                    <div class="arrow"></div>
+                    <div class="decision">
+                        <div class="decision-text">Chức<br>năng?</div>
+                    </div>
+                    <div class="parallel-split" style="width: 500px;"></div>
+                    <div class="parallel-container">
+                        <div class="parallel-branch">
+                            <div class="activity">Quản lý SP/Đơn</div>
+                            <div class="arrow"></div>
+                            <div class="activity">Duyệt đơn, Thêm/Sửa SP</div>
+                        </div>
+                        <div class="parallel-branch">
+                            <div class="activity">Chatbot Knowledge</div>
+                            <div class="arrow"></div>
+                            <div class="activity">Thêm câu hỏi/đáp án (chatbot_knowledge.html)</div>
+                            <div class="arrow"></div>
+                            <div class="activity">Trigger Vectorize RAG DB (add_knowledge.py)</div>
+                        </div>
+                        <div class="parallel-branch">
+                            <div class="activity">Website Config</div>
+                            <div class="arrow"></div>
+                            <div class="activity">Sửa thông báo (Merge_notifs, Admin.js)</div>
+                        </div>
+                    </div>
+                    <div class="parallel-split" style="width: 500px;"></div>
+                    <div class="arrow"></div>
+                    <div class="start-end">Kết thúc</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <h3 style="margin-bottom: 15px;">📊 Tổng Kết</h3>
+            <p style="font-size: 1.1em; line-height: 1.8;">
+                Hệ thống bao gồm <strong>10 sơ đồ hoạt động chính</strong> được thiết kế theo cấu trúc project hiện tại.<br>
+                Bao gồm cả nghiệp vụ e-commerce (Giỏ hàng, Sản phẩm, Đơn) và Tích hợp Trí tuệ nhân tạo (RAG, Recommend).<br><br>
+                <strong>Công nghệ:</strong> Node.js, Express, Python (ChromaDB cho RAG AI), HTML/CSS/JS, Tailwind.<br>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Smooth scroll
+        document.querySelectorAll('.toc a').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+        });
+
+        // Thêm animation khi scroll đến sơ đồ
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '0';
+                    entry.target.style.transform = 'translateY(20px)';
+                    setTimeout(() => {
+                        entry.target.style.transition = 'all 0.6s ease';
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }, 100);
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.diagram-section').forEach(section => {
+            observer.observe(section);
+        });
+    </script>
+</body>
+</html>

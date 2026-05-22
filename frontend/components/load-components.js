@@ -12,22 +12,10 @@ async function loadComponent(elementId, componentPath) {
                     highlightActiveMenu();
                     initMobileMenu();
                     
-                    // Load notification bell CSS
-                    const notificationCSS = document.createElement('link');
-                    notificationCSS.rel = 'stylesheet';
-                    notificationCSS.href = 'components/notification-bell.css';
-                    document.head.appendChild(notificationCSS);
-                    
-                    // Load notification bell JavaScript first, then header.js
-                    const notificationScript = document.createElement('script');
-                    notificationScript.src = 'components/notification-bell.js';
-                    notificationScript.onload = function() {
-                        // Load header JavaScript after notification bell is loaded
-                        const headerScript = document.createElement('script');
-                        headerScript.src = 'components/header.js';
-                        document.body.appendChild(headerScript);
-                    };
-                    document.body.appendChild(notificationScript);
+                    // Load header JavaScript
+                    const headerScript = document.createElement('script');
+                    headerScript.src = 'components/header.js';
+                    document.body.appendChild(headerScript);
                     
                     // Load mobile menu JavaScript
                     const mobileScript = document.createElement('script');
