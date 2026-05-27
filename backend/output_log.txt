@@ -1,0 +1,9 @@
+Loading data for training AI Recommendation from DB...
+Training KNN (Collaborative Filtering) successful!
+Training Apriori (Association Rules) successful!
+=> Routing to Semantic/RAG engine
+INFO:     127.0.0.1:61681 - "POST /api/chat HTTP/1.1" 200 OK
+=> Routing to Semantic/RAG engine
+INFO:     127.0.0.1:54197 - "POST /api/chat HTTP/1.1" 200 OK
+=> Routing to Semantic/RAG engine
+INFO:     127.0.0.1:56262 - "POST /api/chat HTTP/1.1" 200 OK

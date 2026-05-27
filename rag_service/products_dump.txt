@@ -1,0 +1,302 @@
+[
+    {
+        "ma_sp": 1,
+        "ten_sp": "iPhone 17 Pro Max",
+        "gia": 29990000.0,
+        "mo_ta_ngan": "Duy nhất 26/4 giá chỉ 28.990k | Trade-in giảm đến 5 triệu"
+    },
+    {
+        "ma_sp": 2,
+        "ten_sp": "iPhone 14",
+        "gia": 17990000.0,
+        "mo_ta_ngan": "Trả góp 0% | Đổi 4G lên 5G giảm đến 1 triệu"
+    },
+    {
+        "ma_sp": 3,
+        "ten_sp": "Samsung S24 Ultra",
+        "gia": 28990000.0,
+        "mo_ta_ngan": "Smember giảm đến 300.000đ | Không phí chuyển đổi khi trả góp"
+    },
+    {
+        "ma_sp": 4,
+        "ten_sp": "Samsung A54",
+        "gia": 7990000.0,
+        "mo_ta_ngan": "Smember giảm thêm | Trả góp 0% lãi suất"
+    },
+    {
+        "ma_sp": 5,
+        "ten_sp": "Xiaomi Redmi Note 13",
+        "gia": 4990000.0,
+        "mo_ta_ngan": "Giá rẻ bất ngờ | Camera 200MP sắc nét"
+    },
+    {
+        "ma_sp": 6,
+        "ten_sp": "Oppo Reno10",
+        "gia": 10990000.0,
+        "mo_ta_ngan": "Thiết kế thời thượng | Trả góp chỉ từ 2 triệu/tháng"
+    },
+    {
+        "ma_sp": 7,
+        "ten_sp": "Vivo V25",
+        "gia": 9990000.0,
+        "mo_ta_ngan": "Camera selfie 50MP | Trả góp 0% dễ dàng"
+    },
+    {
+        "ma_sp": 8,
+        "ten_sp": "Asus ROG Phone 7",
+        "gia": 21990000.0,
+        "mo_ta_ngan": "Gaming phone số 1 | Pin khủng 6000mAh"
+    },
+    {
+        "ma_sp": 9,
+        "ten_sp": "Vsmart Joy 4",
+        "gia": 3990000.0,
+        "mo_ta_ngan": "Sản phẩm Việt Nam | Đổi trả miễn phí 30 ngày"
+    },
+    {
+        "ma_sp": 10,
+        "ten_sp": "Sony Xperia 5",
+        "gia": 19990000.0,
+        "mo_ta_ngan": "Màn hình 4K HDR | Âm thanh Hi-Res"
+    },
+    {
+        "ma_sp": 11,
+        "ten_sp": "Samsung Galaxy A05 128GB",
+        "gia": 3040000.0,
+        "mo_ta_ngan": "Rẻ vô đối | Đổi trả miễn phí 30 ngày"
+    },
+    {
+        "ma_sp": 12,
+        "ten_sp": "Samsung Galaxy A07 4GB 128GB",
+        "gia": 3390000.0,
+        "mo_ta_ngan": "Rẻ vô đối | Đổi trả miễn phí 30 ngày"
+    },
+    {
+        "ma_sp": 13,
+        "ten_sp": "Samsung Galaxy A17 5G 8GB 128GB",
+        "gia": 5890000.0,
+        "mo_ta_ngan": "Smember giảm thêm | Trả góp 0% lãi suất"
+    },
+    {
+        "ma_sp": 14,
+        "ten_sp": "OPPO Reno14 F 5G 8GB 256GB",
+        "gia": 10100000.0,
+        "mo_ta_ngan": "Thiết kế thời thượng | Trả góp chỉ từ 2 triệu/tháng"
+    },
+    {
+        "ma_sp": 15,
+        "ten_sp": "iPhone 15 Pro Max",
+        "gia": 2000000.0,
+        "mo_ta_ngan": "Giá sốc cuối mùa | Trả góp 0% lãi suất"
+    },
+    {
+        "ma_sp": 16,
+        "ten_sp": "Sạc nhanh Apple 20w USB-C chính hãng Apple Việt Nam",
+        "gia": 500000.0,
+        "mo_ta_ngan": "Rẻ vô đối | Đổi trả miễn phí 30 ngày"
+    },
+    {
+        "ma_sp": 17,
+        "ten_sp": "Xiaomi Redmi 15C 4GB 128GB NFC",
+        "gia": 3190000.0,
+        "mo_ta_ngan": "Giá tốt nhất phân khúc | Bảo hành 18 tháng"
+    },
+    {
+        "ma_sp": 18,
+        "ten_sp": "OPPO A5i 4GB 128GB",
+        "gia": 3690000.0,
+        "mo_ta_ngan": "Sạc nhanh SUPERVOOC | Đổi trả miễn phí 30 ngày"
+    },
+    {
+        "ma_sp": 19,
+        "ten_sp": "OPPO A6 Pro 8GB 128GB",
+        "gia": 7990000.0,
+        "mo_ta_ngan": "Sạc nhanh SUPERVOOC | Đổi trả miễn phí 30 ngày"
+    },
+    {
+        "ma_sp": 20,
+        "ten_sp": "OPPO A58 8GB 128GB",
+        "gia": 4500000.0,
+        "mo_ta_ngan": "Sạc nhanh SUPERVOOC | Đổi trả miễn phí 30 ngày"
+    },
+    {
+        "ma_sp": 21,
+        "ten_sp": "OPPO Reno12 F 5G 8GB 256GB",
+        "gia": 6990000.0,
+        "mo_ta_ngan": "Thiết kế thời thượng | Trả góp chỉ từ 2 triệu/tháng"
+    },
+    {
+        "ma_sp": 22,
+        "ten_sp": "Samsung Galaxy A06 4GB 128GB",
+        "gia": 2700000.0,
+        "mo_ta_ngan": "Rẻ vô đối | Đổi trả miễn phí 30 ngày"
+    },
+    {
+        "ma_sp": 23,
+        "ten_sp": "Samsung Galaxy A26 5G 8GB 128GB",
+        "gia": 6470000.0,
+        "mo_ta_ngan": "Smember giảm thêm | Trả góp 0% lãi suất"
+    },
+    {
+        "ma_sp": 24,
+        "ten_sp": "Xiaomi Redmi 13C 6GB 128GB",
+        "gia": 2990000.0,
+        "mo_ta_ngan": "Giá tốt nhất phân khúc | Bảo hành 18 tháng"
+    },
+    {
+        "ma_sp": 25,
+        "ten_sp": "Xiaomi Redmi 14C 4GB 128GB",
+        "gia": 2850000.0,
+        "mo_ta_ngan": "Giá tốt nhất phân khúc | Bảo hành 18 tháng"
+    },
+    {
+        "ma_sp": 26,
+        "ten_sp": "Xiaomi POCO C71 4GB 128GB",
+        "gia": 2340000.0,
+        "mo_ta_ngan": "Giá tốt nhất phân khúc | Bảo hành 18 tháng"
+    },
+    {
+        "ma_sp": 27,
+        "ten_sp": "Xiaomi Redmi Note 12 4GB 128GB",
+        "gia": 3790000.0,
+        "mo_ta_ngan": "Giá tốt nhất phân khúc | Bảo hành 18 tháng"
+    },
+    {
+        "ma_sp": 28,
+        "ten_sp": "realme C51 6GB 256GB",
+        "gia": 3390000.0,
+        "mo_ta_ngan": "Hiệu năng vượt tầm giá | Sạc nhanh 67W"
+    },
+    {
+        "ma_sp": 29,
+        "ten_sp": "realme 11 8GB 128GB",
+        "gia": 4590000.0,
+        "mo_ta_ngan": "Hiệu năng vượt tầm giá | Sạc nhanh 67W"
+    },
+    {
+        "ma_sp": 30,
+        "ten_sp": "realme Note 60x 3GB 64GB",
+        "gia": 2690000.0,
+        "mo_ta_ngan": "Hiệu năng vượt tầm giá | Sạc nhanh 67W"
+    },
+    {
+        "ma_sp": 31,
+        "ten_sp": "vivo Y22S 8GB 128GB",
+        "gia": 5990000.0,
+        "mo_ta_ngan": "Camera selfie 50MP | Trả góp 0% dễ dàng"
+    },
+    {
+        "ma_sp": 32,
+        "ten_sp": "Sony Xperia 10VI 8GB 128GB",
+        "gia": 8290000.0,
+        "mo_ta_ngan": "Màn hình 4K HDR | Âm thanh Hi-Res"
+    },
+    {
+        "ma_sp": 33,
+        "ten_sp": "Nokia G22 4GB 128GB",
+        "gia": 1790000.0,
+        "mo_ta_ngan": "Rẻ vô đối | Đổi trả miễn phí 30 ngày"
+    },
+    {
+        "ma_sp": 34,
+        "ten_sp": "Samsung Galaxy A36 5G",
+        "gia": 8990000.0,
+        "mo_ta_ngan": "giảm 20%"
+    },
+    {
+        "ma_sp": 35,
+        "ten_sp": "Samsung Galaxy A56 5G",
+        "gia": 10990000.0,
+        "mo_ta_ngan": "Giá sinh viên ưu đãi | Tặng kèm ốp lưng chính hãng"
+    },
+    {
+        "ma_sp": 36,
+        "ten_sp": "Oppo Reno 13 5G",
+        "gia": 12490000.0,
+        "mo_ta_ngan": "Thiết kế thời thượng | Trả góp chỉ từ 2 triệu/tháng"
+    },
+    {
+        "ma_sp": 37,
+        "ten_sp": "Oppo Reno 13F 4G",
+        "gia": 7990000.0,
+        "mo_ta_ngan": "Thiết kế thời thượng | Trả góp chỉ từ 2 triệu/tháng"
+    },
+    {
+        "ma_sp": 38,
+        "ten_sp": "Xiaomi Redmi Note 14 Pro 5G",
+        "gia": 8490000.0,
+        "mo_ta_ngan": "Giá rẻ bất ngờ | Camera 200MP sắc nét"
+    },
+    {
+        "ma_sp": 39,
+        "ten_sp": "Xiaomi Redmi Note 14 Pro+ 5G",
+        "gia": 10990000.0,
+        "mo_ta_ngan": "Giá rẻ bất ngờ | Camera 200MP sắc nét"
+    },
+    {
+        "ma_sp": 40,
+        "ten_sp": "Vivo V40 5G",
+        "gia": 12990000.0,
+        "mo_ta_ngan": "Camera selfie 50MP | Trả góp 0% dễ dàng"
+    },
+    {
+        "ma_sp": 41,
+        "ten_sp": "Vivo V40 Lite 5G",
+        "gia": 8990000.0,
+        "mo_ta_ngan": "Camera selfie 50MP | Trả góp 0% dễ dàng"
+    },
+    {
+        "ma_sp": 42,
+        "ten_sp": "Realme 13 Pro+ 5G",
+        "gia": 11990000.0,
+        "mo_ta_ngan": "Hiệu năng vượt tầm giá | Sạc nhanh 67W"
+    },
+    {
+        "ma_sp": 43,
+        "ten_sp": "Realme 13 5G",
+        "gia": 6990000.0,
+        "mo_ta_ngan": "Hiệu năng vượt tầm giá | Sạc nhanh 67W"
+    },
+    {
+        "ma_sp": 44,
+        "ten_sp": "Google Pixel 8a",
+        "gia": 11990000.0,
+        "mo_ta_ngan": "AI Camera đỉnh cao | Trải nghiệm Android gốc"
+    },
+    {
+        "ma_sp": 45,
+        "ten_sp": "Honor 200 5G",
+        "gia": 10990000.0,
+        "mo_ta_ngan": "Ưu đãi online giảm thêm | Trả góp 0%"
+    },
+    {
+        "ma_sp": 46,
+        "ten_sp": "Honor Magic6 Lite 5G",
+        "gia": 8490000.0,
+        "mo_ta_ngan": "Giá tốt nhất phân khúc | Đổi trả 30 ngày"
+    },
+    {
+        "ma_sp": 47,
+        "ten_sp": "Tecno Spark 30 Pro 5G",
+        "gia": 5990000.0,
+        "mo_ta_ngan": "Giá siêu rẻ | Màn hình lớn pin trâu"
+    },
+    {
+        "ma_sp": 48,
+        "ten_sp": "Tecno Camon 30 Pro 5G",
+        "gia": 8990000.0,
+        "mo_ta_ngan": "Giá siêu rẻ | Màn hình lớn pin trâu"
+    },
+    {
+        "ma_sp": 49,
+        "ten_sp": "Infinix Note 40 Pro 5G",
+        "gia": 6490000.0,
+        "mo_ta_ngan": "Giá tốt nhất phân khúc | Đổi trả 30 ngày"
+    },
+    {
+        "ma_sp": 50,
+        "ten_sp": "Motorola Edge 50 Fusion",
+        "gia": 9990000.0,
+        "mo_ta_ngan": "Giá tốt nhất phân khúc | Đổi trả 30 ngày"
+    }
+]

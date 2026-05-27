@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sơ đồ Kiến trúc Hệ thống</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .border-black { border: 1px solid #000; }
+    </style>
+</head>
+<body class="bg-gray-100 p-8 flex justify-center">
+
+<!-- Outer Frame -->
+<div class="bg-white border-black p-8 w-full max-w-4xl">
+    
+    <!-- 1. Client Layer -->
+    <div class="border-black p-5 mb-3">
+        <h2 class="text-center font-bold text-[15px] mb-5 uppercase tracking-wide">Client Layer</h2>
+        <div class="flex justify-center gap-6">
+            <div class="border-black p-4 w-52 text-center">
+                <div class="font-bold text-sm">Customer Website</div>
+                <div class="text-[11px] text-gray-700 mt-2 tracking-wide">(HTML/CSS/JS/Tailwind)</div>
+            </div>
+            <div class="border-black p-4 w-52 text-center">
+                <div class="font-bold text-sm">Admin Dashboard</div>
+                <div class="text-[11px] text-gray-700 mt-2 tracking-wide">(HTML/CSS/JS)</div>
+            </div>
+            <div class="border-black p-4 w-52 text-center">
+                <div class="font-bold text-sm">Mobile Browser</div>
+                <div class="text-[11px] text-gray-700 mt-2 tracking-wide">(Responsive)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Arrow 1 -->
+    <div class="text-center mb-3">
+        <div class="text-[11px] mb-1 font-bold">HTTP/REST API</div>
+        <div class="text-xs">▼</div>
+    </div>
+
+    <!-- 2. Server Layer -->
+    <div class="border-black p-5 mb-3">
+        <h2 class="text-center font-bold text-[15px] mb-5 uppercase tracking-wide">Server Layer (Node.js + Express.js)</h2>
+        <div class="flex justify-center gap-4 mb-4">
+            <div class="border-black px-6 py-2 text-sm font-bold">CORS</div>
+            <div class="border-black px-6 py-2 text-sm font-bold">Session / JWT</div>
+            <div class="border-black px-6 py-2 text-sm font-bold">Passport Auth</div>
+            <div class="border-black px-6 py-2 text-sm font-bold">Multer</div>
+            <div class="border-black px-6 py-2 text-sm font-bold">Nodemailer</div>
+        </div>
+        <div class="border-black p-3 text-center text-xs font-bold leading-loose mx-10">
+            /api/products &nbsp;&nbsp; /api/auth &nbsp;&nbsp; /api/cart &nbsp;&nbsp; /api/orders &nbsp;&nbsp; /api/payment &nbsp;&nbsp; /api/reviews &nbsp;&nbsp; /api/news &nbsp;&nbsp; /api/admin &nbsp;&nbsp; /api/search &nbsp;&nbsp; /api/address &nbsp;&nbsp; /api/notifications &nbsp;&nbsp; /api/chatbot &nbsp;&nbsp; /api/recommendations
+        </div>
+    </div>
+
+    <!-- Arrow 2 -->
+    <div class="text-center mb-3">
+        <div class="text-[11px] mb-1 font-bold">HTTP/REST API (AI Service) & MySQL Protocol (Data)</div>
+        <div class="text-xs">▼</div>
+    </div>
+
+    <!-- 3. AI Service -->
+    <div class="border-black p-5 mb-6">
+        <h2 class="text-center font-bold text-[15px] mb-5 uppercase tracking-wide">AI RAG & Recommendation Service (Python)</h2>
+        <div class="flex justify-center gap-6">
+            <div class="border-black p-4 w-52 text-center">
+                <div class="font-bold text-sm">RAG Engine</div>
+                <div class="text-[11px] text-gray-700 mt-2 tracking-wide">(chatbot_knowledge.py)</div>
+            </div>
+            <div class="border-black p-4 w-52 text-center">
+                <div class="font-bold text-sm">Recommend Engine</div>
+                <div class="text-[11px] text-gray-700 mt-2 tracking-wide">(recommend_engine.py)</div>
+            </div>
+            <div class="border-black p-4 w-52 text-center">
+                <div class="font-bold text-sm">Vector Database</div>
+                <div class="text-[11px] text-gray-700 mt-2 tracking-wide">(ChromaDB)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Data Layer -->
+    <div class="border-black p-5">
+        <h2 class="text-center font-bold text-[15px] mb-5 uppercase tracking-wide">Data Layer (MySQL - QLCH)</h2>
+        <div class="grid grid-cols-4 gap-4 px-12">
+            <div class="border-black py-3 text-center text-sm font-bold">khach_hang</div>
+            <div class="border-black py-3 text-center text-sm font-bold">san_pham</div>
+            <div class="border-black py-3 text-center text-sm font-bold">don_hang</div>
+            <div class="border-black py-3 text-center text-sm font-bold">gio_hang</div>
+            
+            <div class="border-black py-3 text-center text-sm font-bold">thanh_toan</div>
+            <div class="border-black py-3 text-center text-sm font-bold">danh_gia</div>
+            <div class="border-black py-3 text-center text-sm font-bold">binh_luan</div>
+            <div class="border-black py-3 text-center text-sm font-bold">tin_tuc</div>
+            
+            <div class="border-black py-3 text-center text-sm font-bold">khuyen_mai</div>
+            <div class="border-black py-3 text-center text-sm font-bold">admin</div>
+            <div class="border-black py-3 text-center text-sm font-bold">thong_bao</div>
+            <div class="border-black py-3 text-center text-sm font-bold">lien_he</div>
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>

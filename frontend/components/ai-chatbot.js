@@ -108,6 +108,9 @@
           <div class="ai-chat-input-area">
             <div class="ai-chat-input-wrapper">
               <input type="text" class="ai-chat-input" id="ai-chat-input" placeholder="Nhập câu hỏi của bạn..." autocomplete="off" spellcheck="false">
+              <button class="ai-chat-voice" id="ai-chat-voice" title="Nói với AI" style="background: none; border: none; color: #666; cursor: pointer; padding: 8px; font-size: 16px; margin-right: 4px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
+                <i class="fas fa-microphone"></i>
+              </button>
               <button class="ai-chat-send" id="ai-chat-send">
                 <i class="fas fa-paper-plane"></i>
               </button>
@@ -473,14 +476,226 @@
     const messageDiv = document.createElement('div');
     messageDiv.className = 'ai-message bot';
     
-    if (isHTML) {
-      messageDiv.innerHTML = text;
-    } else {
-      messageDiv.innerHTML = text.replace(/\n/g, '<br>');
-    }
+    let contentHtml = isHTML ? text : text.replace(/\n/g, '<br>');
+    
+    messageDiv.innerHTML = `
+      <div class="ai-msg-content">${contentHtml}</div>
+      <div class="ai-msg-actions" style="margin-top: 8px; display: flex; justify-content: flex-end; opacity: 0.6; transition: opacity 0.2s;">
+        <button class="ai-msg-speak" style="background: none; border: none; padding: 2px 6px; cursor: pointer; color: #1e3c72; font-size: 12px; display: flex; align-items: center; gap: 4px;" title="Nghe đọc tin nhắn">
+          <i class="fas fa-volume-up"></i> <span>Nghe</span>
+        </button>
+      </div>
+    `;
+    
+    // Bind speak event
+    const speakBtn = messageDiv.querySelector('.ai-msg-speak');
+    speakBtn.addEventListener('click', () => {
+      // Extract text content only (strip HTML tags)
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = contentHtml;
+      
+      // Remove any button text or detail links from text to read
+      tempDiv.querySelectorAll('button, a, style, script').forEach(el => el.remove());
+      
+      const cleanText = tempDiv.innerText || tempDiv.textContent;
+      speakText(cleanText, speakBtn);
+    });
     
     messagesContainer.appendChild(messageDiv);
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  }
+  
+  let currentUtterance = null;
+  let speechQueue = [];
+  let speechQueueIndex = 0;
+  let currentSpeechButton = null;
+
+  // Split text into safe chunks under maxLength to prevent browser TTS cutoff
+  function splitTextIntoChunks(text, maxLength = 160) {
+    const cleanText = text.replace(/\s+/g, ' ').trim();
+    if (cleanText.length <= maxLength) return [cleanText];
+
+    const chunks = [];
+    let remaining = cleanText;
+
+    while (remaining.length > 0) {
+      if (remaining.length <= maxLength) {
+        chunks.push(remaining);
+        break;
+      }
+
+      let splitIndex = -1;
+      const punctuationMarks = ['.', '?', '!', ';', ',', ':', '-'];
+      
+      for (let i = maxLength - 1; i >= Math.floor(maxLength / 2); i--) {
+        if (punctuationMarks.includes(remaining[i])) {
+          splitIndex = i + 1;
+          break;
+        }
+      }
+
+      if (splitIndex === -1) {
+        splitIndex = remaining.lastIndexOf(' ', maxLength);
+      }
+
+      if (splitIndex <= 0) {
+        splitIndex = maxLength;
+      }
+
+      const chunk = remaining.slice(0, splitIndex).trim();
+      if (chunk) {
+        chunks.push(chunk);
+      }
+      remaining = remaining.slice(splitIndex).trim();
+    }
+
+    return chunks;
+  }
+
+  function stopSpeaking() {
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+    speechQueue = [];
+    speechQueueIndex = 0;
+    if (currentSpeechButton) {
+      currentSpeechButton.querySelector('i').className = 'fas fa-volume-up';
+      currentSpeechButton.querySelector('span').textContent = 'Nghe';
+      currentSpeechButton.classList.remove('speaking');
+      currentSpeechButton = null;
+    }
+    currentUtterance = null;
+  }
+
+  function playNextChunk() {
+    if (speechQueueIndex >= speechQueue.length) {
+      // Completed all chunks successfully
+      stopSpeaking();
+      return;
+    }
+
+    const chunk = speechQueue[speechQueueIndex];
+    const utterance = new SpeechSynthesisUtterance(chunk);
+    utterance.lang = 'vi-VN';
+
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      const voices = window.speechSynthesis.getVoices();
+      let viVoice = voices.find(v => {
+        const l = v.lang.toLowerCase().replace('_', '-');
+        return l === 'vi-vn';
+      });
+      if (!viVoice) {
+        viVoice = voices.find(v => {
+          const l = v.lang.toLowerCase().replace('_', '-');
+          return l.startsWith('vi');
+        });
+      }
+      if (viVoice) {
+        utterance.voice = viVoice;
+      }
+    }
+
+    utterance.rate = 0.95; // Premium, natural voice pace for Vietnamese
+    currentUtterance = utterance;
+
+    utterance.onend = () => {
+      if (speechQueue.length === 0) return;
+      speechQueueIndex++;
+      playNextChunk();
+    };
+
+    utterance.onerror = (e) => {
+      console.error('Speech synthesis error:', e);
+      if (speechQueue.length === 0) return;
+      speechQueueIndex++;
+      playNextChunk();
+    };
+
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.speak(utterance);
+    }
+  }
+
+  function speakText(text, button) {
+    if (typeof window === 'undefined' || !window.speechSynthesis) {
+      console.warn('Speech synthesis not supported in this browser.');
+      return;
+    }
+
+    if (window.speechSynthesis.speaking || speechQueue.length > 0) {
+      const wasSameButton = (currentSpeechButton === button);
+      stopSpeaking();
+      if (wasSameButton) {
+        return;
+      }
+    }
+
+    const chunks = splitTextIntoChunks(text, 160);
+    if (chunks.length === 0) return;
+
+    speechQueue = chunks;
+    speechQueueIndex = 0;
+    currentSpeechButton = button;
+
+    // UI feedback for speaking active state
+    button.querySelector('i').className = 'fas fa-volume-mute';
+    button.querySelector('span').textContent = 'Dừng';
+    button.classList.add('speaking');
+
+    playNextChunk();
+  }
+
+  let recognition = null;
+  let isListening = false;
+  
+  function initSpeechRecognition() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      console.warn('Speech Recognition not supported in this browser.');
+      const micBtn = document.getElementById('ai-chat-voice');
+      if (micBtn) micBtn.style.display = 'none';
+      return;
+    }
+    
+    recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'vi-VN';
+    
+    const micBtn = document.getElementById('ai-chat-voice');
+    const input = document.getElementById('ai-chat-input');
+    
+    micBtn.addEventListener('click', () => {
+      if (isListening) {
+        recognition.stop();
+      } else {
+        recognition.start();
+      }
+    });
+    
+    recognition.onstart = () => {
+      isListening = true;
+      micBtn.classList.add('listening');
+      micBtn.querySelector('i').className = 'fas fa-microphone-slash';
+      input.placeholder = 'Đang nghe...';
+    };
+    
+    recognition.onend = () => {
+      isListening = false;
+      micBtn.classList.remove('listening');
+      micBtn.querySelector('i').className = 'fas fa-microphone';
+      input.placeholder = 'Nhập câu hỏi của bạn...';
+    };
+    
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      input.value = transcript;
+      sendMessage();
+    };
+    
+    recognition.onerror = (event) => {
+      console.error('Speech recognition error:', event.error);
+    };
   }
   
   // Add user message
@@ -589,7 +804,7 @@
   // Send message
   async function sendMessage(customMessage = null) {
     const input = document.getElementById('ai-chat-input');
-    const message = customMessage ? customMessage.trim() : input.value.trim();
+    const message = (typeof customMessage === 'string') ? customMessage.trim() : input.value.trim();
 
     if (!message && !currentImageBase64) return;
 
@@ -708,6 +923,19 @@
         historyLoaded = false;
       }
     });
+    
+    // Khởi tạo Speech Recognition
+    initSpeechRecognition();
+
+    // Pre-load / warm up voices for browsers that load them asynchronously
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.getVoices();
+      if (window.speechSynthesis.onvoiceschanged !== undefined) {
+        window.speechSynthesis.onvoiceschanged = () => {
+          window.speechSynthesis.getVoices();
+        };
+      }
+    }
   }
   
   // Load when DOM ready

@@ -58,13 +58,33 @@ def get_delivery_address(user_id: str) -> str:
         print(f"Error in mock delivery address connection: {e}")
         return "Dạ, em gặp chút lỗi khi truy cập địa chỉ giao hàng của bạn. Bạn vui lòng kiểm tra lại trong Hồ sơ cá nhân nhé!"
 
+def _detect_brand(message: str):
+    """Phát hiện tên hãng từ tin nhắn người dùng"""
+    msg_lower = message.lower()
+    brand_map = {
+        'vivo': 'Vivo', 'samsung': 'Samsung', 'galaxy': 'Samsung',
+        'iphone': 'Apple', 'apple': 'Apple', 'xiaomi': 'Xiaomi',
+        'redmi': 'Xiaomi', 'poco': 'Xiaomi', 'oppo': 'Oppo',
+        'realme': 'Realme', 'sony': 'Sony', 'xperia': 'Sony',
+        'google': 'Google', 'pixel': 'Google', 'asus': 'Asus',
+        'rog': 'Asus', 'tecno': 'Tecno', 'nokia': 'Nokia',
+        'huawei': 'Huawei', 'honor': 'Honor'
+    }
+    for keyword, brand in brand_map.items():
+        if keyword in msg_lower:
+            return brand
+    return None
+
 def call_groq_fallback(message: str) -> str:
     GROQ_API_KEY = os.getenv("GROQ_API_KEY")
     if not GROQ_API_KEY:
         return "Dạ, hệ thống AI hiện chưa được cấu hình khóa API hợp lệ. Quý khách vui lòng thử lại sau."
         
     try:
-        # Lấy danh sách sản phẩm từ DB
+        # Phát hiện brand từ tin nhắn
+        detected_brand = _detect_brand(message)
+        
+        # Lấy danh sách sản phẩm từ DB (lọc theo brand nếu có)
         products = []
         try:
             conn = mysql.connector.connect(
@@ -75,15 +95,28 @@ def call_groq_fallback(message: str) -> str:
                 connect_timeout=3
             )
             cursor = conn.cursor(dictionary=True)
-            query = """
-                SELECT sp.ma_sp as id, sp.ten_sp as name, hsx.ten_hang as brand, 
-                       sp.gia as price, sp.bo_nho as storage, sp.anh_dai_dien as image
-                FROM san_pham sp
-                LEFT JOIN hang_san_xuat hsx ON sp.ma_hang = hsx.ma_hang
-                WHERE sp.so_luong_ton > 0
-                ORDER BY sp.gia ASC
-            """
-            cursor.execute(query)
+            
+            if detected_brand:
+                query = """
+                    SELECT sp.ma_sp as id, sp.ten_sp as name, hsx.ten_hang as brand, 
+                           sp.gia as price, sp.bo_nho as storage, sp.anh_dai_dien as image
+                    FROM san_pham sp
+                    LEFT JOIN hang_san_xuat hsx ON sp.ma_hang = hsx.ma_hang
+                    WHERE sp.so_luong_ton > 0 AND LOWER(hsx.ten_hang) LIKE %s
+                    ORDER BY sp.gia ASC
+                """
+                cursor.execute(query, (f"%{detected_brand.lower()}%",))
+            else:
+                query = """
+                    SELECT sp.ma_sp as id, sp.ten_sp as name, hsx.ten_hang as brand, 
+                           sp.gia as price, sp.bo_nho as storage, sp.anh_dai_dien as image
+                    FROM san_pham sp
+                    LEFT JOIN hang_san_xuat hsx ON sp.ma_hang = hsx.ma_hang
+                    WHERE sp.so_luong_ton > 0
+                    ORDER BY sp.gia ASC
+                """
+                cursor.execute(query)
+            
             products = cursor.fetchall()
             cursor.close()
             conn.close()
@@ -96,39 +129,50 @@ def call_groq_fallback(message: str) -> str:
             price_formatted = f"{int(p['price']):,}".replace(",", ".") + "đ" if p['price'] else "N/A"
             product_list_str += f"- {p['name']} | Hãng: {p['brand'] or 'N/A'} | Giá: {price_formatted} | Bộ nhớ: {p['storage'] or 'N/A'} | ID: {p['id']} | Ảnh: {p['image'] or ''}\n"
 
-        system_prompt = f"""Bạn là trợ lý AI của QuangHưng Mobile. Hãy tư vấn khách hàng nhiệt tình, thân thiện.
-CHỈ ĐƯỢC phép gợi ý sản phẩm có trong danh sách sau:
+        total_count = len(products)
+        brand_note = f"Hiện có CHÍNH XÁC {total_count} sản phẩm {detected_brand} tại cửa hàng." if detected_brand else f"Cửa hàng hiện có tổng cộng {total_count} sản phẩm."
+
+        system_prompt = f"""Bạn là trợ lý AI của QuangHưng Mobile - cửa hàng điện thoại uy tín. Hãy tư vấn khách hàng nhiệt tình, thân thiện, chuyên nghiệp.
+
+{brand_note}
+
+DANH SÁCH SẢN PHẨM CHÍNH XÁC TỪ CƠ SỞ DỮ LIỆU:
 {product_list_str}
 
-BẮT BUỘC: Khi nhắc đến sản phẩm, sử dụng mẫu HTML này:
+QUY TẮC BẮT BUỘC:
+1. CHỈ ĐƯỢC tư vấn sản phẩm có trong danh sách trên. KHÔNG ĐƯỢC bịa đặt sản phẩm không tồn tại.
+2. Khi khách hỏi "có mấy" hoặc "bao nhiêu" sản phẩm, trả lời SỐ LƯỢNG CHÍNH XÁC: {total_count} sản phẩm.
+3. Dùng TÊN SẢN PHẨM THỰC TẾ (ví dụ: "Vivo V25", "iPhone 16 Pro Max"). TUYỆT ĐỐI KHÔNG dùng tiêu đề khuyến mãi/quảng cáo làm tên sản phẩm.
+4. Khi nhắc đến sản phẩm, BẮT BUỘC sử dụng mẫu HTML sau:
 <div style="display:flex; align-items:center; margin-top:10px; margin-bottom:10px; gap:15px; border: 1px solid #ddd; padding: 10px; border-radius: 8px;">
-  <img src="images/{p.get('image', '') if 'p' in locals() else '{Anh}'}" alt="{{Tên sản phẩm}}" style="width:80px; height:80px; object-fit:cover; border-radius:8px;">
+  <img src="{{Anh}}" alt="{{Ten_san_pham}}" style="width:80px; height:80px; object-fit:cover; border-radius:8px;">
   <div>
-    <strong>{{Tên sản phẩm}}</strong><br>
-    Giá: <span style="color:#e53935; font-weight:bold;">{{Giá}}</span><br>
+    <strong>{{Ten_san_pham}}</strong><br>
+    Giá: <span style="color:#e53935; font-weight:bold;">{{Gia}}</span><br>
     <a href="product-detail.html?id={{ID}}" style="display:inline-block; margin-top:5px; padding:5px 10px; background-color:#1976d2; color:#fff; text-decoration:none; border-radius:4px; font-size:12px;">Xem chi tiết</a>
   </div>
 </div>
-(Thay thế {{Ảnh}}, {{Tên sản phẩm}}, {{Giá}}, {{ID}} bằng thông tin thực tế. Lưu ý đường dẫn ảnh chỉ cần phần tên ảnh ví dụ: iphone15.jpg, không để images/images/ hay path đầy đủ vì thẻ src đã có prefix images/).
-
-Trả lời CHỈ dùng thẻ HTML (<br>, <strong>, <div>). Không dùng Markdown (*, **, -).
+5. Trả lời CHỈ dùng thẻ HTML (<br>, <strong>, <div>). KHÔNG dùng Markdown (*, **, -).
+6. Xưng hô lịch sự: "Dạ", "em", "anh/chị".
+7. So sánh ưu/nhược điểm nếu có nhiều sản phẩm cùng hãng.
+8. Cuối câu trả lời, đưa ra gợi ý tiếp theo để dẫn dắt hội thoại.
 """
         response = requests.post(
             "https://api.groq.com/openai/v1/chat/completions",
             json={
                 "model": "llama-3.3-70b-versatile",
                 "messages": [
-                    {"role": "system", "content": system_prompt.replace("{p.get('image', '') if 'p' in locals() else '{Anh}'}", "{Anh}")},
+                    {"role": "system", "content": system_prompt},
                     {"role": "user", "content": message}
                 ],
-                "temperature": 0.7,
-                "max_tokens": 800
+                "temperature": 0.5,
+                "max_tokens": 1500
             },
             headers={
                 "Authorization": f"Bearer {GROQ_API_KEY}",
                 "Content-Type": "application/json"
             },
-            timeout=8.0
+            timeout=15.0
         )
         if response.status_code == 200:
             return response.json()["choices"][0]["message"]["content"]

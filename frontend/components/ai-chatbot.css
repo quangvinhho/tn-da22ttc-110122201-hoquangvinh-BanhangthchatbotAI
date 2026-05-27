@@ -653,3 +653,44 @@
   font-size: 11px;
 }
 
+/* Voice Commerce Premium Upgrades */
+.ai-chat-voice {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ai-chat-voice:hover {
+  color: #1e3c72 !important;
+  transform: scale(1.15);
+}
+
+.ai-chat-voice.listening {
+  color: #dc2626 !important;
+  animation: micPulse 1.2s infinite;
+}
+
+@keyframes micPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+.ai-msg-speak {
+  transition: all 0.2s ease;
+  border-radius: 6px;
+}
+
+.ai-msg-speak:hover {
+  background-color: rgba(30, 60, 114, 0.1) !important;
+  opacity: 1 !important;
+}
+
+.ai-msg-speak.speaking {
+  color: #dc2626 !important;
+  animation: ttsWave 0.8s infinite alternate;
+}
+
+@keyframes ttsWave {
+  from { transform: scale(1); }
+  to { transform: scale(1.08); }
+}
+

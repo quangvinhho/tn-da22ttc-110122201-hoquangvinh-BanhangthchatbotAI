@@ -758,6 +758,16 @@ router.get('/stats/top-products', async (req, res) => {
 
 // ==================== PRODUCTS MANAGEMENT ====================
 
+// Gọi sang RAG Service để đồng bộ dữ liệu sản phẩm tự động
+async function syncRAGProducts() {
+    try {
+        await fetch('http://127.0.0.1:8000/api/reload-vectorstore', { method: 'POST' });
+        console.log('Đã tự động đồng bộ RAG Vectorstore sau khi cập nhật sản phẩm');
+    } catch (error) {
+        console.log('RAG service hiện không chạy, bỏ qua đồng bộ tự động.');
+    }
+}
+
 // GET /api/admin/products - Lấy tất cả sản phẩm với thông tin chi tiết
 router.get('/products', async (req, res) => {
     try {
@@ -834,6 +844,8 @@ router.post('/products', async (req, res) => {
                  cau_hinh.camera || null, cau_hinh.pin || null, cau_hinh.he_dieu_hanh || null]
             );
         }
+        
+        syncRAGProducts(); // Tự động đồng bộ RAG
         
         res.json({ success: true, message: 'Thêm sản phẩm thành công', data: { id: productId } });
     } catch (error) {
@@ -1010,6 +1022,8 @@ router.put('/products/:id', async (req, res) => {
             }
         }
         
+        syncRAGProducts(); // Tự động đồng bộ RAG
+        
         res.json({ success: true, message: 'Cập nhật sản phẩm thành công' });
     } catch (error) {
         console.error('Error updating product:', error);
@@ -1036,6 +1050,8 @@ router.delete('/products/:id', async (req, res) => {
         await pool.query('DELETE FROM danh_gia WHERE ma_sp = ?', [id]);
         // Xóa sản phẩm
         await pool.query('DELETE FROM san_pham WHERE ma_sp = ?', [id]);
+        
+        syncRAGProducts(); // Tự động đồng bộ RAG
         
         res.json({ success: true, message: 'Xóa sản phẩm thành công' });
     } catch (error) {

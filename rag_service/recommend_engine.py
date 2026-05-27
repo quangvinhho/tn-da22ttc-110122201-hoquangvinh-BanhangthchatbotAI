@@ -10,7 +10,7 @@ load_dotenv(dotenv_path="../backend/.env")
 
 DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_USER = os.getenv("DB_USER", "root")
-DB_PASS = os.getenv("DB_PASS", "Vinh123456789@")
+DB_PASS = os.getenv("DB_PASSWORD", "Vinh123456789@")
 DB_NAME = os.getenv("DB_NAME", "QHUNG")
 
 def train_knn_model(user_item_matrix):
@@ -106,9 +106,13 @@ def get_apriori_recommendations(rules, current_cart_items):
     return list(recommended_items)
 
 
+import sqlalchemy
+
 def fetch_data_from_db():
     try:
-        conn = mysql.connector.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, database=DB_NAME)
+        import urllib.parse
+        encoded_pass = urllib.parse.quote_plus(DB_PASS)
+        engine = sqlalchemy.create_engine(f"mysql+mysqlconnector://{DB_USER}:{encoded_pass}@{DB_HOST}/{DB_NAME}")
         
         # 1. User-Item Data for KNN
         query_knn = """
@@ -118,15 +122,15 @@ def fetch_data_from_db():
             WHERE dh.ma_kh IS NOT NULL 
             GROUP BY dh.ma_kh, ct.ma_sp
         """
-        df_knn = pd.read_sql(query_knn, conn)
+        df_knn = pd.read_sql(query_knn, engine)
         
         # 2. Transaction Data for Apriori
         query_apriori = """
             SELECT ma_don, ma_sp FROM chi_tiet_don_hang
         """
-        df_apriori = pd.read_sql(query_apriori, conn)
+        df_apriori = pd.read_sql(query_apriori, engine)
         
-        conn.close()
+        engine.dispose()
         return df_knn, df_apriori
     except Exception as e:
         print(f"Error fetching data from DB: {e}")
@@ -284,12 +288,12 @@ def extract_interests_from_history(user_id):
         conn = mysql.connector.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, database=DB_NAME)
         cursor = conn.cursor(dictionary=True)
         
-        # 1. Lấy lịch sử tìm kiếm
-        cursor.execute("SELECT tu_khoa FROM du_lieu_tim_kiem WHERE ma_kh = %s ORDER BY thoi_gian DESC LIMIT 20", (user_id,))
+        # 1. Lấy lịch sử tìm kiếm (chỉ lấy 5 lượt gần nhất để bám sát sở thích hiện tại)
+        cursor.execute("SELECT tu_khoa FROM du_lieu_tim_kiem WHERE ma_kh = %s ORDER BY thoi_gian DESC LIMIT 5", (user_id,))
         searches = cursor.fetchall()
         
-        # 2. Lấy lịch sử chat
-        cursor.execute("SELECT noi_dung FROM lich_su_chatbot WHERE ma_kh = %s AND vai_tro = 'user' ORDER BY thoi_gian DESC LIMIT 20", (user_id,))
+        # 2. Lấy lịch sử chat (chỉ lấy 5 tin nhắn gần nhất)
+        cursor.execute("SELECT noi_dung FROM lich_su_chatbot WHERE ma_kh = %s AND vai_tro = 'user' ORDER BY thoi_gian DESC LIMIT 5", (user_id,))
         chats = cursor.fetchall()
         
         conn.close()

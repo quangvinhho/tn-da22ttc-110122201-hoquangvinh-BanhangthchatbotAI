@@ -36,7 +36,7 @@ router.get('/', checkAdmin, async (req, res) => {
     }
     
     if (search) {
-      query += ' AND (question LIKE ? OR answer LIKE ?)';
+      query += ' AND (title LIKE ? OR content LIKE ?)';
       params.push(`%${search}%`, `%${search}%`);
     }
     
@@ -45,7 +45,7 @@ router.get('/', checkAdmin, async (req, res) => {
       params.push(is_active);
     }
     
-    query += ' ORDER BY created_at DESC';
+    query += ' ORDER BY updated_at DESC';
     
     const [rows] = await pool.query(query, params);
     res.json(rows);
@@ -77,15 +77,15 @@ router.get('/:id', checkAdmin, async (req, res) => {
 // Tạo knowledge mới
 router.post('/', checkAdmin, async (req, res) => {
   try {
-    const { question, answer, type, is_active } = req.body;
+    const { title, content, type, is_active } = req.body;
     
-    if (!question || !answer) {
+    if (!title || !content) {
       return res.status(400).json({ error: 'Vui lòng nhập đầy đủ thông tin' });
     }
     
     const [result] = await pool.query(
-      'INSERT INTO chatbot_knowledge (question, answer, type, is_active) VALUES (?, ?, ?, ?)',
-      [question, answer, type || 'faq', is_active !== undefined ? is_active : 1]
+      'INSERT INTO chatbot_knowledge (title, content, type, is_active) VALUES (?, ?, ?, ?)',
+      [title, content, type || 'faq', is_active !== undefined ? is_active : 1]
     );
     
     syncRAGKnowledge(); // Tự động đồng bộ
@@ -103,15 +103,15 @@ router.post('/', checkAdmin, async (req, res) => {
 // Cập nhật knowledge
 router.put('/:id', checkAdmin, async (req, res) => {
   try {
-    const { question, answer, type, is_active } = req.body;
+    const { title, content, type, is_active } = req.body;
     
-    if (!question || !answer) {
+    if (!title || !content) {
       return res.status(400).json({ error: 'Vui lòng nhập đầy đủ thông tin' });
     }
     
     await pool.query(
-      'UPDATE chatbot_knowledge SET question = ?, answer = ?, type = ?, is_active = ? WHERE id = ?',
-      [question, answer, type || 'faq', is_active !== undefined ? is_active : 1, req.params.id]
+      'UPDATE chatbot_knowledge SET title = ?, content = ?, type = ?, is_active = ? WHERE id = ?',
+      [title, content, type || 'faq', is_active !== undefined ? is_active : 1, req.params.id]
     );
     
     syncRAGKnowledge(); // Tự động đồng bộ

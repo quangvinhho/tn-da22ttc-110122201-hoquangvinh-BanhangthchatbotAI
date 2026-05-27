@@ -97,12 +97,26 @@ class SecureStorage {
   // Lấy dữ liệu an toàn
   getItem(key) {
     try {
-      const encrypted = localStorage.getItem(key);
-      if (!encrypted) return null;
-      const decrypted = this.decrypt(encrypted);
-      return JSON.parse(decrypted);
+      // Vì originalGetItem có thể được monkeypatch để trả về chuỗi đã giải mã hoặc plaintext
+      const rawValue = localStorage.getItem(key);
+      if (!rawValue) return null;
+      
+      const trimmed = rawValue.trim();
+      if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+        return JSON.parse(trimmed);
+      }
+      
+      const decrypted = this.decrypt(rawValue);
+      if (!decrypted) return null;
+      
+      const decryptedTrimmed = decrypted.trim();
+      if (!decryptedTrimmed) return null;
+      
+      return JSON.parse(decryptedTrimmed);
     } catch (e) {
-      console.error('SecureStorage getItem error');
+      console.error('SecureStorage getItem error', e);
+      // Xóa dữ liệu lỗi để tránh lỗi lặp lại
+      localStorage.removeItem(key);
       return null;
     }
   }

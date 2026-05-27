@@ -1,3 +1,12 @@
+import sys
+import io
+import warnings
+
+# Stdout wrapping is skipped to avoid OSError [Errno 22] on background task pipes
+
+# Ẩn các cảnh báo không cần thiết từ thư viện (pandas, websockets, langchain) để làm sạch log
+warnings.filterwarnings("ignore")
+
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List, Dict, Optional, Any
@@ -13,6 +22,7 @@ class ChatRequest(BaseModel):
     userId: Optional[Any] = None
     conversationId: Optional[Any] = None
     history: Optional[List[Dict]] = []
+    interests: Optional[List[str]] = []
 
 class ChatResponse(BaseModel):
     response: str
@@ -32,17 +42,50 @@ async def chat(request: ChatRequest):
             )
 
         engine = get_rag_engine()
-        answer = engine.process_chat(request.message, request.history)
+        answer = engine.process_chat(
+            request.message, 
+            request.history, 
+            user_id=request.userId, 
+            interests=request.interests
+        )
         
         return ChatResponse(response=answer)
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         error_msg = str(e)
+        try:
+            with open("error_log.txt", "a", encoding="utf-8") as f:
+                f.write(traceback.format_exc() + "\n")
+        except:
+            pass
         print(f"Error in chat endpoint: {error_msg}")
         if "API_KEY_INVALID" in error_msg or "API key not valid" in error_msg or "400" in error_msg:
             return ChatResponse(
                 response="Hệ thống ghi nhận lỗi khóa API (API Key) không hợp lệ từ máy chủ Groq. Vui lòng kiểm tra lại cấu hình GROQ_API_KEY trong tệp backend/.env.",
                 intent="ERROR"
             )
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+@app.post("/api/admin-chat", response_model=ChatResponse)
+async def admin_chat(request: ChatRequest):
+    try:
+        if not request.message:
+            raise HTTPException(status_code=400, detail="Message is required")
+            
+        if not GROQ_API_KEY or GROQ_API_KEY == "your_groq_api_key_here":
+            return ChatResponse(
+                response="AI chưa được cấu hình khóa API.",
+                intent="ERROR"
+            )
+
+        engine = get_rag_engine()
+        answer = engine.process_admin_chat(request.message, request.history)
+        return ChatResponse(response=answer)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        print(f"Error in admin_chat endpoint: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.post("/api/reload-vectorstore")

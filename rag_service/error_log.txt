@@ -1,0 +1,338 @@
+Traceback (most recent call last):
+  File "D:\GDDA\rag_service\venv\Lib\site-packages\mysql\connector\connection_cext.py", line 772, in cmd_query
+    self._cmysql.query(
+    ~~~~~~~~~~~~~~~~~~^
+        query,
+        ^^^^^^
+    ...<3 lines>...
+        query_attrs=self.query_attrs,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+_mysql_connector.MySQLInterfaceError: Table 'qhung.loai_san_pham' doesn't exist
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\GDDA\rag_service\main.py", line 45, in chat
+    engine = get_rag_engine()
+  File "D:\GDDA\rag_service\rag_engine.py", line 505, in get_rag_engine
+    rag_engine = RAGEngine()
+  File "D:\GDDA\rag_service\rag_engine.py", line 50, in __init__
+    self.vectorstore = self._initialize_vector_store()
+                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "D:\GDDA\rag_service\rag_engine.py", line 70, in _initialize_vector_store
+    cursor.execute(query)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "D:\GDDA\rag_service\venv\Lib\site-packages\mysql\connector\cursor_cext.py", line 353, in execute
+    self._connection.cmd_query(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self._stmt_partition["mappable_stmt"],
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<2 lines>...
+        raw_as_string=self._raw_as_string,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "D:\GDDA\rag_service\venv\Lib\site-packages\mysql\connector\opentelemetry\context_propagation.py", line 106, in wrapper
+    result = method(cnx, *args, **kwargs)
+  File "D:\GDDA\rag_service\venv\Lib\site-packages\mysql\connector\connection_cext.py", line 781, in cmd_query
+    raise get_mysql_exception(
+        err.errno, msg=err.msg, sqlstate=err.sqlstate
+    ) from err
+mysql.connector.errors.ProgrammingError: 1146 (42S02): Table 'qhung.loai_san_pham' doesn't exist
+
+Traceback (most recent call last):
+  File "D:\GDDA\rag_service\main.py", line 44, in chat
+    answer = engine.process_chat(request.message, request.history)
+  File "D:\GDDA\rag_service\rag_engine.py", line 503, in process_chat
+    return self.query_semantic(message, history)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "D:\GDDA\rag_service\rag_engine.py", line 308, in query_semantic
+    prompt = PromptTemplate(
+        template=system_template,
+        input_variables=["context", "question"]
+    )
+  File "C:\Users\DELL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\langchain_core\load\serializable.py", line 118, in __init__
+    super().__init__(*args, **kwargs)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\DELL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\pydantic\main.py", line 263, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+pydantic_core._pydantic_core.ValidationError: 1 validation error for PromptTemplate
+  Value error, Invalid format specifier in f-string template. Nested replacement fields are not allowed. [type=value_error, input_value={'template': '\n        B...'partial_variables': {}}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.13/v/value_error
+
+Traceback (most recent call last):
+  File "D:\GDDA\rag_service\main.py", line 44, in chat
+    answer = engine.process_chat(request.message, request.history)
+  File "D:\GDDA\rag_service\rag_engine.py", line 503, in process_chat
+    'sắp hết', 'thống kê', 'báo cáo', 'bán chạy', 'đánh giá', 'kpi', 'thu nhập'
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\GDDA\rag_service\rag_engine.py", line 308, in query_semantic
+    prompt = PromptTemplate(
+        template=system_template,
+        input_variables=["context", "question"]
+    )
+  File "C:\Users\DELL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\langchain_core\load\serializable.py", line 118, in __init__
+    super().__init__(*args, **kwargs)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\DELL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\pydantic\main.py", line 263, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+pydantic_core._pydantic_core.ValidationError: 1 validation error for PromptTemplate
+  Value error, Invalid format specifier in f-string template. Nested replacement fields are not allowed. [type=value_error, input_value={'template': '\n        B...'partial_variables': {}}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.13/v/value_error
+
+Traceback (most recent call last):
+  File "D:\GDDA\rag_service\main.py", line 44, in chat
+    answer = engine.process_chat(request.message, request.history)
+  File "D:\GDDA\rag_service\rag_engine.py", line 503, in process_chat
+    'sắp hết', 'thống kê', 'báo cáo', 'bán chạy', 'đánh giá', 'kpi', 'thu nhập'
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\GDDA\rag_service\rag_engine.py", line 308, in query_semantic
+    prompt = PromptTemplate(
+        template=system_template,
+        input_variables=["context", "question"]
+    )
+  File "C:\Users\DELL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\langchain_core\load\serializable.py", line 118, in __init__
+    super().__init__(*args, **kwargs)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\DELL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\pydantic\main.py", line 263, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+pydantic_core._pydantic_core.ValidationError: 1 validation error for PromptTemplate
+  Value error, Invalid format specifier in f-string template. Nested replacement fields are not allowed. [type=value_error, input_value={'template': '\n        B...'partial_variables': {}}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.13/v/value_error
+
+Traceback (most recent call last):
+  File "D:\GDDA\rag_service\main.py", line 44, in chat
+    answer = engine.process_chat(request.message, request.history)
+  File "D:\GDDA\rag_service\rag_engine.py", line 503, in process_chat
+    'sắp hết', 'thống kê', 'báo cáo', 'bán chạy', 'đánh giá', 'kpi', 'thu nhập'
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\GDDA\rag_service\rag_engine.py", line 308, in query_semantic
+    prompt = PromptTemplate(
+        template=system_template,
+        input_variables=["context", "question"]
+    )
+  File "C:\Users\DELL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\langchain_core\load\serializable.py", line 118, in __init__
+    super().__init__(*args, **kwargs)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\DELL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\pydantic\main.py", line 263, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+pydantic_core._pydantic_core.ValidationError: 1 validation error for PromptTemplate
+  Value error, Invalid format specifier in f-string template. Nested replacement fields are not allowed. [type=value_error, input_value={'template': '\n        B...'partial_variables': {}}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.13/v/value_error
+
+Traceback (most recent call last):
+  File "D:\GDDA\rag_service\main.py", line 44, in chat
+    answer = engine.process_chat(request.message, request.history)
+  File "D:\GDDA\rag_service\rag_engine.py", line 557, in process_chat
+    return self.query_semantic(message, history)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "D:\GDDA\rag_service\rag_engine.py", line 308, in query_semantic
+    prompt = PromptTemplate(
+        template=system_template,
+        input_variables=["context", "question"]
+    )
+  File "C:\Users\DELL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\langchain_core\load\serializable.py", line 118, in __init__
+    super().__init__(*args, **kwargs)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\DELL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\pydantic\main.py", line 263, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+pydantic_core._pydantic_core.ValidationError: 1 validation error for PromptTemplate
+  Value error, Invalid format specifier in f-string template. Nested replacement fields are not allowed. [type=value_error, input_value={'template': '\n        B...'partial_variables': {}}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.13/v/value_error
+
+Traceback (most recent call last):
+  File "D:\GDDA\rag_service\main.py", line 44, in chat
+    answer = engine.process_chat(request.message, request.history)
+  File "D:\GDDA\rag_service\rag_engine.py", line 563, in process_chat
+    return self.query_semantic(message, history)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "D:\GDDA\rag_service\rag_engine.py", line 311, in query_semantic
+    prompt = PromptTemplate(
+        template=system_template,
+        input_variables=["context", "question"]
+    )
+  File "C:\Users\DELL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\langchain_core\load\serializable.py", line 118, in __init__
+    super().__init__(*args, **kwargs)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\DELL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\pydantic\main.py", line 263, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+pydantic_core._pydantic_core.ValidationError: 1 validation error for PromptTemplate
+  Value error, Invalid variable name '...' in f-string template. Variable names cannot contain attribute access (.) or indexing ([]). [type=value_error, input_value={'template': '\n        B...'partial_variables': {}}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.13/v/value_error
+
+Traceback (most recent call last):
+  File "D:\GDDA\rag_service\main.py", line 44, in chat
+    answer = engine.process_chat(request.message, request.history)
+  File "D:\GDDA\rag_service\rag_engine.py", line 563, in process_chat
+    print("=> Routing to Semantic/RAG engine (Public user forced)")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\GDDA\rag_service\rag_engine.py", line 311, in query_semantic
+    """
+    
+    ...<2 lines>...
+        input_variables=["context", "question"]
+    
+  File "C:\Users\DELL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\langchain_core\load\serializable.py", line 118, in __init__
+    super().__init__(*args, **kwargs)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\DELL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\pydantic\main.py", line 263, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+pydantic_core._pydantic_core.ValidationError: 1 validation error for PromptTemplate
+  Value error, Invalid variable name '...' in f-string template. Variable names cannot contain attribute access (.) or indexing ([]). [type=value_error, input_value={'template': '\n        B...'partial_variables': {}}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.13/v/value_error
+
+Traceback (most recent call last):
+  File "D:\GDDA\rag_service\main.py", line 44, in chat
+    answer = engine.process_chat(request.message, request.history)
+  File "D:\GDDA\rag_service\rag_engine.py", line 563, in process_chat
+    print("=> Routing to Semantic/RAG engine (Public user forced)")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\GDDA\rag_service\rag_engine.py", line 311, in query_semantic
+    """
+    
+    ...<2 lines>...
+        input_variables=["context", "question"]
+    
+  File "C:\Users\DELL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\langchain_core\load\serializable.py", line 118, in __init__
+    super().__init__(*args, **kwargs)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\DELL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\pydantic\main.py", line 263, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+pydantic_core._pydantic_core.ValidationError: 1 validation error for PromptTemplate
+  Value error, Invalid variable name '...' in f-string template. Variable names cannot contain attribute access (.) or indexing ([]). [type=value_error, input_value={'template': '\n        B...'partial_variables': {}}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.13/v/value_error
+
+Traceback (most recent call last):
+  File "D:\GDDA\rag_service\main.py", line 45, in chat
+    answer = engine.process_chat(
+        request.message,
+    ...<2 lines>...
+        interests=request.interests
+    )
+  File "D:\GDDA\rag_service\rag_engine.py", line 577, in process_chat
+    return self.query_semantic(message, history, interests)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\GDDA\rag_service\rag_engine.py", line 217, in query_semantic
+    print(f"[RAG FAST-CONTEXT] '{question}' -> '{standalone_question}'")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\DELL\AppData\Local\Python\pythoncore-3.14-64\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u1edf' in position 21: character maps to <undefined>
+
+Traceback (most recent call last):
+  File "D:\GDDA\rag_service\main.py", line 45, in chat
+    answer = engine.process_chat(
+        request.message,
+    ...<2 lines>...
+        interests=request.interests
+    )
+  File "D:\GDDA\rag_service\rag_engine.py", line 577, in process_chat
+    return self.query_semantic(message, history, interests)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\GDDA\rag_service\rag_engine.py", line 217, in query_semantic
+    print(f"[RAG FAST-CONTEXT] '{question}' -> '{standalone_question}'")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\DELL\AppData\Local\Python\pythoncore-3.14-64\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u1ea5' in position 29: character maps to <undefined>
+
+Traceback (most recent call last):
+  File "D:\GDDA\rag_service\main.py", line 45, in chat
+    answer = engine.process_chat(
+        request.message,
+    ...<2 lines>...
+        interests=request.interests
+    )
+  File "D:\GDDA\rag_service\rag_engine.py", line 577, in process_chat
+    return self.query_semantic(message, history, interests)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\GDDA\rag_service\rag_engine.py", line 217, in query_semantic
+    print(f"[RAG FAST-CONTEXT] '{question}' -> '{standalone_question}'")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\DELL\AppData\Local\Python\pythoncore-3.14-64\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u1ea5' in position 29: character maps to <undefined>
+
+Traceback (most recent call last):
+  File "D:\GDDA\rag_service\main.py", line 45, in chat
+    answer = engine.process_chat(
+        request.message,
+    ...<2 lines>...
+        interests=request.interests
+    )
+  File "D:\GDDA\rag_service\rag_engine.py", line 577, in process_chat
+    return self.query_semantic(message, history, interests)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\GDDA\rag_service\rag_engine.py", line 217, in query_semantic
+    print(f"[RAG FAST-CONTEXT] '{question}' -> '{standalone_question}'")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\DELL\AppData\Local\Python\pythoncore-3.14-64\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u1ea1' in position 29: character maps to <undefined>
+
+Traceback (most recent call last):
+  File "D:\GDDA\rag_service\main.py", line 45, in chat
+    answer = engine.process_chat(
+        request.message,
+    ...<2 lines>...
+        interests=request.interests
+    )
+  File "D:\GDDA\rag_service\rag_engine.py", line 599, in process_chat
+    return self.query_semantic(message, history, interests)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\GDDA\rag_service\rag_engine.py", line 236, in query_semantic
+    general_knowledge = self._get_general_knowledge()
+  File "D:\GDDA\rag_service\rag_engine.py", line 330, in _get_general_knowledge
+    print("[CACHE HIT] Trả knowledge từ RAM cache")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\DELL\AppData\Local\Python\pythoncore-3.14-64\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u1ea3' in position 14: character maps to <undefined>
+
+Traceback (most recent call last):
+  File "D:\GDDA\rag_service\main.py", line 45, in chat
+    answer = engine.process_chat(
+        request.message,
+    ...<2 lines>...
+        interests=request.interests
+    )
+  File "D:\GDDA\rag_service\rag_engine.py", line 599, in process_chat
+    return self.query_semantic(message, history, interests)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\GDDA\rag_service\rag_engine.py", line 236, in query_semantic
+    general_knowledge = self._get_general_knowledge()
+  File "D:\GDDA\rag_service\rag_engine.py", line 330, in _get_general_knowledge
+    print("[CACHE HIT] Trả knowledge từ RAM cache")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\DELL\AppData\Local\Python\pythoncore-3.14-64\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u1ea3' in position 14: character maps to <undefined>
+
+Traceback (most recent call last):
+  File "D:\GDDA\rag_service\main.py", line 45, in chat
+    answer = engine.process_chat(
+        request.message,
+    ...<2 lines>...
+        interests=request.interests
+    )
+  File "D:\GDDA\rag_service\rag_engine.py", line 599, in process_chat
+    return self.query_semantic(message, history, interests)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\GDDA\rag_service\rag_engine.py", line 236, in query_semantic
+    general_knowledge = self._get_general_knowledge()
+  File "D:\GDDA\rag_service\rag_engine.py", line 330, in _get_general_knowledge
+    print("[CACHE HIT] Trả knowledge từ RAM cache")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\DELL\AppData\Local\Python\pythoncore-3.14-64\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u1ea3' in position 14: character maps to <undefined>
+

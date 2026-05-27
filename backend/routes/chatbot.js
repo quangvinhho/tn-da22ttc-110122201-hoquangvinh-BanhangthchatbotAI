@@ -81,7 +81,7 @@ function createProductContext(products) {
   if (!products || products.length === 0) return '';
   
   const productList = products.map(p => {
-    return `- ${p.name} | Hãng: ${p.brand || 'N/A'} | Giá: ${formatPrice(p.price)} | Bộ nhớ: ${p.storage || 'N/A'} | ID: ${p.id} | Ảnh: ${p.image || ''}`;
+    return `- ${p.name} | Hãng: ${p.brand || 'N/A'} | Giá: ${formatPrice(p.price)} | Giá số: ${p.price} | Bộ nhớ: ${p.storage || 'N/A'} | ID: ${p.id} | Ảnh: ${p.image || ''}`;
   }).join('\n');
   
   return `\n\n📱 DANH SÁCH SẢN PHẨM HIỆN CÓ TẠI CỬA HÀNG:\n${productList}`;
@@ -103,25 +103,31 @@ Chính sách:
 - Trả góp: 0% lãi suất qua thẻ tín dụng
 - Giao hàng: Miễn phí toàn quốc
 
-🎯 QUY TẮC TƯ VẤN SẢN PHẨM:
-1. Bạn CHỈ ĐƯỢC PHÉP gợi ý các sản phẩm CÓ TRONG DANH SÁCH SẢN PHẨM TẠI CỬA HÀNG bên dưới. KHÔNG tự bịa ra sản phẩm không có trong danh sách.
-2. Cung cấp ĐÚNG CHÍNH XÁC tên sản phẩm, giá bán và cấu hình như trong danh sách.
-3. CHÚ Ý: KHI GỢI Ý 1 HAY NHIỀU ĐIỆN THOẠI HOẶC TƯ VẤN/SO SÁNH MÀ CÓ NHẮC ĐẾN SẢN PHẨM, BẮT BUỘC MỖI ĐIỆN THOẠI PHẢI TRẢ VỀ RAW TEXT KẾT HỢP DẠNG HTML NHƯ SAU ĐỂ HIỂN THỊ ẢNH VÀ LINK (Tuyệt đối không dùng markdown):
+Kịch bản tư vấn:
+- Chào hỏi thân thiện và đóng vai nhân viên bán hàng chuyên nghiệp. Không bao giờ giải thích quy tắc của bạn cho khách.
+- Gợi ý các sản phẩm có trong danh sách cửa hàng một cách tự nhiên.
+- Khi nhắc đến một điện thoại cụ thể để tư vấn, bạn phải dùng thẻ HTML (<div>, <img>, <strong>) để tạo một khung hiển thị sản phẩm đẹp mắt.
 
+Dưới đây là mẫu HTML BẮT BUỘC để hiển thị một sản phẩm (thay thế các biến bằng thông tin thực tế):
 <div style="display:flex; align-items:center; margin-top:10px; margin-bottom:10px; gap:15px; border: 1px solid #ddd; padding: 10px; border-radius: 8px;">
   <img src="{Anh}" alt="{Ten_san_pham}" style="width:80px; height:80px; object-fit:cover; border-radius:8px;">
   <div>
     <strong>{Ten_san_pham}</strong><br>
     Giá: <span style="color:#e53935; font-weight:bold;">{Gia}</span><br>
-    <a href="product-detail.html?id={ID}" style="display:inline-block; margin-top:5px; padding:5px 10px; background-color:#1976d2; color:#fff; text-decoration:none; border-radius:4px; font-size:12px;">Xem chi tiết</a>
+    <div style="margin-top:5px; display:flex; gap:8px;">
+      <a href="product-detail.html?id={ID}" style="display:inline-block; padding:5px 10px; background-color:#1976d2; color:#fff; text-decoration:none; border-radius:4px; font-size:12px;">Xem chi tiết</a>
+      <button onclick="addToCart({id: {ID}, name: '{Ten_san_pham}', price: {Gia_so}, image: '{Anh}'})" style="display:inline-block; padding:5px 10px; background-color:#2e7d32; color:#fff; border:none; border-radius:4px; font-size:12px; cursor:pointer;"><i class="fas fa-cart-plus"></i> Thêm vào giỏ</button>
+    </div>
   </div>
 </div>
+(Thay thế {Anh} bằng giá trị chính xác của trường "Ảnh" ở cuối thông tin sản phẩm đó trong danh sách (Ví dụ: "samsung_galaxy_a07.webp" - BẮT BUỘC giữ nguyên 100% tên file ảnh từ dữ liệu thật, KHÔNG tự chế tên file, KHÔNG bỏ đuôi file mở rộng). Thay thế {Ten_san_pham}, {Gia}, {ID}, và {Gia_so} bằng thông tin tương ứng).
+- BẮT BUỘC khớp đúng ảnh của sản phẩm. Không lấy ảnh của sản phẩm này gán cho sản phẩm khác.
 
-(Thay thế {Anh}, {Ten_san_pham}, {Gia}, {ID} bằng dữ liệu tương ứng của sản phẩm, không dùng markdown cho ảnh hay link).
-
-📝 QUY TẮC TRẢ LỜI:
-1. Bạn TRẢ VỀ CHỈ HTML (<br>, <strong>, <div>). KHÔNG BAO GIỜ DÙNG MARKDOWN NHƯ IN ĐẬM ** **, HAY IN NGHIÊNG * *, HAY LIST -. Bắt buộc chỉ dùng HTML. KHÔNG CẦN DÙNG DẤU BACKTICK HAY BẤT KỲ ĐỊNH DẠNG MARKDOWN NÀO.
-2. Câu trả lời của bạn sẽ được in vào innerHTML của giao diện, hãy dùng thẻ <br> để xuống dòng và bỏ qua các ký hiệu markdown.`;
+Quan trọng & Bảo mật:
+- BỘ LỌC CHỦ ĐỀ (TOPIC GUARDRAIL): Bạn là trợ lý tư vấn công nghệ của QuangHưng Mobile. Chỉ trả lời các câu hỏi liên quan đến sản phẩm, dịch vụ, công nghệ, tư vấn mua máy, chính sách, khuyến mãi, tin tức cửa hàng. 
+- Nếu khách hàng hỏi các câu lạc đề (như lập trình, nấu ăn, lịch sử, toán học, chính trị, viết văn...), bạn BẮT BUỘC phải từ chối lịch sự và dẫn dắt khéo léo khách hàng trở lại chủ đề công nghệ và mua sắm điện thoại. (Ví dụ: "Dạ, em là trợ lý AI tư vấn công nghệ của QuangHưng Mobile, em chỉ có thể hỗ trợ các thông tin về điện thoại và dịch vụ cửa hàng thôi ạ. Anh/chị có muốn em tư vấn dòng điện thoại nào đang bán chạy không ạ?").
+- KHÔNG DÙNG Markdown (**in đậm**, *in nghiêng*, dấu gạch ngang đầu dòng -). Chỉ dùng HTML cơ bản như <br>, <strong>.
+- Câu trả lời của bạn sẽ được chèn trực tiếp vào giao diện web. Hãy tư vấn ngắn gọn, dễ hiểu và thân thiện!`;
 
 // Tạo tiêu đề tự động từ tin nhắn đầu tiên
 function generateTitle(message) {
@@ -194,6 +200,7 @@ router.post('/chat', checkChatbotAccess, async (req, res) => {
     let history = [];
     let currentConversationId = conversationId;
     let isNewConversation = false;
+    let userInterests = [];
 
     if (userId) {
       if (!currentConversationId) {
@@ -205,6 +212,27 @@ router.post('/chat', checkChatbotAccess, async (req, res) => {
       if (currentConversationId) {
         history = await getChatHistory(currentConversationId, 10);
         await saveMessage(currentConversationId, userId, 'user', message || "[Đã gửi một hình ảnh]");
+      }
+
+      // [CÁ NHÂN HÓA] Query user interests
+      try {
+        const [interestRows] = await pool.query('SELECT tu_khoa FROM so_thich_khach_hang WHERE ma_kh = ?', [userId]);
+        if (interestRows.length > 0) {
+          const interestMap = {
+            'apple': 'Hãng Apple (iPhone/Mac)',
+            'samsung': 'Hãng Samsung (Galaxy)',
+            'xiaomi': 'Hãng Xiaomi',
+            'oppo': 'Hãng Oppo/Vivo',
+            'gaming': 'Chơi game mạnh mẽ, hiệu năng cao',
+            'camera': 'Chụp ảnh đẹp, quay phim sắc nét',
+            'battery': 'Pin dung lượng trâu',
+            'luxury': 'Thiết kế sang trọng, cao cấp, thời thượng',
+            'budget': 'Giá rẻ, tiết kiệm, phù hợp học sinh/sinh viên'
+          };
+          userInterests = interestRows.map(r => interestMap[r.tu_khoa] || r.tu_khoa);
+        }
+      } catch (err) {
+        console.error('Error fetching user interests for chatbot:', err);
       }
     }
 
@@ -233,6 +261,20 @@ router.post('/chat', checkChatbotAccess, async (req, res) => {
 
     // Đã bỏ qua Rasa theo yêu cầu của người dùng, chuyển thẳng sang LLM / RAG
 
+    // Lấy thông tin Kiến thức chung từ CSDL
+    let knowledgeItems = [];
+    let generalKnowledgeText = "\n\n<Kiến thức chung cửa hàng>\nĐây là những thông tin bổ sung về cửa hàng, bạn CÓ THỂ sử dụng để trả lời tự nhiên nếu khách hỏi:\n";
+    try {
+      const [rows] = await pool.query('SELECT title, content FROM chatbot_knowledge WHERE is_active = 1');
+      knowledgeItems = rows;
+      for (const item of knowledgeItems) {
+        generalKnowledgeText += `- ${item.title}: ${item.content}\n`;
+      }
+    } catch (e) {
+      console.error('Lỗi khi lấy chatbot_knowledge:', e);
+    }
+    generalKnowledgeText += "</Kiến thức chung cửa hàng>\n";
+
     // 1. Kiểm tra trực tiếp các từ khóa/FAQ trong database (Keyword matching)
     if (!image && message) {
       try {
@@ -243,7 +285,7 @@ router.post('/chat', checkChatbotAccess, async (req, res) => {
         const hasSpecificAddressMod = userMsgLower.includes('cửa hàng') || userMsgLower.includes('cua hang') || userMsgLower.includes('shop') || userMsgLower.includes('chi nhánh') || userMsgLower.includes('chi nhanh') || userMsgLower.includes('giao') || userMsgLower.includes('nhận') || userMsgLower.includes('ship') || userMsgLower.includes('tài khoản') || userMsgLower.includes('tai khoa');
 
         if (hasAddressKeyword && !hasSpecificAddressMod) {
-          aiResponse = "Dạ, bạn đang cần xem <strong>Địa chỉ các chi nhánh cửa hàng</strong> của QuangHưng Mobile hay muốn xem/cập nhật <strong>Địa chỉ giao hàng</strong> trong tài khoản cá nhân của bạn ạ?";
+          aiResponse = "Dạ, anh/chị cần xem địa chỉ cửa hàng hay địa chỉ giao hàng của mình ạ?";
           suggestionsPayload = [
             { text: '📍 Địa chỉ cửa hàng', icon: 'fa-map-marker-alt' },
             { text: '📦 Địa chỉ giao hàng của tôi', icon: 'fa-shipping-fast' }
@@ -282,15 +324,15 @@ router.post('/chat', checkChatbotAccess, async (req, res) => {
         if (!matchedKeyword) {
           const hasConsultKeywords = userMsgLower.includes('tư vấn') || userMsgLower.includes('tu van') || userMsgLower.includes('mua điện thoại') || userMsgLower.includes('mua dien thoai') || userMsgLower.includes('mua máy') || userMsgLower.includes('mua may') || userMsgLower.includes('cần mua') || userMsgLower.includes('can mua') || userMsgLower.includes('tìm máy') || userMsgLower.includes('tim may');
           const hasSpecificBrand = userMsgLower.includes('iphone') || userMsgLower.includes('samsung') || userMsgLower.includes('xiaomi') || userMsgLower.includes('oppo') || userMsgLower.includes('vivo') || userMsgLower.includes('realme') || userMsgLower.includes('sony');
-          const hasMoneyTerms = userMsgLower.includes('triệu') || userMsgLower.includes('trieu') || userMsgLower.includes('tr') || userMsgLower.includes('đ') || userMsgLower.includes('vnd') || /\d+/.test(userMsgLower);
+          const hasMoneyTerms = userMsgLower.includes('triệu') || userMsgLower.includes('trieu') || userMsgLower.includes(' vnd') || /\d/.test(userMsgLower);
 
           if (hasConsultKeywords && !hasSpecificBrand && !hasMoneyTerms) {
-            aiResponse = "Dạ, để em tư vấn dòng điện thoại phù hợp nhất cho mình, bạn có thể chia sẻ thêm cho em một vài thông tin như:<br>1. Bạn thích hãng điện thoại nào ạ (iPhone, Samsung, Xiaomi...)?<br>2. Ngân sách dự kiến của bạn khoảng bao nhiêu ạ?<br>3. Nhu cầu chính của bạn là gì (chơi game, chụp ảnh, pin trâu...)?";
+            aiResponse = "Dạ, anh/chị đang cần tìm điện thoại của hãng nào ạ? Hoặc anh/chị có thể cho em biết nhu cầu sử dụng chính (chơi game, chụp ảnh...) để em gợi ý nhé!";
             suggestionsPayload = [
+              { text: 'iPhone', icon: 'fa-apple' },
+              { text: 'Samsung', icon: 'fa-android' },
+              { text: 'Xiaomi', icon: 'fa-mobile-alt' },
               { text: 'Dưới 5 triệu', icon: 'fa-money-bill-wave' },
-              { text: 'Từ 5 - 10 triệu', icon: 'fa-money-bill-wave' },
-              { text: 'iPhone', icon: 'fa-mobile-alt' },
-              { text: 'Samsung', icon: 'fa-mobile-alt' },
               { text: 'Chơi game', icon: 'fa-gamepad' },
               { text: 'Chụp ảnh đẹp', icon: 'fa-camera' }
             ];
@@ -298,35 +340,33 @@ router.post('/chat', checkChatbotAccess, async (req, res) => {
           }
         }
 
-        if (!matchedKeyword) {
-          const [knowledgeItems] = await pool.query('SELECT question, answer FROM chatbot_knowledge WHERE is_active = 1');
-        
-        for (const item of knowledgeItems) {
-          const keywords = item.question.toLowerCase().split(',').map(k => k.trim()).filter(k => k.length > 0);
-          
-          for (const k of keywords) {
-             // Trùng khớp hoàn toàn chuỗi
-             if (userMsgLower.includes(k)) {
-               aiResponse = item.answer;
-               matchedKeyword = true;
-               break;
-             }
-             
-             // So khớp mờ (Fuzzy match) theo từng từ
-             const kwWords = k.split(/\s+/);
-             let matchCount = 0;
-             for (const w of kwWords) {
-                if (w.length >= 2 && userMsgLower.includes(w)) matchCount++;
-             }
-             // Nếu người dùng nhắc đến > 50% số từ quan trọng trong từ khóa
-             if (kwWords.length >= 2 && matchCount >= Math.ceil(kwWords.length / 2)) {
-                aiResponse = item.answer;
-                matchedKeyword = true;
-                break;
-             }
+        if (!matchedKeyword && knowledgeItems.length > 0) {
+          for (const item of knowledgeItems) {
+            const keywords = item.title.toLowerCase().split(',').map(k => k.trim()).filter(k => k.length > 0);
+            
+            for (const k of keywords) {
+               // Trùng khớp hoàn toàn chuỗi
+               if (userMsgLower.includes(k)) {
+                 aiResponse = item.content;
+                 matchedKeyword = true;
+                 break;
+               }
+               
+               // So khớp mờ (Fuzzy match) theo từng từ có nghĩa (độ dài >= 2)
+               const kwWords = k.split(/\s+/).filter(w => w.length >= 2);
+               let matchCount = 0;
+               for (const w of kwWords) {
+                  if (userMsgLower.includes(w)) matchCount++;
+               }
+               // Nếu người dùng nhắc đến toàn bộ các từ quan trọng trong từ khóa
+               if (kwWords.length >= 2 && matchCount === kwWords.length) {
+                  aiResponse = item.content;
+                  matchedKeyword = true;
+                  break;
+               }
+            }
+            if (matchedKeyword) break;
           }
-          if (matchedKeyword) break;
-         }
         }
       } catch (err) {
         console.error('Lỗi khi kiểm tra từ khóa trực tiếp:', err);
@@ -337,7 +377,7 @@ router.post('/chat', checkChatbotAccess, async (req, res) => {
     if (!image && !matchedKeyword) {
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000); // Tăng lên 15 giây cho Python RAG vì mô hình HuggingFace chạy local cần chút thời gian xử lý
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // Tăng lên 30 giây để đợi LangChain tự động retry nếu bị Groq Rate Limit nhẹ
 
         const pyResponse = await fetch('http://127.0.0.1:8000/api/chat', {
           method: 'POST',
@@ -346,7 +386,8 @@ router.post('/chat', checkChatbotAccess, async (req, res) => {
             message: message,
             userId: userId,
             conversationId: currentConversationId,
-            history: history.slice(0, -1) // Truyền lịch sử trừ tin nhắn hiện tại
+            history: history.slice(0, -1), // Truyền lịch sử trừ tin nhắn hiện tại
+            interests: userInterests
           }),
           signal: controller.signal
         });
@@ -372,9 +413,57 @@ router.post('/chat', checkChatbotAccess, async (req, res) => {
 
     // 2. Nếu Python RAG thất bại hoặc đang xử lý hình ảnh, dùng Groq trực tiếp
     if (!aiResponse) {
-      // Lấy danh sách sản phẩm từ database để AI có thể gợi ý (Giới hạn 15 sản phẩm để tránh lỗi Rate Limit của Groq)
+      // Lấy danh sách sản phẩm từ database
       const products = await getProductsFromDB();
-      const productContext = createProductContext(products.slice(0, 15));
+      
+      // Phát hiện brand từ tin nhắn người dùng
+      const msgLower = (typeof userMessage.content === 'string' ? userMessage.content : message || '').toLowerCase();
+      const brandMap = {
+        'vivo': 'Vivo', 'samsung': 'Samsung', 'galaxy': 'Samsung',
+        'iphone': 'Apple', 'apple': 'Apple', 'xiaomi': 'Xiaomi',
+        'redmi': 'Xiaomi', 'poco': 'Xiaomi', 'oppo': 'Oppo',
+        'realme': 'Realme', 'sony': 'Sony', 'xperia': 'Sony',
+        'google': 'Google', 'pixel': 'Google', 'asus': 'Asus',
+        'rog': 'Asus', 'tecno': 'Tecno', 'nokia': 'Nokia'
+      };
+      let detectedBrand = null;
+      for (const [keyword, brand] of Object.entries(brandMap)) {
+        if (msgLower.includes(keyword)) {
+          detectedBrand = brand;
+          break;
+        }
+      }
+      
+      // Lọc sản phẩm: ưu tiên theo brand, sau đó theo tên
+      let relevantProducts;
+      if (detectedBrand) {
+        // Lọc theo brand field (chính xác hơn split word đầu tiên)
+        relevantProducts = products.filter(p => {
+          const pBrand = (p.brand || '').toLowerCase();
+          return pBrand.includes(detectedBrand.toLowerCase());
+        });
+      } else {
+        // Lọc theo tên sản phẩm hoặc brand
+        relevantProducts = products.filter(p => {
+          const pName = (p.name || '').toLowerCase();
+          const pBrand = (p.brand || '').toLowerCase();
+          return msgLower && (msgLower.includes(pBrand) || msgLower.includes(pName) || pName.includes(msgLower));
+        });
+      }
+      
+      // Nếu không tìm thấy, lấy 10 sản phẩm đầu tiên
+      if (relevantProducts.length === 0) {
+        relevantProducts = products.slice(0, 10);
+      }
+      
+      // Tăng giới hạn lên 15 sản phẩm cho query brand, 10 cho query chung
+      const maxProducts = detectedBrand ? 15 : 10;
+      const productContext = createProductContext(relevantProducts.slice(0, maxProducts));
+      
+      // Thêm thông tin số lượng chính xác
+      const countNote = detectedBrand 
+        ? `\n\n📊 THÔNG TIN CHÍNH XÁC: Cửa hàng hiện có ${relevantProducts.length} sản phẩm ${detectedBrand}. Khi khách hỏi "có mấy" hoặc "bao nhiêu", hãy trả lời con số ${relevantProducts.length} này.`
+        : '';
     
     let historyInstruction = "";
     if (history.length > 0 && userId) {
@@ -383,11 +472,18 @@ router.post('/chat', checkChatbotAccess, async (req, res) => {
       historyInstruction = "\n\nLƯU Ý: Khách hàng chưa đăng nhập hoặc chưa có lịch sử, KHÔNG bịa ra lịch sử.";
     }
 
+    let interestsInstruction = "";
+    if (userInterests.length > 0) {
+      interestsInstruction = `\n\n🎯 SỞ THÍCH CÁ NHÂN HÓA CỦA KHÁCH HÀNG: Khách hàng này đặc biệt yêu thích và quan tâm đến: ${userInterests.join(', ')}. Hãy chủ động khéo léo ưu tiên tư vấn, so sánh hoặc gợi ý các sản phẩm phù hợp nhất với những sở thích/nhu cầu này của họ để tăng tỷ lệ chốt sale!`;
+    }
+
     let imagePromptExtension = "";
     if (image) {
       imagePromptExtension = "\n\nKHÁCH HÀNG VỪA GỬI 1 HÌNH ẢNH: Hãy nhận diện điện thoại trong ảnh. Nếu sản phẩm đó có trong danh sách, hãy giới thiệu nó bằng mẫu HTML đã cho sẵn. Nếu KHÔNG CÓ TRONG DANH SÁCH website, hãy trả lời lịch sự và thân thiện (ví dụ: 'Dạ, hiện tại cửa hàng bên em chưa kinh doanh dòng sản phẩm này ạ...', rồi tư vấn sản phẩm tương đương có trong danh sách).";
     }
-    const SYSTEM_PROMPT = BASE_SYSTEM_PROMPT + historyInstruction + productContext + imagePromptExtension;
+    
+    const extraRules = "\n\nQUY TẮC BỔ SUNG:\n- Dùng TÊN SẢN PHẨM THỰC TẾ. TUYỆT ĐỐI KHÔNG dùng tiêu đề khuyến mãi/quảng cáo làm tên sản phẩm.\n- Xưng hô lịch sự: 'Dạ', 'em', 'anh/chị'.\n- So sánh ưu/nhược điểm nếu có nhiều sản phẩm cùng hãng.\n- Cuối câu trả lời, đưa ra gợi ý/câu hỏi tiếp theo để dẫn dắt hội thoại.";
+    const SYSTEM_PROMPT = BASE_SYSTEM_PROMPT + generalKnowledgeText + historyInstruction + interestsInstruction + countNote + productContext + imagePromptExtension + extraRules;
 
       const response = await fetch(GROQ_API_URL, {
         method: 'POST',
@@ -401,8 +497,8 @@ router.post('/chat', checkChatbotAccess, async (req, res) => {
             { role: 'system', content: SYSTEM_PROMPT },
             ...history
           ],
-          temperature: 0.7,
-          max_tokens: 800
+          temperature: 0.5,
+          max_tokens: 1500
         })
       });
 
@@ -658,6 +754,49 @@ router.get('/check', async (req, res) => {
   } catch (error) {
     console.error('Database check error:', error);
     res.status(500).json({ status: 'error', message: error.message });
+  }
+});
+
+// Route chat dành riêng cho Admin (Bảo mật cao)
+router.post('/admin-chat', async (req, res) => {
+  try {
+    const sessionUser = req.session ? req.session.user : null;
+    if (!sessionUser || sessionUser.vai_tro !== 'admin') {
+      return res.status(403).json({ error: 'Bạn không có quyền truy cập tính năng Trợ lý Quản trị.' });
+    }
+
+    const { message, userId, conversationId } = req.body;
+    if (!message) {
+      return res.status(400).json({ error: 'Vui lòng nhập tin nhắn' });
+    }
+
+    // Gửi yêu cầu sang Python RAG Service an toàn (endpoint mới /api/admin-chat)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+    const pyResponse = await fetch('http://127.0.0.1:8000/api/admin-chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: message,
+        userId: userId,
+        conversationId: conversationId
+      }),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    if (pyResponse.ok) {
+      const pyData = await pyResponse.json();
+      return res.json({ response: pyData.response });
+    } else {
+      console.error('Python RAG Service returned error for Admin chat');
+      return res.status(500).json({ error: 'Trợ lý AI đang bận xử lý dữ liệu, vui lòng thử lại sau.' });
+    }
+  } catch (error) {
+    console.error('Admin chatbot error:', error);
+    res.status(500).json({ error: 'Đã xảy ra lỗi hệ thống' });
   }
 });
 

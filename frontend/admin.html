@@ -8,6 +8,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/admin-chatbot.css" />
   <script src="js/secure-storage.js"></script>
   <script>
     tailwind.config = {
@@ -379,7 +380,7 @@
       <div class="px-5 h-[84px] flex items-center border-b border-[#1e293b] shrink-0">
         <div class="flex items-center gap-3 w-full">
           <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/25 overflow-hidden">
-            <img src="images/Logo.png" alt="Logo" class="w-8 h-8 object-contain" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-store text-white\\'></i>'">
+            <img src="images/Logo.png" alt="Logo" class="w-8 h-8 object-contain" onerror="this.parentElement.innerHTML='<i class=&quot;fas fa-store text-white&quot;></i>'">
           </div>
           <div>
             <h1 class="text-base font-bold text-white">QuangHung</h1>
@@ -1511,127 +1512,145 @@
       
       <!-- Chatbot RAG Section -->
       <section id="section-chatbot-rag" class="section-content">
-        
-        
-    <div class="knowledge-container">
-
-        
-        <div class="header-section">
-            <div>
-                <h1>Quản lý Chatbot Knowledge Base</h1>
-                <p style="color: #718096;">Quản lý câu hỏi và câu trả lời cho chatbot RAG</p>
-            </div>
-            <div style="display: flex; gap: 10px;">
-                <button class="btn btn-primary" onclick="openModal()">
-                    ➕ Thêm Knowledge
-                </button>
-                <button class="btn btn-success" onclick="reloadVectorstore()" title="Đồng bộ dữ liệu với RAG AI">
-                    🔄 Đồng bộ RAG
-                </button>
-
-            </div>
-        </div>
-        
-        <div class="stats-cards" id="statsCards">
-            <div class="stat-card">
-                <h3>Tổng số</h3>
-                <div class="number" id="totalCount">0</div>
-            </div>
-            <div class="stat-card" style="background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);">
-                <h3>Đang hoạt động</h3>
-                <div class="number" id="activeCount">0</div>
-            </div>
-            <div class="stat-card" style="background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);">
-                <h3>Tạm dừng</h3>
-                <div class="number" id="inactiveCount">0</div>
-            </div>
-        </div>
-        
-        <div class="filters">
-            <input type="text" id="searchInput" placeholder="🔍 Tìm kiếm câu hỏi hoặc câu trả lời...">
-            <select id="typeFilter">
-                <option value="">Tất cả loại</option>
-                <option value="store_info">Thông tin cửa hàng</option>
-                <option value="faq">Câu hỏi thường gặp</option>
-                <option value="policy">Chính sách</option>
-            </select>
-            <select id="statusFilter">
-                <option value="">Tất cả trạng thái</option>
-                <option value="1">Đang hoạt động</option>
-                <option value="0">Tạm dừng</option>
-            </select>
-            <button class="btn btn-primary" onclick="loadKnowledge()">Lọc</button>
-        </div>
-        
-        <div class="knowledge-table">
-            <table>
-                <thead>
-                    <tr>
-                        <th style="width: 50px;">ID</th>
-                        <th style="width: 25%;">Câu hỏi / Từ khóa</th>
-                        <th style="width: 35%;">Câu trả lời</th>
-                        <th style="width: 120px;">Loại</th>
-                        <th style="width: 100px;">Trạng thái</th>
-                        <th style="width: 200px;">Thao tác</th>
-                    </tr>
-                </thead>
-                <tbody id="knowledgeList">
-                    <tr>
-                        <td colspan="6" class="empty-state">
-                            <div>Đang tải dữ liệu...</div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-    
-    <!-- Modal thêm/sửa -->
-    <div class="modal" id="knowledgeModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="modalTitle">Thêm Knowledge</h2>
-                <button class="close-btn" onclick="closeModal()">&times;</button>
-            </div>
-            <form id="knowledgeForm" onsubmit="saveKnowledge(event)">
-                <input type="hidden" id="knowledgeId">
-                
-                <div class="form-group">
-                    <label>Câu hỏi / Từ khóa *</label>
-                    <input type="text" id="question" required placeholder="VD: Địa chỉ cửa hàng">
+        <div class="knowledge-container p-6 lg:p-8 max-w-7xl mx-auto">
+            <!-- Header -->
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+                <div>
+                    <h1 class="text-3xl font-extrabold text-slate-800 tracking-tight flex items-center gap-3">
+                        Cơ sở tri thức RAG
+                    </h1>
+                    <p class="text-slate-500 mt-1 text-sm">Tài liệu tinh giúp chatbot hiểu rõ thông tin cửa hàng và trả lời chính xác bằng LLM</p>
                 </div>
-                
-                <div class="form-group">
-                    <label>Câu trả lời *</label>
-                    <textarea id="answer" required placeholder="Nhập câu trả lời chi tiết..."></textarea>
+                <div class="flex gap-3 flex-wrap">
+                    <button class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl transition-all shadow-md shadow-blue-500/15 flex items-center gap-2 active:scale-95 animate-fade-in" onclick="openModal()">
+                        <i class="fas fa-plus"></i> Thêm tri thức
+                    </button>
+                    <button id="syncRagBtn" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm rounded-xl transition-all shadow-md shadow-emerald-500/15 flex items-center gap-2 active:scale-95" onclick="reloadVectorstore()" title="Đồng bộ dữ liệu với RAG AI">
+                        <i class="fas fa-sync-alt"></i> Đồng bộ RAG
+                    </button>
                 </div>
-                
-                <div class="form-group">
-                    <label>Loại thông tin</label>
-                    <select id="type">
-                        <option value="faq">Câu hỏi thường gặp</option>
+            </div>
+            
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8" id="statsCards">
+                <div class="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white p-6 rounded-2xl shadow-lg shadow-indigo-500/20 relative overflow-hidden group">
+                    <div class="absolute -right-4 -bottom-4 opacity-10 text-8xl transition-all group-hover:scale-110">
+                        <i class="fas fa-folder-open"></i>
+                    </div>
+                    <h3 class="text-sm font-semibold opacity-90 uppercase tracking-wider mb-2">Tổng số tài liệu</h3>
+                    <div class="text-4xl font-extrabold" id="totalCount">0</div>
+                </div>
+                <div class="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white p-6 rounded-2xl shadow-lg shadow-emerald-500/20 relative overflow-hidden group">
+                    <div class="absolute -right-4 -bottom-4 opacity-10 text-8xl transition-all group-hover:scale-110">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h3 class="text-sm font-semibold opacity-90 uppercase tracking-wider mb-2">Đang hoạt động</h3>
+                    <div class="text-4xl font-extrabold" id="activeCount">0</div>
+                </div>
+                <div class="bg-gradient-to-br from-amber-500 to-amber-600 text-white p-6 rounded-2xl shadow-lg shadow-amber-500/20 relative overflow-hidden group">
+                    <div class="absolute -right-4 -bottom-4 opacity-10 text-8xl transition-all group-hover:scale-110">
+                        <i class="fas fa-pause-circle"></i>
+                    </div>
+                    <h3 class="text-sm font-semibold opacity-90 uppercase tracking-wider mb-2">Tạm dừng</h3>
+                    <div class="text-4xl font-extrabold" id="inactiveCount">0</div>
+                </div>
+            </div>
+
+            <!-- Filters Section -->
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 mb-8 flex flex-col md:flex-row gap-4 items-center justify-between">
+                <div class="relative w-full md:w-96">
+                    <input type="text" id="searchInput" placeholder="Tìm kiếm tiêu đề, nội dung..." class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white rounded-xl text-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+                    <div class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                        <i class="fas fa-search"></i>
+                    </div>
+                </div>
+                <div class="flex w-full md:w-auto gap-3 flex-wrap">
+                    <select id="typeFilter" class="px-4 py-3 bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white rounded-xl text-sm transition-all focus:outline-none cursor-pointer">
+                        <option value="">Tất cả loại</option>
                         <option value="store_info">Thông tin cửa hàng</option>
+                        <option value="faq">FAQ</option>
                         <option value="policy">Chính sách</option>
                     </select>
+                    <select id="statusFilter" class="px-4 py-3 bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white rounded-xl text-sm transition-all focus:outline-none cursor-pointer">
+                        <option value="">Tất cả trạng thái</option>
+                        <option value="1">Đang hoạt động</option>
+                        <option value="0">Tạm dừng</option>
+                    </select>
+                    <button class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium text-sm transition-all shadow-md shadow-blue-500/10 hover:shadow-blue-500/20 active:scale-95" onclick="loadKnowledge()">
+                        Lọc
+                    </button>
                 </div>
-                
-                <div class="form-group">
-                    <label>
-                        <input type="checkbox" id="isActive" checked>
-                        Kích hoạt ngay
-                    </label>
+            </div>
+
+            <!-- RAG Explanation Banner -->
+            <div class="mb-8 p-6 rounded-2xl bg-amber-50 border border-amber-200/60 shadow-sm flex items-start gap-4 animate-fade-in">
+                <div class="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600 shrink-0">
+                    <i class="fas fa-info-circle text-lg"></i>
                 </div>
-                
-                <div class="form-actions">
-                    <button type="button" class="btn" onclick="closeModal()">Hủy</button>
-                    <button type="submit" class="btn btn-primary">Lưu</button>
+                <div>
+                    <h4 class="font-bold text-amber-800 mb-1">Nguyên lý hoạt động của RAG</h4>
+                    <p class="text-sm text-amber-700/90 leading-relaxed">
+                        Các tài liệu dưới đây được vector hóa và lưu vào bộ nhớ dịch vụ AI. Khi khách hỏi về thông tin cửa hàng, chính sách, chủ cửa hàng... hệ thống RAG sẽ tìm kiếm các đoạn văn bản tương đồng nhất dưới đây để bổ sung ngữ cảnh cho LLM. Nhờ đó chatbot trả lời chính xác mà không cần cấu hình câu hỏi tĩnh.
+                    </p>
                 </div>
-            </form>
+            </div>
+
+            <!-- RAG Documents Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="knowledgeList">
+                <!-- Tri thức cards will be rendered here -->
+                <div class="col-span-full text-center py-12 text-slate-500 bg-white rounded-2xl shadow-sm border border-slate-100">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p class="text-sm">Đang tải dữ liệu cơ sở tri thức...</p>
+                </div>
+            </div>
         </div>
-    </div>
-    
-    
-      
+        
+        <!-- Modal thêm/sửa -->
+        <div class="modal" id="knowledgeModal">
+            <div class="modal-content !max-w-2xl !p-8 rounded-2xl shadow-2xl border border-slate-100">
+                <div class="modal-header border-b border-slate-100 pb-4 mb-6">
+                    <h2 id="modalTitle" class="text-xl font-bold text-slate-800">Thêm Tài liệu Tri thức</h2>
+                    <button class="close-btn text-slate-400 hover:text-slate-600 transition-colors" onclick="closeModal()">&times;</button>
+                </div>
+                <form id="knowledgeForm" onsubmit="saveKnowledge(event)">
+                    <input type="hidden" id="knowledgeId">
+                    
+                    <div class="form-group mb-5">
+                        <label class="block mb-2 text-sm font-semibold text-slate-700">Tiêu đề tài liệu *</label>
+                        <input type="text" id="title" required placeholder="VD: Người sáng lập và chủ cửa hàng" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white rounded-xl text-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+                    </div>
+                    
+                    <div class="form-group mb-5">
+                        <label class="block mb-2 text-sm font-semibold text-slate-700">Nội dung tài liệu *</label>
+                        <textarea id="content" required placeholder="Nhập nội dung tri thức chi tiết cho chatbot học..." class="w-full min-h-[180px] px-4 py-3 bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white rounded-xl text-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/20"></textarea>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <div class="form-group">
+                            <label class="block mb-2 text-sm font-semibold text-slate-700">Loại thông tin</label>
+                            <select id="type" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white rounded-xl text-sm transition-all focus:outline-none cursor-pointer">
+                                <option value="store_info">Thông tin cửa hàng</option>
+                                <option value="faq">FAQ</option>
+                                <option value="policy">Chính sách</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group flex items-end pb-3">
+                            <label class="inline-flex items-center cursor-pointer select-none">
+                                <input type="checkbox" id="isActive" checked class="sr-only peer">
+                                <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 relative"></div>
+                                <span class="ml-3 text-sm font-medium text-slate-700">Kích hoạt tài liệu này</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions border-t border-slate-100 pt-5 mt-6">
+                        <button type="button" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-sm font-semibold transition-all mr-2" onclick="closeModal()">Hủy</button>
+                        <button type="submit" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-all shadow-md shadow-blue-500/10">Lưu lại</button>
+                    </div>
+                </form>
+            </div>
+        </div>
       </section>
 
   <!-- ==================== EMPLOYEES SECTION ==================== -->
@@ -3552,6 +3571,11 @@
       }
       if (sectionId === 'interests') {
         loadAdminInterests();
+      }
+      if (sectionId === 'chatbot-rag') {
+        if (typeof initChatbotKnowledge === 'function') {
+          initChatbotKnowledge();
+        }
       }
 
       // Update page title
@@ -6039,6 +6063,7 @@
         case 'notifications': loadNotifications(); break;
         case 'contacts': loadContacts(); break;
         case 'interests': loadAdminInterests(); break;
+        case 'chatbot-rag': if (typeof initChatbotKnowledge === 'function') initChatbotKnowledge(); break;
       }
     };
 
@@ -6523,5 +6548,6 @@
 
 <script src="js/admin-autosave.js"></script>
 <script src="chatbot-knowledge.js"></script>
+<script src="js/admin-chatbot.js"></script>
 </body>
 </html>
