@@ -461,8 +461,10 @@
 
         if (data.success) {
           localStorage.setItem('registeredEmail', email);
+          // [MỚI] Đánh dấu KH mới — login.html sẽ set flag forceOnboarding sau khi đăng nhập
+          localStorage.setItem('pendingNewUserOnboarding', '1');
           alert('Đăng ký thành công!');
-          window.location.href = 'login.html?registered=true';
+          window.location.href = 'login.html?registered=true&newUser=1';
         } else {
           alert(data.message || 'Đăng ký thất bại!');
         }

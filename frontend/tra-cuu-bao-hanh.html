@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tra cứu bảo hành điện tử - QuangHưng Mobile</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="components/header.css">
+    <link rel="stylesheet" href="components/ai-chatbot.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { font-family: 'Roboto', sans-serif; background: #f8fafc; }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: 16px;
+            top: 24px;
+            bottom: -24px;
+            width: 2px;
+            background: #e2e8f0;
+        }
+        .timeline-item:last-child::before {
+            display: none;
+        }
+        .step-active {
+            color: #d70018;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+    <!-- Header Placeholder -->
+    <div id="header-placeholder"></div>
+    <div class="h-[70px]"></div>
+
+    <!-- Background Layer kéo dài hiệu ứng màu đỏ từ Header -->
+    <div class="w-full absolute left-0 top-[70px] -z-10 overflow-hidden h-[120px] sm:h-[160px] md:h-[200px] flex justify-center">
+        <div class="w-[200%] h-full bg-[#d70018] rounded-b-[50%] md:rounded-b-[40%] shadow-sm"></div>
+    </div>
+
+    <!-- Breadcrumb -->
+    <div class="relative z-10">
+        <div class="max-w-7xl mx-auto px-4 py-3">
+            <nav class="flex items-center gap-2 text-sm text-white/90">
+                <a href="index.html" class="hover:text-white transition"><i class="fas fa-home"></i></a>
+                <i class="fas fa-chevron-right text-white/60 text-xs"></i>
+                <span class="font-medium text-white">Tra cứu bảo hành</span>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Page Header -->
+    <div class="relative z-10 mb-6">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="flex items-center gap-4 text-center md:text-left flex-col md:flex-row">
+                    <div class="w-16 h-16 bg-gradient-to-br from-[#d70018] to-[#b50012] rounded-2xl flex items-center justify-center shadow-lg transform transition hover:scale-105">
+                        <i class="fas fa-shield-alt text-white text-2xl animate-pulse"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl md:text-3xl font-bold text-gray-900">Bảo Hành Điện Tử</h1>
+                        <p class="text-gray-500 mt-1">Tra cứu thời hạn & gửi yêu cầu sửa chữa trực tuyến siêu tốc</p>
+                    </div>
+                </div>
+                <div class="flex gap-3">
+                    <a href="chinh-sach-bao-hanh.html" class="px-4 py-2 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition text-sm font-medium">
+                        <i class="fas fa-info-circle mr-2"></i>Chính sách bảo hành
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <main class="max-w-4xl mx-auto px-4 py-2 w-full flex-1 relative z-10">
+        <!-- Search Box -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8 mb-8">
+            <h3 class="text-lg font-bold text-gray-800 mb-4 text-center md:text-left">🔍 Nhập thông tin để tra cứu</h3>
+            <form id="search-form" class="flex flex-col sm:flex-row gap-3">
+                <div class="relative flex-1">
+                    <i class="fas fa-barcode absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg"></i>
+                    <input type="text" id="search-input" placeholder="Nhập mã IMEI, số Serial, hoặc Mã đơn hàng..." 
+                           class="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#d70018] focus:border-[#d70018] transition outline-none text-gray-800 font-medium">
+                </div>
+                <button type="submit" class="px-8 py-3.5 bg-[#d70018] hover:bg-[#b50012] text-white rounded-xl font-bold transition duration-300 shadow-md shadow-red-500/10 flex items-center justify-center gap-2">
+                    <i class="fas fa-search"></i> Tra cứu
+                </button>
+            </form>
+            <p class="text-xs text-gray-400 mt-3 text-center md:text-left">
+                <i class="fas fa-lightbulb text-yellow-500 mr-1"></i> Mẹo: Mã IMEI/Serial được dán ở vỏ hộp máy hoặc xem tại mục **Cài đặt -> Giới thiệu** trên điện thoại của bạn.
+            </p>
+        </div>
+
+        <!-- Result Container (Hidden by default) -->
+        <div id="result-container" class="hidden">
+            <!-- Warranty Details Card -->
+            <div id="warranty-cards"></div>
+            
+            <!-- Claim Warranty Modal/Form -->
+            <div id="claim-form-section" class="hidden bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8 mt-8">
+                <div class="flex items-center gap-3 border-b border-gray-100 pb-4 mb-6">
+                    <div class="w-10 h-10 bg-red-50 rounded-xl flex items-center justify-center text-[#d70018]">
+                        <i class="fas fa-tools text-lg"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-800">Gửi Yêu Cầu Bảo Hành Trực Tuyến</h3>
+                        <p class="text-sm text-gray-500">Mô tả tình trạng lỗi để kỹ thuật viên liên hệ hỗ trợ nhanh nhất</p>
+                    </div>
+                </div>
+                
+                <form id="claim-form" class="space-y-4">
+                    <input type="hidden" id="claim-pbh-id">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Sản phẩm yêu cầu bảo hành</label>
+                        <input type="text" id="claim-product-name" readonly 
+                               class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-500 font-medium cursor-not-allowed">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Mô tả chi tiết tình trạng lỗi <span class="text-red-500">*</span></label>
+                        <textarea id="claim-error-desc" rows="4" required placeholder="Ví dụ: Điện thoại không nhận sạc, màn hình có sọc xanh lá dọc sau khi cập nhật hệ điều hành, loa rè khi mở âm lượng lớn..."
+                                  class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#d70018] focus:border-[#d70018] transition outline-none text-gray-800"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Hình ảnh/Video lỗi (Tùy chọn)</label>
+                        <input type="text" id="claim-image-url" placeholder="Nhập link hình ảnh chứng minh lỗi (nếu có)"
+                               class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#d70018] focus:border-[#d70018] transition outline-none text-gray-800">
+                        <p class="text-xs text-gray-400 mt-1">Cung cấp link ảnh lỗi giúp kỹ thuật viên chẩn đoán lỗi nhanh và chuẩn xác hơn.</p>
+                    </div>
+                    
+                    <div class="flex justify-end gap-3 pt-3 border-t border-gray-100">
+                        <button type="button" id="btn-cancel-claim" class="px-6 py-2.5 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition font-medium">Hủy bỏ</button>
+                        <button type="submit" class="px-8 py-2.5 bg-[#d70018] hover:bg-[#b50012] text-white rounded-xl font-bold transition shadow-md shadow-red-500/10">
+                            Gửi yêu cầu ngay
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- No Result / Welcome Area -->
+        <div id="welcome-container" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center">
+            <div class="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-shield-halved text-4xl text-[#d70018]"></i>
+            </div>
+            <h3 class="text-xl font-bold text-gray-800 mb-2">Hệ thống bảo hành điện tử thông minh</h3>
+            <p class="text-gray-500 max-w-lg mx-auto mb-6">
+                Khi mua hàng tại QuangHưng Mobile, thông tin bảo hành sẽ được tự động kích hoạt số hóa trực tuyến. Bạn có thể dễ dàng tra cứu quyền lợi bảo hành hoặc yêu cầu hỗ trợ sửa chữa lỗi bất cứ lúc nào.
+            </p>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto text-left">
+                <div class="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                    <h4 class="font-bold text-gray-800 text-sm mb-1">⚡ Kích hoạt siêu tốc</h4>
+                    <p class="text-xs text-gray-500">Tự động kích hoạt ngay khi nhận hàng thành công.</p>
+                </div>
+                <div class="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                    <h4 class="font-bold text-gray-800 text-sm mb-1">🛡️ Bảo hành tiêu chuẩn</h4>
+                    <p class="text-xs text-gray-500">Bảo hành chính hãng 12-18 tháng lỗi nhà sản xuất.</p>
+                </div>
+                <div class="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                    <h4 class="font-bold text-gray-800 text-sm mb-1">🛠️ Yêu cầu online</h4>
+                    <p class="text-xs text-gray-500">Gửi lỗi trực tuyến, theo dõi tiến độ sửa chữa 24/7.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer Placeholder -->
+    <div id="footer-placeholder" class="mt-auto"></div>
+
+    <!-- Scripts -->
+    <script src="main.js"></script>
+    <script src="components/load-components.js"></script>
+    <script>
+        const API_URL = 'http://localhost:3000/api';
+
+        document.getElementById('search-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const query = document.getElementById('search-input').value.trim();
+            if (!query) {
+                showToast('Vui lòng nhập thông tin tìm kiếm!', 'error');
+                return;
+            }
+
+            try {
+                // Show loading
+                document.getElementById('welcome-container').classList.add('hidden');
+                const searchBtn = this.querySelector('button[type="submit"]');
+                const origBtnHtml = searchBtn.innerHTML;
+                searchBtn.innerHTML = '<i class="fas fa-spinner animate-spin"></i> Đang tìm...';
+                searchBtn.disabled = true;
+
+                const response = await fetch(`${API_URL}/warranty/check`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: query })
+                });
+
+                const resData = await response.json();
+                
+                searchBtn.innerHTML = origBtnHtml;
+                searchBtn.disabled = false;
+
+                if (resData.success) {
+                    renderWarrantyResults(resData.data);
+                } else {
+                    showToast(resData.message || 'Không tìm thấy thông tin bảo hành!', 'error');
+                    // Hiển thị lại màn hình trống
+                    document.getElementById('welcome-container').classList.remove('hidden');
+                    document.getElementById('result-container').classList.add('hidden');
+                }
+
+            } catch (err) {
+                console.error(err);
+                showToast('Lỗi kết nối máy chủ, vui lòng thử lại sau!', 'error');
+            }
+        });
+
+        // Hàm render kết quả bảo hành
+        function renderWarrantyResults(data) {
+            const container = document.getElementById('result-container');
+            const cardsContainer = document.getElementById('warranty-cards');
+            cardsContainer.innerHTML = '';
+            
+            data.forEach(pbh => {
+                const now = new Date();
+                const expDate = new Date(pbh.ngay_het_han);
+                const isExpired = pbh.trang_thai === 'expired' || expDate < now;
+                const isVoided = pbh.trang_thai === 'voided';
+                
+                let statusBadge = `<span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full"><i class="fas fa-check-circle mr-1"></i> Còn hạn bảo hành</span>`;
+                if (isExpired) {
+                    statusBadge = `<span class="px-3 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-full"><i class="fas fa-exclamation-triangle mr-1"></i> Hết hạn bảo hành</span>`;
+                } else if (isVoided) {
+                    statusBadge = `<span class="px-3 py-1 bg-gray-100 text-gray-700 text-xs font-bold rounded-full"><i class="fas fa-ban mr-1"></i> Đã vô hiệu hóa</span>`;
+                }
+
+                // Tính số ngày còn lại
+                let remainingDaysText = '';
+                if (!isExpired && !isVoided) {
+                    const diffTime = Math.abs(expDate - now);
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    remainingDaysText = `<p class="text-sm font-semibold text-green-600 mt-1"><i class="far fa-clock mr-1"></i> Còn lại ${diffDays} ngày bảo hành</p>`;
+                }
+
+                // Render claims history
+                let claimsHistoryHtml = '';
+                if (pbh.claims && pbh.claims.length > 0) {
+                    claimsHistoryHtml += `
+                        <div class="border-t border-gray-100 pt-6 mt-6">
+                            <h4 class="font-bold text-gray-800 text-sm mb-4"><i class="fas fa-history mr-1"></i> Lịch sử yêu cầu hỗ trợ sửa chữa</h4>
+                            <div class="space-y-6 relative pl-4 border-l-2 border-gray-100 ml-2">
+                    `;
+                    
+                    pbh.claims.forEach(claim => {
+                        let stepPending = 'text-gray-400', stepDiag = 'text-gray-400', stepRepair = 'text-gray-400', stepSuccess = 'text-gray-400';
+                        let currentStepText = 'Đang xếp hàng chờ tiếp nhận';
+                        let currentIcon = 'fa-clock';
+                        
+                        if (claim.trang_thai === 'pending') {
+                            stepPending = 'text-blue-600 font-bold';
+                        } else if (claim.trang_thai === 'received' || claim.trang_thai === 'diagnosing') {
+                            stepPending = 'text-green-600';
+                            stepDiag = 'text-blue-600 font-bold';
+                            currentStepText = 'Kỹ thuật viên đang kiểm tra thiết bị';
+                            currentIcon = 'fa-microchip';
+                        } else if (claim.trang_thai === 'repairing') {
+                            stepPending = 'text-green-600';
+                            stepDiag = 'text-green-600';
+                            stepRepair = 'text-blue-600 font-bold';
+                            currentStepText = 'Đang sửa chữa / Thay thế linh kiện';
+                            currentIcon = 'fa-tools';
+                        } else if (claim.trang_thai === 'completed') {
+                            stepPending = 'text-green-600';
+                            stepDiag = 'text-green-600';
+                            stepRepair = 'text-green-600';
+                            stepSuccess = 'text-green-600 font-bold';
+                            currentStepText = 'Hoàn thành sửa chữa - Trả máy thành công';
+                            currentIcon = 'fa-check-circle';
+                        } else if (claim.trang_thai === 'rejected') {
+                            stepPending = 'text-green-600';
+                            stepDiag = 'text-green-600';
+                            stepSuccess = 'text-red-600 font-bold';
+                            currentStepText = 'Từ chối bảo hành (vi phạm điều kiện)';
+                            currentIcon = 'fa-times-circle';
+                        }
+
+                        claimsHistoryHtml += `
+                            <div class="relative">
+                                <!-- Bullet point -->
+                                <div class="absolute -left-[25px] top-1 w-4.5 h-4.5 bg-white border-2 border-red-500 rounded-full flex items-center justify-center">
+                                    <div class="w-2 h-2 bg-red-500 rounded-full"></div>
+                                </div>
+                                <div class="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2">
+                                        <span class="text-xs font-bold text-gray-400">Yêu cầu #${claim.ma_ycbh} - ${new Date(claim.ngay_tao).toLocaleDateString('vi-VN')}</span>
+                                        <span class="px-2 py-0.5 bg-red-50 text-[#d70018] text-xs font-bold rounded-lg border border-red-100 flex items-center gap-1">
+                                            <i class="fas ${currentIcon}"></i> ${currentStepText}
+                                        </span>
+                                    </div>
+                                    <p class="text-sm font-semibold text-gray-800">Lỗi khách báo: <span class="font-normal text-gray-600">"${claim.mo_ta_loi}"</span></p>
+                                    ${claim.ket_qua ? `<p class="text-sm font-bold text-green-700 mt-2">Kết quả xử lý: <span class="font-normal text-gray-600">${claim.ket_qua}</span></p>` : ''}
+                                    
+                                    <!-- Mini Timeline -->
+                                    <div class="flex justify-between items-center mt-4 pt-4 border-t border-gray-200/50 text-xxs sm:text-xs">
+                                        <div class="flex flex-col items-center ${stepPending}">
+                                            <i class="fas fa-file-invoice mb-1"></i>
+                                            <span>Đã gửi</span>
+                                        </div>
+                                        <div class="h-0.5 bg-gray-200 flex-1 mx-2"></div>
+                                        <div class="flex flex-col items-center ${stepDiag}">
+                                            <i class="fas fa-microchip mb-1"></i>
+                                            <span>Kiểm tra</span>
+                                        </div>
+                                        <div class="h-0.5 bg-gray-200 flex-1 mx-2"></div>
+                                        <div class="flex flex-col items-center ${stepRepair}">
+                                            <i class="fas fa-tools mb-1"></i>
+                                            <span>Sửa chữa</span>
+                                        </div>
+                                        <div class="h-0.5 bg-gray-200 flex-1 mx-2"></div>
+                                        <div class="flex flex-col items-center ${stepSuccess}">
+                                            <i class="fas ${claim.trang_thai === 'rejected' ? 'fa-times-circle text-red-500' : 'fa-check-double'} mb-1"></i>
+                                            <span>Kết quả</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    claimsHistoryHtml += `</div></div>`;
+                }
+
+                // Render Action Button
+                let actionBtnHtml = '';
+                if (!isExpired && !isVoided) {
+                    actionBtnHtml = `
+                        <div class="mt-6 flex justify-end">
+                            <button onclick="openClaimForm(${pbh.ma_pbh}, '${pbh.ten_sp}')" 
+                                    class="px-5 py-2.5 bg-gradient-to-r from-red-600 to-[#d70018] hover:from-red-700 hover:to-[#b50012] text-white font-bold rounded-xl shadow-md shadow-red-500/10 transition duration-300 flex items-center gap-2">
+                                <i class="fas fa-wrench"></i> Gửi yêu cầu sửa chữa/bảo hành online
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    actionBtnHtml = `
+                        <div class="mt-6 flex justify-end">
+                            <a href="contact.html" class="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition flex items-center gap-2">
+                                <i class="fas fa-phone"></i> Liên hệ sửa chữa dịch vụ
+                            </a>
+                        </div>
+                    `;
+                }
+
+                cardsContainer.innerHTML += `
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8 mb-6">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 border-b border-gray-100 pb-4 mb-6">
+                            <div>
+                                <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Phiếu bảo hành điện tử</span>
+                                <h4 class="text-xl font-extrabold text-gray-800 mt-0.5">Mã số: #${pbh.ma_pbh}</h4>
+                            </div>
+                            <div>
+                                ${statusBadge}
+                            </div>
+                        </div>
+                        
+                        <div class="flex flex-col md:flex-row gap-6">
+                            <!-- Product Image -->
+                            <div class="w-full md:w-32 h-32 bg-gray-50 border border-gray-100 rounded-xl overflow-hidden flex items-center justify-center p-2 flex-shrink-0">
+                                <img src="${pbh.anh_dai_dien || 'images/iphone.jpg'}" alt="${pbh.ten_sp}" class="max-h-full max-w-full object-contain">
+                            </div>
+                            
+                            <!-- Information -->
+                            <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <span class="block text-xs font-bold text-gray-400">Tên thiết bị</span>
+                                    <span class="text-base font-bold text-gray-800">${pbh.ten_sp}</span>
+                                </div>
+                                <div>
+                                    <span class="block text-xs font-bold text-gray-400">Mã đơn hàng</span>
+                                    <span class="text-base font-bold text-gray-800">#${pbh.ma_don}</span>
+                                </div>
+                                <div>
+                                    <span class="block text-xs font-bold text-gray-400">Số IMEI</span>
+                                    <span class="text-base font-mono font-semibold text-gray-700">${pbh.so_imei || 'Chưa cập nhật'}</span>
+                                </div>
+                                <div>
+                                    <span class="block text-xs font-bold text-gray-400">Số Serial</span>
+                                    <span class="text-base font-mono font-semibold text-gray-700">${pbh.so_serial || 'Chưa cập nhật'}</span>
+                                </div>
+                                <div>
+                                    <span class="block text-xs font-bold text-gray-400">Ngày mua</span>
+                                    <span class="text-sm font-semibold text-gray-700">${new Date(pbh.ngay_mua).toLocaleDateString('vi-VN')}</span>
+                                </div>
+                                <div>
+                                    <span class="block text-xs font-bold text-gray-400">Ngày hết hạn</span>
+                                    <span class="text-sm font-semibold text-gray-700">${new Date(pbh.ngay_het_han).toLocaleDateString('vi-VN')}</span>
+                                    ${remainingDaysText}
+                                </div>
+                            </div>
+                        </div>
+
+                        ${pbh.ghi_chu ? `
+                        <div class="bg-yellow-50/50 border-l-4 border-yellow-400 p-4 rounded-r-xl mt-6 text-sm text-gray-700">
+                            <h5 class="font-bold mb-1">📝 Ghi chú lịch sử thiết bị:</h5>
+                            <p class="whitespace-pre-line leading-relaxed font-medium">${pbh.ghi_chu}</p>
+                        </div>
+                        ` : ''}
+
+                        ${claimsHistoryHtml}
+                        
+                        ${actionBtnHtml}
+                    </div>
+                `;
+            });
+
+            container.classList.remove('hidden');
+        }
+
+        // Mở form gửi yêu cầu bảo hành
+        function openClaimForm(pbhId, productName) {
+            document.getElementById('claim-pbh-id').value = pbhId;
+            document.getElementById('claim-product-name').value = productName;
+            document.getElementById('claim-error-desc').value = '';
+            document.getElementById('claim-image-url').value = '';
+            
+            const claimFormSec = document.getElementById('claim-form-section');
+            claimFormSec.classList.remove('hidden');
+            
+            // Scroll to form
+            claimFormSec.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Đóng form
+        document.getElementById('btn-cancel-claim').addEventListener('click', function() {
+            document.getElementById('claim-form-section').classList.add('hidden');
+        });
+
+        // Submit form gửi bảo hành
+        document.getElementById('claim-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const ma_pbh = document.getElementById('claim-pbh-id').value;
+            const mo_ta_loi = document.getElementById('claim-error-desc').value.trim();
+            const hinh_anh = document.getElementById('claim-image-url').value.trim();
+
+            if (!mo_ta_loi) {
+                showToast('Vui lòng mô tả tình trạng lỗi của sản phẩm!', 'error');
+                return;
+            }
+
+            try {
+                const submitBtn = this.querySelector('button[type="submit"]');
+                const origHtml = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<i class="fas fa-spinner animate-spin"></i> Đang gửi...';
+                submitBtn.disabled = true;
+
+                const response = await fetch(`${API_URL}/warranty/claim`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        ma_pbh: ma_pbh,
+                        mo_ta_loi: mo_ta_loi,
+                        hinh_anh: hinh_anh || null
+                    })
+                });
+
+                const data = await response.json();
+                
+                submitBtn.innerHTML = origHtml;
+                submitBtn.disabled = false;
+
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    document.getElementById('claim-form-section').classList.add('hidden');
+                    
+                    // Trigger tìm kiếm lại để reload data mới
+                    const query = document.getElementById('search-input').value.trim();
+                    if (query) {
+                        document.getElementById('search-form').dispatchEvent(new Event('submit'));
+                    }
+                } else {
+                    showToast(data.message || 'Lỗi gửi yêu cầu bảo hành!', 'error');
+                }
+
+            } catch (err) {
+                console.error(err);
+                showToast('Lỗi kết nối, vui lòng thử lại sau!', 'error');
+            }
+        });
+    </script>
+</body>
+</html>

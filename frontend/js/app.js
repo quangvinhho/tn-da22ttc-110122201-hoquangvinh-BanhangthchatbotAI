@@ -173,19 +173,29 @@ function checkUserLogin() {
 function initHeader() {
   // ===== USER AUTHENTICATION =====
   checkUserLogin();
-  
-  // Kiểm tra popup sở thích sau khi load trang (nếu đã đăng nhập)
-  setTimeout(() => {
-      let user = null;
-      if (window.secureStorage) {
-        user = window.secureStorage.getItem('user');
-      } else {
-        user = JSON.parse(localStorage.getItem('user') || 'null');
-      }
+
+  // Helper get user (priority secureStorage)
+  function _getCurrentUser() {
+    if (window.secureStorage) return window.secureStorage.getItem('user');
+    return JSON.parse(localStorage.getItem('user') || 'null');
+  }
+
+  // [MỚI] KH vừa đăng ký xong (đã set flag ở login.html) → show popup ngay
+  if (localStorage.getItem('forceOnboarding') === '1') {
+    const user = _getCurrentUser();
+    if (user && user.ma_kh) {
+      localStorage.removeItem('forceOnboarding'); // chỉ show 1 lần
+      checkAndShowInterestsPopup(user);
+    }
+  } else {
+    // Trường hợp bình thường — wait 1.5s rồi check
+    setTimeout(() => {
+      const user = _getCurrentUser();
       if (user && user.ma_kh) {
-          checkAndShowInterestsPopup(user);
+        checkAndShowInterestsPopup(user);
       }
-  }, 1500); // Đợi trang load xong
+    }, 1500);
+  }
   
   // Lắng nghe thay đổi localStorage
   window.addEventListener('storage', function(e) {

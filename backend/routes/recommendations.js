@@ -12,16 +12,24 @@ router.post('/', async (req, res) => {
             return res.json({ success: true, data: [], source: 'no_user' });
         }
 
-        // Kiểm tra tổng số lần click chuột của user, phải >= 5 mới hiển thị mục này
+        // Kiểm tra điều kiện hiển thị "Dành riêng cho bạn":
+        //   - Đã xem ≥ 5 SP (KH active), HOẶC
+        //   - Đã có ≥ 1 sở thích trong so_thich_khach_hang (KH onboarding xong)
         const [totalViewsRow] = await pool.query(
             `SELECT SUM(so_lan_xem) as total FROM lich_su_xem_san_pham WHERE ma_kh = ?`,
             [userId]
         );
-        const totalViews = totalViewsRow[0].total || 0;
+        const totalViews = parseInt(totalViewsRow[0].total) || 0;
 
-        if (totalViews < 5) {
-            // Khách hàng chưa click đủ 5 lần -> Ẩn mục Dành riêng cho bạn
-            return res.json({ success: true, data: [], source: 'not_enough_clicks' });
+        const [interestsRow] = await pool.query(
+            `SELECT COUNT(*) AS c FROM so_thich_khach_hang WHERE ma_kh = ?`,
+            [userId]
+        );
+        const interestsCount = parseInt(interestsRow[0].c) || 0;
+
+        if (totalViews < 5 && interestsCount === 0) {
+            // Chưa xem đủ 5 SP và cũng chưa có sở thích nào -> KH hoàn toàn mới, ẩn section
+            return res.json({ success: true, data: [], source: 'cold_start' });
         }
         
         // 1. Lấy danh sách sản phẩm người dùng đã xem
@@ -115,11 +123,37 @@ router.post('/', async (req, res) => {
         }
         
         if (baseProducts.length === 0) {
-            // --- CƠ CHẾ FALLBACK (Không ảnh hưởng trang web) ---
-            // Gợi ý những sản phẩm mới hoặc ngẫu nhiên
-            const [fallbackProducts] = await pool.query(
-                `SELECT ma_sp as id, ten_sp as name, gia as price, anh_dai_dien as image, mau_sac as color, bo_nho as storage FROM san_pham ORDER BY ngay_cap_nhat DESC LIMIT 8`
-            );
+            // --- CƠ CHẾ FALLBACK ---
+            // [MỚI] Nếu KH có sở thích → ưu tiên SP cùng hãng yêu thích.
+            // Ngược lại → SP mới nhất.
+            let fallbackProducts = [];
+            if (interestsCount > 0) {
+                try {
+                    const [byInterest] = await pool.query(
+                        `SELECT sp.ma_sp AS id, sp.ten_sp AS name, sp.gia AS price, sp.anh_dai_dien AS image,
+                                sp.mau_sac AS color, sp.bo_nho AS storage
+                         FROM san_pham sp
+                         LEFT JOIN hang_san_xuat hsx ON sp.ma_hang = hsx.ma_hang
+                         WHERE EXISTS (
+                           SELECT 1 FROM so_thich_khach_hang st
+                           WHERE st.ma_kh = ?
+                             AND (LOWER(hsx.ten_hang) LIKE LOWER(CONCAT('%', st.tu_khoa, '%'))
+                                  OR LOWER(sp.ten_sp) LIKE LOWER(CONCAT('%', st.tu_khoa, '%')))
+                         )
+                         AND sp.so_luong_ton > 0
+                         ORDER BY sp.ngay_cap_nhat DESC
+                         LIMIT 8`,
+                        [userId]
+                    );
+                    fallbackProducts = byInterest;
+                } catch (e) { console.warn('Fallback by interest failed:', e.message); }
+            }
+            if (fallbackProducts.length === 0) {
+                const [latest] = await pool.query(
+                    `SELECT ma_sp as id, ten_sp as name, gia as price, anh_dai_dien as image, mau_sac as color, bo_nho as storage FROM san_pham ORDER BY ngay_cap_nhat DESC LIMIT 8`
+                );
+                fallbackProducts = latest;
+            }
             baseProducts = fallbackProducts;
         }
 

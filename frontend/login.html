@@ -658,10 +658,17 @@
               localStorage.setItem('user', JSON.stringify(data.data));
             }
             localStorage.setItem('isLoggedIn', 'true');
-            
+
+            // [MỚI] Force onboarding cho KH vừa register: flag để app.js hiện popup ngay
+            if (new URLSearchParams(window.location.search).get('newUser') === '1'
+                || localStorage.getItem('pendingNewUserOnboarding') === '1') {
+              localStorage.setItem('forceOnboarding', '1');
+              localStorage.removeItem('pendingNewUserOnboarding');
+            }
+
             // Merge giỏ hàng guest vào giỏ hàng user
             mergeGuestCart(data.data.ma_kh);
-            
+
             // Kiểm tra redirect URL (cho checkout)
             const urlParams = new URLSearchParams(window.location.search);
             const redirectUrl = urlParams.get('redirect');

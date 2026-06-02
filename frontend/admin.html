@@ -458,6 +458,14 @@
             <div class="sidebar-icon"><i class="fas fa-heart text-sm"></i></div>
             <span class="text-sm font-medium">Sở thích KH</span>
           </a>
+          <a href="#" onclick="showSection('warranties')" class="sidebar-item flex items-center px-3 py-2.5 text-slate-100 group" id="nav-warranties">
+            <div class="sidebar-icon"><i class="fas fa-shield-alt text-sm"></i></div>
+            <span class="text-sm font-medium">Bảo hành</span>
+          </a>
+          <a href="#" onclick="showSection('email-logs')" class="sidebar-item flex items-center px-3 py-2.5 text-slate-100 group" id="nav-email-logs">
+            <div class="sidebar-icon"><i class="fas fa-envelope-open-text text-sm"></i></div>
+            <span class="text-sm font-medium">Lịch sử Email</span>
+          </a>
         </div>
       </nav>
       
@@ -1952,6 +1960,100 @@
     </div>
   </div>
 
+  <!-- ==================== WARRANTIES SECTION ==================== -->
+  <div id="section-warranties" class="section-content">
+    <div class="flex justify-between items-center mb-6">
+      <div>
+        <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+          <i class="fas fa-shield-alt text-blue-500"></i>Quản lý Yêu cầu Bảo hành
+        </h2>
+        <p class="text-slate-500 text-sm mt-1">Tiếp nhận, chẩn đoán lỗi, sửa chữa và bàn giao thiết bị bảo hành cho khách hàng.</p>
+      </div>
+      <button onclick="loadWarranties()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-sm font-medium text-slate-700">
+        <i class="fas fa-sync-alt mr-2"></i>Làm mới
+      </button>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-sm">
+          <thead>
+            <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider">
+              <th class="py-4 px-6 font-semibold">Mã YC</th>
+              <th class="py-4 px-6 font-semibold">Phiếu BH / IMEI</th>
+              <th class="py-4 px-6 font-semibold">Khách hàng</th>
+              <th class="py-4 px-6 font-semibold">Thiết bị</th>
+              <th class="py-4 px-6 font-semibold">Mô tả lỗi</th>
+              <th class="py-4 px-6 font-semibold">Ngày yêu cầu</th>
+              <th class="py-4 px-6 font-semibold">Trạng thái</th>
+              <th class="py-4 px-6 font-semibold text-center">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="warranties-table-body" class="divide-y divide-slate-100">
+            <tr><td colspan="8" class="text-center py-8 text-slate-400"><i class="fas fa-spinner fa-spin mr-2"></i>Đang tải...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== EMAIL LOGS SECTION ==================== -->
+  <div id="section-email-logs" class="section-content">
+    <div class="flex justify-between items-center mb-6">
+      <div>
+        <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+          <i class="fas fa-envelope-open-text text-amber-500"></i>Lịch sử Email gửi đi
+        </h2>
+        <p class="text-slate-500 text-sm mt-1">Theo dõi email xác nhận, cập nhật trạng thái, marketing đã gửi cho khách hàng.</p>
+      </div>
+      <button onclick="loadEmailLogs(1)" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-sm font-medium text-slate-700">
+        <i class="fas fa-sync-alt mr-2"></i>Làm mới
+      </button>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-lg border border-slate-100 p-4 mb-4">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <select id="email-log-filter-type" class="border border-slate-200 rounded-lg px-3 py-2 text-sm" onchange="loadEmailLogs(1)">
+          <option value="">Tất cả loại email</option>
+          <option value="confirmation">Xác nhận đơn hàng</option>
+          <option value="status_update">Cập nhật trạng thái</option>
+          <option value="marketing">Marketing / SP mới</option>
+          <option value="voucher">Voucher</option>
+        </select>
+        <select id="email-log-filter-status" class="border border-slate-200 rounded-lg px-3 py-2 text-sm" onchange="loadEmailLogs(1)">
+          <option value="">Tất cả trạng thái</option>
+          <option value="sent">Gửi thành công</option>
+          <option value="failed">Gửi thất bại</option>
+        </select>
+        <input type="date" id="email-log-filter-from" class="border border-slate-200 rounded-lg px-3 py-2 text-sm" onchange="loadEmailLogs(1)" />
+        <input type="date" id="email-log-filter-to" class="border border-slate-200 rounded-lg px-3 py-2 text-sm" onchange="loadEmailLogs(1)" />
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-sm">
+          <thead>
+            <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider">
+              <th class="py-4 px-6 font-semibold">#</th>
+              <th class="py-4 px-6 font-semibold">Thời gian</th>
+              <th class="py-4 px-6 font-semibold">Loại</th>
+              <th class="py-4 px-6 font-semibold">Email nhận</th>
+              <th class="py-4 px-6 font-semibold">Khách hàng</th>
+              <th class="py-4 px-6 font-semibold">SP / Đơn hàng</th>
+              <th class="py-4 px-6 font-semibold">Tiêu đề</th>
+              <th class="py-4 px-6 font-semibold text-center">Trạng thái</th>
+            </tr>
+          </thead>
+          <tbody id="email-logs-tbody">
+            <tr><td colspan="8" class="text-center text-slate-400 py-8">Đang tải...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="email-logs-pagination" class="flex items-center justify-between px-6 py-3 border-t border-slate-100 text-sm text-slate-600"></div>
+    </div>
+  </div>
+
       </main>
     </div>
   </div>
@@ -2197,6 +2299,13 @@
               <option value="inactive">Tạm dừng</option>
             </select>
           </div>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">Áp dụng cho sản phẩm (tùy chọn)</label>
+          <select id="promotion-ma-sp" class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500">
+            <option value="">— Áp dụng tất cả SP (broadcast cho mọi KH) —</option>
+          </select>
+          <p class="text-xs text-slate-500 mt-1">Chọn 1 SP cụ thể để gửi thông báo cho KH quan tâm SP đó. Để trống = broadcast cho 50 KH gần nhất.</p>
         </div>
       </form>
       <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-200 bg-slate-50">
@@ -2559,6 +2668,40 @@
             <button type="submit" class="px-5 py-2 btn-primary text-white rounded-xl font-medium shadow-lg shadow-blue-500/30">Lưu lại</button>
           </div>
         </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Gửi Email Marketing cho KH phù hợp -->
+  <div id="notify-customers-modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-amber-500 to-orange-500">
+        <h3 class="text-lg font-bold text-white"><i class="fas fa-envelope mr-2"></i>Gửi email cho khách hàng phù hợp</h3>
+        <button onclick="closeNotifyCustomersModal()" class="text-white hover:bg-white/20 rounded-lg p-1.5"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="p-6 overflow-y-auto flex-1">
+        <div class="mb-4">
+          <div class="text-sm text-slate-600">Sản phẩm:</div>
+          <div id="notify-product-name" class="font-semibold text-slate-800 text-lg">---</div>
+        </div>
+        <div class="mb-4 flex items-end gap-3">
+          <div class="flex-1">
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Số khách hàng tối đa</label>
+            <input type="number" id="notify-limit" value="50" min="1" max="200" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" />
+          </div>
+          <button onclick="loadNotifyPreview()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium text-slate-700">
+            <i class="fas fa-search mr-1"></i>Preview
+          </button>
+        </div>
+        <div id="notify-preview-area" class="bg-slate-50 rounded-lg p-4 text-sm text-slate-500 text-center">
+          Bấm "Preview" để xem danh sách KH phù hợp trước khi gửi email
+        </div>
+      </div>
+      <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
+        <button onclick="closeNotifyCustomersModal()" class="px-4 py-2 border border-slate-300 rounded-xl font-medium text-slate-700 hover:bg-slate-100">Hủy</button>
+        <button id="notify-send-btn" onclick="confirmSendNotifyEmails()" disabled class="px-5 py-2 bg-amber-500 hover:bg-amber-600 disabled:bg-slate-300 disabled:cursor-not-allowed text-white rounded-xl font-medium shadow-lg">
+          <i class="fas fa-paper-plane mr-1"></i>Gửi email ngay
+        </button>
       </div>
     </div>
   </div>
@@ -4325,8 +4468,9 @@
           <td class="px-4 py-3 ${p.so_luong_ton <= 5 ? 'text-red-600 font-bold' : ''}">${p.so_luong_ton}</td>
           <td class="px-4 py-3">${p.avg_rating ? '⭐ ' + parseFloat(p.avg_rating).toFixed(1) : 'Chưa có'}</td>
           <td class="px-4 py-3 space-x-1">
-            <button onclick="editProduct(${p.ma_sp})" class="px-2 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600"><i class="fas fa-edit"></i></button>
-            <button onclick="deleteProduct(${p.ma_sp})" class="px-2 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600"><i class="fas fa-trash"></i></button>
+            <button onclick="editProduct(${p.ma_sp})" class="px-2 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600" title="Sửa"><i class="fas fa-edit"></i></button>
+            <button onclick="deleteProduct(${p.ma_sp})" class="px-2 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600" title="Xóa"><i class="fas fa-trash"></i></button>
+            <button onclick="openNotifyCustomersModal(${p.ma_sp}, '${(p.ten_sp || '').replace(/'/g, "\\'")}')" class="px-2 py-1 bg-amber-500 text-white rounded text-xs hover:bg-amber-600" title="Gửi email cho KH phù hợp"><i class="fas fa-envelope"></i></button>
           </td>
         </tr>
       `).join('');
@@ -5216,10 +5360,33 @@
       }
     }
 
+    async function populatePromotionProductSelect() {
+      const select = document.getElementById('promotion-ma-sp');
+      if (!select) return;
+      // Tránh load lặp lại
+      if (select.dataset.loaded === '1') return;
+      try {
+        const res = await fetch(`${API_URL}/admin/products`, { credentials: 'include' });
+        const data = await res.json();
+        const list = data.data || data.products || data || [];
+        const products = Array.isArray(list) ? list : (list.data || []);
+        for (const p of products) {
+          const opt = document.createElement('option');
+          opt.value = p.ma_sp;
+          opt.textContent = `[#${p.ma_sp}] ${truncateText(p.ten_sp, 50)}`;
+          select.appendChild(opt);
+        }
+        select.dataset.loaded = '1';
+      } catch (e) { console.warn('Không load được SP cho promotion select:', e.message); }
+    }
+
     function showAddPromotionModal() {
       document.getElementById('promotion-modal-title').textContent = 'Thêm Khuyến mãi';
       document.getElementById('promotion-form').reset();
       document.getElementById('promotion-id').value = '';
+      const maSpSel = document.getElementById('promotion-ma-sp');
+      if (maSpSel) maSpSel.value = '';
+      populatePromotionProductSelect();
       
       // Set default dates
       const now = new Date();
@@ -5249,6 +5416,7 @@
       const end = document.getElementById('promotion-end').value;
       const quantity = document.getElementById('promotion-quantity').value || 100;
       const status = document.getElementById('promotion-status').value;
+      const maSpRaw = document.getElementById('promotion-ma-sp')?.value || '';
 
       if (!code || !value || !start || !end) {
         alert('Vui lòng điền đầy đủ thông tin bắt buộc!');
@@ -5267,7 +5435,8 @@
         so_luong: parseInt(quantity),
         ngay_bat_dau: start,
         ngay_ket_thuc: end,
-        trang_thai: status
+        trang_thai: status,
+        ma_sp: maSpRaw ? parseInt(maSpRaw) : null
       };
 
       try {
@@ -5311,7 +5480,13 @@
       document.getElementById('promotion-end').value = promo.ngay_ket_thuc ? new Date(promo.ngay_ket_thuc).toISOString().slice(0, 16) : '';
       document.getElementById('promotion-quantity').value = promo.so_luong || 100;
       document.getElementById('promotion-status').value = promo.trang_thai || 'active';
-      
+
+      // Populate dropdown SP rồi set giá trị hiện có (nếu có ma_sp gán)
+      populatePromotionProductSelect().then(() => {
+        const sel = document.getElementById('promotion-ma-sp');
+        if (sel) sel.value = promo.ma_sp || '';
+      });
+
       document.getElementById('promotion-modal').classList.remove('hidden');
       document.getElementById('promotion-modal').classList.add('flex');
     }
@@ -6063,6 +6238,7 @@
         case 'notifications': loadNotifications(); break;
         case 'contacts': loadContacts(); break;
         case 'interests': loadAdminInterests(); break;
+        case 'warranties': loadWarranties(); break;
         case 'chatbot-rag': if (typeof initChatbotKnowledge === 'function') initChatbotKnowledge(); break;
       }
     };
@@ -6441,6 +6617,188 @@
     }
     
     // Load settings sẽ được gọi từ loadDashboardData (không gọi riêng để tránh race condition auth)
+
+    // ==================== EMAIL LOGS + NOTIFY CUSTOMERS ====================
+    let currentNotifyProductId = null;
+    let currentEmailLogsPage = 1;
+
+    function openNotifyCustomersModal(productId, productName) {
+      currentNotifyProductId = productId;
+      document.getElementById('notify-product-name').textContent = productName || `Sản phẩm #${productId}`;
+      document.getElementById('notify-limit').value = 50;
+      document.getElementById('notify-preview-area').innerHTML = '<div class="text-center text-slate-500">Bấm "Preview" để xem danh sách KH phù hợp trước khi gửi email</div>';
+      document.getElementById('notify-send-btn').disabled = true;
+      const modal = document.getElementById('notify-customers-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeNotifyCustomersModal() {
+      const modal = document.getElementById('notify-customers-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      currentNotifyProductId = null;
+    }
+
+    async function loadNotifyPreview() {
+      if (!currentNotifyProductId) return;
+      const limit = parseInt(document.getElementById('notify-limit').value) || 50;
+      const area = document.getElementById('notify-preview-area');
+      area.innerHTML = '<div class="text-center text-slate-500"><i class="fas fa-spinner fa-spin mr-2"></i>Đang tìm khách hàng phù hợp...</div>';
+
+      try {
+        const res = await fetch(`${API_URL}/admin/products/${currentNotifyProductId}/notify-customers`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ limit, dryRun: true })
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.message || 'Lỗi không xác định');
+
+        const customers = data.data.customers || [];
+        if (customers.length === 0) {
+          area.innerHTML = '<div class="text-center text-amber-600 py-4"><i class="fas fa-exclamation-circle mr-1"></i>Không tìm thấy KH phù hợp với sản phẩm này.</div>';
+          document.getElementById('notify-send-btn').disabled = true;
+          return;
+        }
+
+        area.innerHTML = `
+          <div class="mb-3 text-sm font-semibold text-slate-700">Tìm thấy <span class="text-amber-600">${customers.length}</span> khách hàng phù hợp:</div>
+          <div class="max-h-64 overflow-y-auto bg-white rounded-lg border border-slate-200">
+            <table class="w-full text-sm">
+              <thead class="bg-slate-100 sticky top-0">
+                <tr>
+                  <th class="px-3 py-2 text-left text-xs font-semibold text-slate-600">Tên KH</th>
+                  <th class="px-3 py-2 text-left text-xs font-semibold text-slate-600">Email</th>
+                  <th class="px-3 py-2 text-center text-xs font-semibold text-slate-600">Điểm</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${customers.map(c => `
+                  <tr class="border-t border-slate-100 hover:bg-slate-50">
+                    <td class="px-3 py-2">${c.ho_ten || `KH#${c.ma_kh}`}</td>
+                    <td class="px-3 py-2 text-slate-600">${c.email}</td>
+                    <td class="px-3 py-2 text-center"><span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full text-xs font-semibold">${c.score}</span></td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+        document.getElementById('notify-send-btn').disabled = false;
+      } catch (e) {
+        area.innerHTML = `<div class="text-center text-red-600 py-4">Lỗi: ${e.message}</div>`;
+      }
+    }
+
+    async function confirmSendNotifyEmails() {
+      if (!currentNotifyProductId) return;
+      const limit = parseInt(document.getElementById('notify-limit').value) || 50;
+      if (!confirm(`Xác nhận gửi email cho tối đa ${limit} KH phù hợp với sản phẩm này?`)) return;
+
+      const sendBtn = document.getElementById('notify-send-btn');
+      sendBtn.disabled = true;
+      sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Đang gửi...';
+
+      try {
+        const res = await fetch(`${API_URL}/admin/products/${currentNotifyProductId}/notify-customers`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ limit, dryRun: false })
+        });
+        const data = await res.json();
+        if (data.success) {
+          const r = data.data;
+          showToast(`✅ Đã gửi: ${r.sent}/${r.matched} (Lỗi: ${r.failed})`, 'success');
+          closeNotifyCustomersModal();
+        } else {
+          throw new Error(data.message || 'Gửi email thất bại');
+        }
+      } catch (e) {
+        showToast(`Lỗi: ${e.message}`, 'error');
+      } finally {
+        sendBtn.innerHTML = '<i class="fas fa-paper-plane mr-1"></i>Gửi email ngay';
+        sendBtn.disabled = false;
+      }
+    }
+
+    async function loadEmailLogs(page = 1) {
+      currentEmailLogsPage = page;
+      const tbody = document.getElementById('email-logs-tbody');
+      tbody.innerHTML = '<tr><td colspan="8" class="text-center text-slate-400 py-8"><i class="fas fa-spinner fa-spin mr-2"></i>Đang tải...</td></tr>';
+
+      const params = new URLSearchParams({ page, limit: 20 });
+      const t = document.getElementById('email-log-filter-type').value;
+      const s = document.getElementById('email-log-filter-status').value;
+      const f = document.getElementById('email-log-filter-from').value;
+      const to = document.getElementById('email-log-filter-to').value;
+      if (t) params.append('loai_email', t);
+      if (s) params.append('trang_thai', s);
+      if (f) params.append('from', f);
+      if (to) params.append('to', to + ' 23:59:59');
+
+      try {
+        const res = await fetch(`${API_URL}/admin/email-logs?${params}`, { credentials: 'include' });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.message);
+        renderEmailLogs(data.data, data.pagination);
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="8" class="text-center text-red-500 py-6">Lỗi: ${e.message}</td></tr>`;
+      }
+    }
+
+    function renderEmailLogs(rows, pagination) {
+      const tbody = document.getElementById('email-logs-tbody');
+      if (!rows || rows.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-slate-400 py-8">Chưa có email nào</td></tr>';
+        document.getElementById('email-logs-pagination').innerHTML = '';
+        return;
+      }
+      const typeLabels = { confirmation: '📦 Xác nhận đơn', status_update: '🚚 Cập nhật TT', marketing: '🎁 Marketing', voucher: '💳 Voucher' };
+      tbody.innerHTML = rows.map(r => {
+        const time = new Date(r.ngay_gui).toLocaleString('vi-VN');
+        const statusBadge = r.trang_thai === 'sent'
+          ? '<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs">✅ Gửi OK</span>'
+          : `<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded-full text-xs" title="${(r.error_msg || '').replace(/"/g, '&quot;')}">❌ Lỗi</span>`;
+        return `
+          <tr class="border-b border-slate-100 hover:bg-slate-50">
+            <td class="px-6 py-3 text-slate-500">${r.ma_log}</td>
+            <td class="px-6 py-3 text-slate-700 text-xs">${time}</td>
+            <td class="px-6 py-3"><span class="text-xs">${typeLabels[r.loai_email] || r.loai_email}</span></td>
+            <td class="px-6 py-3 text-slate-700 text-xs">${r.email_nhan}</td>
+            <td class="px-6 py-3 text-slate-600 text-xs">${r.ten_kh || (r.ma_kh ? '#' + r.ma_kh : '-')}</td>
+            <td class="px-6 py-3 text-slate-600 text-xs">${r.ten_sp ? r.ten_sp : (r.ma_sp ? 'SP #' + r.ma_sp : (r.ma_don ? '<span class="text-blue-600">Đơn #' + r.ma_don + '</span>' : '-'))}</td>
+            <td class="px-6 py-3 text-slate-700 text-xs">${(r.tieu_de || '').length > 50 ? r.tieu_de.substring(0, 50) + '...' : (r.tieu_de || '')}</td>
+            <td class="px-6 py-3 text-center">${statusBadge}</td>
+          </tr>
+        `;
+      }).join('');
+
+      // Pagination
+      const pg = document.getElementById('email-logs-pagination');
+      const { page, totalPages, total } = pagination || { page: 1, totalPages: 1, total: rows.length };
+      pg.innerHTML = `
+        <div>Hiển thị ${rows.length} / ${total} email</div>
+        <div class="flex gap-1">
+          <button onclick="loadEmailLogs(${page - 1})" ${page <= 1 ? 'disabled' : ''} class="px-3 py-1 border border-slate-200 rounded text-xs disabled:opacity-40">‹ Trước</button>
+          <span class="px-3 py-1 text-xs">Trang ${page}/${totalPages}</span>
+          <button onclick="loadEmailLogs(${page + 1})" ${page >= totalPages ? 'disabled' : ''} class="px-3 py-1 border border-slate-200 rounded text-xs disabled:opacity-40">Sau ›</button>
+        </div>
+      `;
+    }
+
+    // Auto-load khi vào tab Email Logs
+    (function hookEmailLogsLoader() {
+      const origShow = window.showSection;
+      if (typeof origShow !== 'function') return;
+      window.showSection = function(id) {
+        const ret = origShow.apply(this, arguments);
+        if (id === 'email-logs') loadEmailLogs(1);
+        return ret;
+      };
+    })();
   </script>
   
   <!-- Settings Modal -->
@@ -6545,6 +6903,177 @@
       </div>
     </div>
   </div>
+
+  <!-- Warranty Claim Update Modal -->
+  <div id="warranty-modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-blue-500 to-blue-600 shrink-0">
+        <h3 class="text-lg font-bold text-white"><i class="fas fa-tools mr-2"></i>Cập nhật Tiến độ Bảo hành</h3>
+        <button onclick="closeWarrantyModal()" class="text-white/80 hover:text-white"><i class="fas fa-times text-xl"></i></button>
+      </div>
+      <form id="warranty-update-form" onsubmit="saveWarrantyClaimStatus(event)" class="p-6 space-y-4">
+        <input type="hidden" id="warranty-claim-id">
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">Sản phẩm lỗi</label>
+          <input type="text" id="warranty-claim-product" readonly class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-500 cursor-not-allowed font-medium">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">Mô tả lỗi khách hàng báo</label>
+          <textarea id="warranty-claim-desc" readonly class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-500 cursor-not-allowed italic text-sm" rows="2"></textarea>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">Cập nhật Trạng thái xử lý *</label>
+          <select id="warranty-claim-status" required class="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer">
+            <option value="pending">Chờ tiếp nhận</option>
+            <option value="received">Đã tiếp nhận sản phẩm lỗi</option>
+            <option value="diagnosing">Đang kiểm tra chẩn đoán lỗi</option>
+            <option value="repairing">Đang tiến hành sửa chữa/thay thế</option>
+            <option value="completed">Đã bảo hành hoàn thành trả máy</option>
+            <option value="rejected">Từ chối bảo hành (lỗi người dùng...)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">Kết luận kỹ thuật (Kết quả) *</label>
+          <input type="text" id="warranty-claim-result" required placeholder="VD: Thay màn hình chính hãng mới, Đã fix lỗi phần mềm, Từ chối..." class="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">Ghi chú lịch thiết bị (Lưu vào phiếu BH gốc)</label>
+          <textarea id="warranty-claim-note" placeholder="VD: Thay thế cụm màn hình mã VN-2026. Bảo hành màn hình thay thế 6 tháng." class="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" rows="2"></textarea>
+        </div>
+        <div class="flex justify-end gap-3 pt-4 border-t border-slate-100">
+          <button type="button" onclick="closeWarrantyModal()" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl transition">Hủy</button>
+          <button type="submit" class="px-6 py-2.5 btn-primary text-white font-semibold rounded-xl shadow-lg shadow-blue-500/20 transition">Lưu cập nhật</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // ==================== WARRANTIES SECTION ====================
+    let allWarranties = [];
+
+    async function loadWarranties() {
+      try {
+        const res = await fetch(`${API_URL}/warranty/claims`);
+        const data = await res.json();
+        
+        if (data.success) {
+          allWarranties = data.data;
+          renderWarranties(allWarranties);
+        }
+      } catch (error) {
+        console.error('Error loading warranties:', error);
+        document.getElementById('warranties-table-body').innerHTML = '<tr><td colspan="8" class="py-8 text-center text-red-400">Lỗi tải dữ liệu bảo hành</td></tr>';
+      }
+    }
+
+    function renderWarranties(claims) {
+      const tbody = document.getElementById('warranties-table-body');
+      if (!claims || claims.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="py-8 text-center text-slate-400">Không có Yêu cầu Bảo hành nào</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = claims.map(c => {
+        const statusConfig = {
+          'pending': { label: 'Chờ tiếp nhận', class: 'bg-amber-100 text-amber-700 border-amber-200' },
+          'received': { label: 'Đã nhận máy', class: 'bg-blue-100 text-blue-700 border-blue-200' },
+          'diagnosing': { label: 'Chẩn đoán lỗi', class: 'bg-purple-100 text-purple-700 border-purple-200' },
+          'repairing': { label: 'Đang sửa chữa', class: 'bg-indigo-100 text-indigo-700 border-indigo-200' },
+          'completed': { label: 'Đã hoàn thành', class: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+          'rejected': { label: 'Từ chối', class: 'bg-rose-100 text-rose-700 border-rose-200' }
+        };
+        const status = statusConfig[c.trang_thai] || { label: c.trang_thai, class: 'bg-slate-100 text-slate-700 border-slate-200' };
+
+        return `
+          <tr class="hover:bg-slate-50 transition-colors">
+            <td class="py-4 px-6 font-bold text-slate-700">#${c.ma_ycbh}</td>
+            <td class="py-4 px-6">
+              <span class="block font-semibold">Phiếu #${c.ma_pbh}</span>
+              <span class="text-xs text-slate-400 font-mono">IMEI: ${c.so_imei || '-'}</span>
+            </td>
+            <td class="py-4 px-6">
+              <span class="block font-semibold text-slate-800">${c.ten_kh || 'Khách vãng lai'}</span>
+              <span class="text-xs text-slate-500">${c.sdt_kh || '-'}</span>
+            </td>
+            <td class="py-4 px-6">
+              <span class="font-medium text-slate-700">${c.ten_sp}</span>
+              <span class="block text-xxs text-slate-400">Đơn hàng: #${c.ma_don}</span>
+            </td>
+            <td class="py-4 px-6 text-slate-600 max-w-xs truncate" title="${c.mo_ta_loi}">${c.mo_ta_loi}</td>
+            <td class="py-4 px-6 text-slate-500 text-xs">${new Date(c.ngay_tao).toLocaleDateString('vi-VN')}</td>
+            <td class="py-4 px-6">
+              <span class="px-2.5 py-1 text-xs font-semibold rounded-full border ${status.class}">
+                ${status.label}
+              </span>
+            </td>
+            <td class="py-4 px-6 text-center">
+              <button onclick="editWarrantyClaim(${c.ma_ycbh})" class="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg text-xs font-bold transition-colors">
+                <i class="fas fa-edit mr-1"></i>Cập nhật
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function editWarrantyClaim(claimId) {
+      const claim = allWarranties.find(c => c.ma_ycbh === claimId);
+      if (!claim) return;
+
+      document.getElementById('warranty-claim-id').value = claimId;
+      document.getElementById('warranty-claim-product').value = claim.ten_sp;
+      document.getElementById('warranty-claim-desc').value = claim.mo_ta_loi;
+      document.getElementById('warranty-claim-status').value = claim.trang_thai;
+      document.getElementById('warranty-claim-result').value = claim.ket_qua || '';
+      document.getElementById('warranty-claim-note').value = '';
+
+      const modal = document.getElementById('warranty-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeWarrantyModal() {
+      const modal = document.getElementById('warranty-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    async function saveWarrantyClaimStatus(e) {
+      e.preventDefault();
+      const claimId = document.getElementById('warranty-claim-id').value;
+      const status = document.getElementById('warranty-claim-status').value;
+      const result = document.getElementById('warranty-claim-result').value.trim();
+      const note = document.getElementById('warranty-claim-note').value.trim();
+
+      const btn = e.target.querySelector('button[type="submit"]');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang lưu...';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch(`${API_URL}/warranty/claim/${claimId}/status`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status, result, note })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          showToast('Cập nhật tiến độ bảo hành thành công và đã gửi email cho KH!', 'success');
+          closeWarrantyModal();
+          loadWarranties();
+        } else {
+          showToast(data.message || 'Lỗi cập nhật tiến độ!', 'error');
+        }
+      } catch (err) {
+        showToast('Lỗi kết nối máy chủ', 'error');
+      } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      }
+    }
+  </script>
 
 <script src="js/admin-autosave.js"></script>
 <script src="chatbot-knowledge.js"></script>

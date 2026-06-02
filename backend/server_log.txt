@@ -1,0 +1,152 @@
+Server đang chạy tại http://localhost:3000
+API endpoint: http://localhost:3000/api
+[Cron] Pending payment reminder scheduled (hourly at :07, Asia/Ho_Chi_Minh)
+✅ Kết nối MySQL thành công!
+📍 GET /api/auth/google
+Session ID: I0b-1rUwa5aVgRmDgN2jkdkk6YPHhzmw
+Session user: none
+📍 GET /api/auth/google/callback
+Session ID: I0b-1rUwa5aVgRmDgN2jkdkk6YPHhzmw
+Session user: none
+🔵 Google callback handler started
+Query state: login
+Session adminLogin: undefined
+Google OAuth - State: login - isRegistering: false - Email: gujiu2882@gmail.com
+Query params: {
+  state: 'login',
+  iss: 'https://accounts.google.com',
+  code: '4/0AeoWuM_JeYf55fSX9JfcMyUJ0_sFg8_bAYmWGZaBr2JQzoDFxxZcFofdJGkZImBKAkXHeQ',
+  scope: 'email profile https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile openid',
+  authuser: '2',
+  prompt: 'none'
+}
+User đã tồn tại trong DB: gujiu2882@gmail.com
+🔵 Passport authenticate callback
+Error: null
+User: {
+  ma_kh: 12,
+  ma_admin: null,
+  ho_ten: 'Jiu Gu',
+  email: 'gujiu2882@gmail.com',
+  avt: 'https://lh3.googleusercontent.com/a/ACg8ocKR--qWMboolPaqy73EemIhaotR_VcnlzFI-i4doXQKGWurCw=s96-c',
+  so_dt: null,
+  dia_chi: null,
+  gioi_tinh: null,
+  ngay_sinh: null,
+  quyen: null,
+  role: 'customer',
+  isAdmin: false,
+  google_id: '116160041515715591063'
+}
+Info: {}
+🔵 isAdminLogin: false
+🔵 Google OAuth callback - Email: gujiu2882@gmail.com - isAdminLogin: false
+✅ Customer Google OAuth session saved: I0b-1rUwa5aVgRmDgN2jkdkk6YPHhzmw
+=== GET /:userId ===
+userId: 12
+All carts for user: [ { ma_gio_hang: 13 } ]
+Cart items from DB: 0
+=== GET SUCCESS ===
+📍 GET /api/admin/dashboard/overview
+Session ID: I0b-1rUwa5aVgRmDgN2jkdkk6YPHhzmw
+Session user: gujiu2882@gmail.com
+❌ Admin auth failed: Not admin role
+User role: undefined
+📍 GET /api/admin/dashboard/revenue
+Session ID: I0b-1rUwa5aVgRmDgN2jkdkk6YPHhzmw
+Session user: gujiu2882@gmail.com
+❌ Admin auth failed: Not admin role
+User role: undefined
+📍 GET /api/admin/dashboard/sales-analytics
+Session ID: I0b-1rUwa5aVgRmDgN2jkdkk6YPHhzmw
+Session user: gujiu2882@gmail.com
+❌ Admin auth failed: Not admin role
+User role: undefined
+📍 GET /api/admin/dashboard/inventory
+Session ID: I0b-1rUwa5aVgRmDgN2jkdkk6YPHhzmw
+Session user: gujiu2882@gmail.com
+❌ Admin auth failed: Not admin role
+User role: undefined
+📍 GET /api/admin/settings
+Session ID: I0b-1rUwa5aVgRmDgN2jkdkk6YPHhzmw
+Session user: gujiu2882@gmail.com
+📍 GET /api/admin/dashboard/overview
+Session ID: I0b-1rUwa5aVgRmDgN2jkdkk6YPHhzmw
+Session user: gujiu2882@gmail.com
+❌ Admin auth failed: Not admin role
+User role: undefined
+📍 GET /api/admin/dashboard/revenue
+Session ID: I0b-1rUwa5aVgRmDgN2jkdkk6YPHhzmw
+Session user: gujiu2882@gmail.com
+❌ Admin auth failed: Not admin role
+User role: undefined
+📍 GET /api/admin/dashboard/sales-analytics
+Session ID: I0b-1rUwa5aVgRmDgN2jkdkk6YPHhzmw
+Session user: gujiu2882@gmail.com
+❌ Admin auth failed: Not admin role
+User role: undefined
+📍 GET /api/admin/dashboard/inventory
+Session ID: I0b-1rUwa5aVgRmDgN2jkdkk6YPHhzmw
+Session user: gujiu2882@gmail.com
+❌ Admin auth failed: Not admin role
+User role: undefined
+📍 GET /api/admin/settings
+Session ID: I0b-1rUwa5aVgRmDgN2jkdkk6YPHhzmw
+Session user: gujiu2882@gmail.com
+=== GET /:userId ===
+userId: 12
+All carts for user: [ { ma_gio_hang: 13 } ]
+Cart items from DB: 0
+=== GET SUCCESS ===
+📍 GET /api/admin/settings/public
+Session ID: I0b-1rUwa5aVgRmDgN2jkdkk6YPHhzmw
+Session user: gujiu2882@gmail.com
+=== GET /:userId ===
+userId: 12
+All carts for user: [ { ma_gio_hang: 13 } ]
+Cart items from DB: 0
+=== GET SUCCESS ===
+📍 GET /api/admin/settings/public
+Session ID: I0b-1rUwa5aVgRmDgN2jkdkk6YPHhzmw
+Session user: gujiu2882@gmail.com
+=== GET /:userId ===
+userId: 12
+All carts for user: [ { ma_gio_hang: 13 } ]
+Cart items from DB: 0
+=== GET SUCCESS ===
+📍 GET /api/admin/settings/public
+Session ID: I0b-1rUwa5aVgRmDgN2jkdkk6YPHhzmw
+Session user: gujiu2882@gmail.com
+=== GET /:userId ===
+userId: 12
+All carts for user: [ { ma_gio_hang: 13 } ]
+Cart items from DB: 0
+=== GET SUCCESS ===
+=== GET /:userId ===
+userId: 12
+All carts for user: [ { ma_gio_hang: 13 } ]
+Cart items from DB: 0
+=== GET SUCCESS ===
+📍 GET /api/admin/dashboard/overview
+Session ID: I0b-1rUwa5aVgRmDgN2jkdkk6YPHhzmw
+Session user: gujiu2882@gmail.com
+❌ Admin auth failed: Not admin role
+User role: undefined
+📍 GET /api/admin/dashboard/revenue
+Session ID: I0b-1rUwa5aVgRmDgN2jkdkk6YPHhzmw
+Session user: gujiu2882@gmail.com
+❌ Admin auth failed: Not admin role
+User role: undefined
+📍 GET /api/admin/dashboard/sales-analytics
+Session ID: I0b-1rUwa5aVgRmDgN2jkdkk6YPHhzmw
+Session user: gujiu2882@gmail.com
+❌ Admin auth failed: Not admin role
+User role: undefined
+📍 GET /api/admin/dashboard/inventory
+Session ID: I0b-1rUwa5aVgRmDgN2jkdkk6YPHhzmw
+Session user: gujiu2882@gmail.com
+❌ Admin auth failed: Not admin role
+User role: undefined
+📍 GET /api/admin/settings
+Session ID: I0b-1rUwa5aVgRmDgN2jkdkk6YPHhzmw
+Session user: gujiu2882@gmail.com

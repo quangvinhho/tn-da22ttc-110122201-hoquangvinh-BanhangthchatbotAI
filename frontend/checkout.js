@@ -1944,7 +1944,12 @@ async function completeOrder(orderData) {
     if (result.success) {
       // Cập nhật orderId từ database
       orderData.dbOrderId = result.data.orderId;
-      
+
+      // [MỚI] Lưu thông tin tri ân + gợi ý từ backend để hiển thị modal + trang order-success
+      orderData.thankYouVoucher = result.data.thankYouVoucher || null;
+      orderData.estimatedDelivery = result.data.estimatedDelivery || '2-3 ngày làm việc';
+      orderData.recommendedProducts = result.data.recommendedProducts || [];
+
       // Nếu đã thanh toán đặt cọc (demo mode - lập tức thành công)
       if (orderData.depositPaid && isDeposit) {
         await fetch(`${API_URL}/orders/${result.data.orderId}/payment`, {
@@ -2004,14 +2009,234 @@ async function completeOrder(orderData) {
   
   // Dispatch event để cập nhật cart badge
   window.dispatchEvent(new Event('cartUpdated'));
-  
-  // Show success message once and redirect after 1 second
+
+  // Toast nhanh rồi redirect sang trang order-success (đã có voucher + recommend products + confetti)
   showToast('Đặt hàng thành công! Đang chuyển hướng...', 'success');
-  
-  // Redirect to success page after 1 second
   setTimeout(() => {
     window.location.href = `order-success.html?orderId=${orderData.orderId}`;
-  }, 1000);
+  }, 900);
+}
+
+// ===== THANK YOU MODAL =====
+function showThankYouModal(orderData) {
+  const voucher = orderData.thankYouVoucher;
+  const recs = orderData.recommendedProducts || [];
+  const estimated = orderData.estimatedDelivery || '2-3 ngày làm việc';
+  const orderId = orderData.dbOrderId || orderData.orderId;
+
+  const fmtPrice = (n) => {
+    const v = parseFloat(n) || 0;
+    return v.toLocaleString('vi-VN') + 'đ';
+  };
+
+  // Order details lấy từ orderData (set trong placeOrder trước khi gọi modal)
+  const items = orderData.items || [];
+  const customer = orderData.customer || {};
+  const address = orderData.address || {};
+  const pricing = orderData.pricing || {};
+  const payment = orderData.payment || {};
+
+  const paymentLabels = {
+    'cod': 'Thanh toán khi nhận hàng (COD)',
+    'bank': 'Chuyển khoản ngân hàng',
+    'momo': 'Ví MoMo', 'momo_qr': 'MoMo QR', 'momo_wallet': 'MoMo Ví',
+    'momo_atm': 'MoMo ATM', 'momo_credit': 'MoMo Thẻ quốc tế',
+    'vnpay': 'VNPay', 'installment': 'Trả góp 0%',
+    'bank_deposit': 'Đặt cọc chuyển khoản'
+  };
+
+  const fullAddress = [address.detail, address.ward, address.district, address.province].filter(Boolean).join(', ');
+
+  // Items list HTML
+  const itemsHtml = items.length > 0 ? items.map(it => `
+    <div class="flex gap-3 py-3 border-b border-gray-100 last:border-0">
+      <img src="${it.image || it.anh_dai_dien || 'https://placehold.co/60x60?text=SP'}" alt="${it.name || it.ten_sp || ''}" class="w-14 h-14 object-contain rounded border border-gray-200" onerror="this.src='https://placehold.co/60x60?text=SP'">
+      <div class="flex-1 min-w-0">
+        <div class="text-sm font-semibold text-gray-800 line-clamp-2 leading-snug">${it.name || it.ten_sp || 'Sản phẩm'}</div>
+        <div class="text-xs text-gray-500 mt-0.5">SL: ${it.quantity || 1} × ${fmtPrice(it.price || it.gia)}</div>
+      </div>
+      <div class="text-sm font-bold text-red-600 whitespace-nowrap">${fmtPrice((it.price || it.gia || 0) * (it.quantity || 1))}</div>
+    </div>
+  `).join('') : '<div class="text-sm text-gray-400 italic py-4 text-center">Không có thông tin sản phẩm</div>';
+
+  const voucherCardHtml = voucher ? `
+    <div class="bg-gradient-to-br from-yellow-50 via-orange-50 to-yellow-50 border-2 border-dashed border-orange-400 rounded-xl p-4 mb-4 shadow-sm">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="text-3xl">🎁</span>
+        <div>
+          <div class="font-bold text-orange-700 text-base">Voucher tri ân -${voucher.percent}%</div>
+          <div class="text-xs text-gray-600">Cho lần mua tiếp theo trong ${voucher.expiryDays} ngày</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <code id="ty-voucher-code" class="flex-1 bg-white px-3 py-2 rounded-lg border-2 border-orange-300 font-mono text-sm font-bold text-orange-700 select-all text-center">${voucher.code}</code>
+        <button onclick="copyThankYouVoucher('${voucher.code}')" class="px-3 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-xs font-semibold transition">
+          <i class="fas fa-copy mr-1"></i>Copy
+        </button>
+      </div>
+    </div>
+  ` : '';
+
+  const recsHtml = recs.length > 0 ? `
+    <div>
+      <h4 class="font-bold text-gray-800 mb-3 flex items-center gap-2 text-sm">
+        <i class="fas fa-lightbulb text-yellow-500"></i>
+        Có thể bạn cũng thích
+      </h4>
+      <div class="grid grid-cols-2 gap-3">
+        ${recs.slice(0, 4).map(p => `
+          <a href="product-detail.html?id=${p.ma_sp}" class="border border-gray-200 rounded-lg p-2 hover:shadow-lg hover:border-red-300 transition block bg-white">
+            <img src="${p.anh_dai_dien || 'https://placehold.co/100x100?text=SP'}" alt="${p.ten_sp}" class="w-full h-20 object-contain mb-1.5" onerror="this.src='https://placehold.co/100x100?text=SP'">
+            <div class="text-xs font-semibold text-gray-800 line-clamp-2 leading-tight">${p.ten_sp}</div>
+            <div class="text-xs font-bold text-red-600 mt-1">${fmtPrice(p.gia_giam || p.gia)}</div>
+          </a>
+        `).join('')}
+      </div>
+    </div>
+  ` : '';
+
+  const modalHtml = `
+    <div id="thank-you-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start md:items-center justify-center z-[9999] p-2 md:p-4 overflow-y-auto">
+      <div id="ty-confetti-container" class="fixed inset-0 pointer-events-none z-0"></div>
+      <div class="bg-white rounded-2xl shadow-2xl max-w-5xl w-full relative z-10 overflow-hidden animate-slide-in my-4">
+        <!-- Header Gradient -->
+        <div class="bg-gradient-to-br from-green-500 via-emerald-500 to-emerald-600 px-6 py-5 text-white text-center relative">
+          <div class="inline-block mb-2">
+            <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto shadow-lg">
+              <i class="fas fa-check text-4xl text-green-500"></i>
+            </div>
+          </div>
+          <h2 class="text-2xl md:text-3xl font-black mb-1">🎉 Đặt hàng thành công!</h2>
+          <p class="text-green-50 text-sm">Cảm ơn bạn đã tin tưởng QuangHưng Mobile</p>
+        </div>
+
+        <!-- Body 2-col -->
+        <div class="grid md:grid-cols-2 gap-0 max-h-[70vh] overflow-y-auto">
+          <!-- LEFT: Order Summary -->
+          <div class="p-5 md:border-r border-gray-200 bg-white">
+            <!-- Order ID + Estimated -->
+            <div class="flex items-center justify-between bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg p-3 mb-4">
+              <div>
+                <div class="text-xs text-gray-500">Mã đơn hàng</div>
+                <div class="font-bold text-gray-900 text-lg">#${orderId}</div>
+              </div>
+              <div class="text-right">
+                <div class="text-xs text-gray-500">Dự kiến giao</div>
+                <div class="font-semibold text-green-700 text-sm">${estimated}</div>
+              </div>
+            </div>
+
+            <!-- Customer & Address -->
+            <div class="bg-blue-50 rounded-lg p-3 mb-4">
+              <h4 class="font-bold text-gray-800 mb-2 text-sm flex items-center gap-2">
+                <i class="fas fa-truck text-blue-600"></i>Giao đến
+              </h4>
+              <div class="text-sm text-gray-700 space-y-1">
+                <div><span class="font-semibold">${customer.fullName || ''}</span> · ${customer.phone || ''}</div>
+                <div class="text-xs text-gray-600">${fullAddress}</div>
+              </div>
+            </div>
+
+            <!-- Items -->
+            <h4 class="font-bold text-gray-800 mb-2 text-sm flex items-center gap-2">
+              <i class="fas fa-box text-orange-500"></i>Sản phẩm (${items.length})
+            </h4>
+            <div class="border border-gray-200 rounded-lg px-3 max-h-52 overflow-y-auto mb-4">
+              ${itemsHtml}
+            </div>
+
+            <!-- Totals -->
+            <div class="bg-gray-50 rounded-lg p-3 space-y-1.5 text-sm">
+              <div class="flex justify-between text-gray-600"><span>Tạm tính:</span><span>${fmtPrice(pricing.subtotal || 0)}</span></div>
+              <div class="flex justify-between text-gray-600"><span>Phí vận chuyển:</span><span>${(pricing.shippingFee || 0) > 0 ? fmtPrice(pricing.shippingFee) : '<span class="text-green-600">Miễn phí</span>'}</span></div>
+              ${(pricing.discount || 0) > 0 ? `<div class="flex justify-between text-green-600"><span>Giảm giá:</span><span>-${fmtPrice(pricing.discount)}</span></div>` : ''}
+              <div class="flex justify-between font-bold text-base text-red-600 pt-2 border-t border-gray-200">
+                <span>Tổng cộng:</span><span>${fmtPrice(pricing.total || 0)}</span>
+              </div>
+              <div class="text-xs text-gray-500 mt-1">Thanh toán: ${paymentLabels[payment.method] || payment.method || 'N/A'}</div>
+            </div>
+          </div>
+
+          <!-- RIGHT: Voucher + Recommend -->
+          <div class="p-5 bg-gradient-to-b from-amber-50/30 to-white">
+            ${voucherCardHtml}
+            ${recsHtml}
+            ${!voucher && !recs.length ? '<div class="text-center text-gray-400 italic py-12"><i class="fas fa-gift text-5xl mb-3"></i><div>Cảm ơn bạn đã mua hàng!</div></div>' : ''}
+          </div>
+        </div>
+
+        <!-- Footer Actions -->
+        <div class="border-t border-gray-200 bg-gray-50 px-5 py-4 flex flex-col md:flex-row gap-3">
+          <a href="products.html" class="flex-1 text-center py-3 px-4 bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 font-semibold rounded-lg transition">
+            <i class="fas fa-shopping-cart mr-1"></i>Tiếp tục mua sắm
+          </a>
+          <a href="order-success.html?orderId=${orderData.orderId}" class="flex-1 text-center py-3 px-4 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold rounded-lg transition shadow-md">
+            <i class="fas fa-receipt mr-1"></i>Xem chi tiết đơn hàng
+          </a>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+  document.body.style.overflow = 'hidden';
+
+  // Trigger confetti
+  createThankYouConfetti();
+}
+
+function copyThankYouVoucher(code) {
+  navigator.clipboard.writeText(code).then(() => {
+    showToast(`Đã copy mã ${code}!`, 'success');
+  }).catch(() => {
+    const el = document.getElementById('ty-voucher-code');
+    if (el) {
+      const range = document.createRange();
+      range.selectNode(el);
+      window.getSelection().removeAllRanges();
+      window.getSelection().addRange(range);
+      try { document.execCommand('copy'); showToast(`Đã copy mã ${code}!`, 'success'); } catch {}
+    }
+  });
+}
+
+function createThankYouConfetti() {
+  const container = document.getElementById('ty-confetti-container');
+  if (!container) return;
+  const colors = ['#d91e23', '#22c55e', '#3b82f6', '#f59e0b', '#a855f7', '#ec4899'];
+  for (let i = 0; i < 60; i++) {
+    const piece = document.createElement('div');
+    piece.style.cssText = `
+      position: fixed;
+      width: 10px;
+      height: 10px;
+      background-color: ${colors[i % colors.length]};
+      top: -10px;
+      left: ${Math.random() * 100}%;
+      opacity: 1;
+      transform: rotate(${Math.random() * 360}deg);
+      animation: ty-confetti-fall ${2 + Math.random() * 2}s ease-out ${Math.random() * 0.6}s forwards;
+      border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
+    `;
+    container.appendChild(piece);
+  }
+  // Inject keyframes once
+  if (!document.getElementById('ty-confetti-style')) {
+    const style = document.createElement('style');
+    style.id = 'ty-confetti-style';
+    style.textContent = `
+      @keyframes ty-confetti-fall {
+        0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+        100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+      }
+      @keyframes ty-slide-in {
+        0% { opacity: 0; transform: translateY(20px) scale(0.95); }
+        100% { opacity: 1; transform: translateY(0) scale(1); }
+      }
+      .animate-slide-in { animation: ty-slide-in 0.4s ease-out forwards; }
+    `;
+    document.head.appendChild(style);
+  }
 }
 
 // ===== CUSTOM DROPDOWN FUNCTIONS =====

@@ -334,6 +334,24 @@ router.put('/orders/:id/status', async (req, res) => {
         
         await connection.query('UPDATE don_hang SET trang_thai = ? WHERE ma_don = ?', [status, id]);
         
+        // Gửi email cập nhật trạng thái đơn hàng (không block admin response)
+        try {
+            const { sendOrderStatusUpdate } = require('../services/emailService');
+            sendOrderStatusUpdate(id, status).catch(err => console.error('[Email Admin] sendOrderStatusUpdate error:', err));
+        } catch (e) {
+            console.error('[Email Admin] Lỗi require emailService:', e);
+        }
+
+        // Tự động kích hoạt bảo hành điện tử nếu đơn hàng hoàn thành
+        if (status === 'completed') {
+            try {
+                const { createWarrantiesForOrder } = require('../services/warrantyService');
+                createWarrantiesForOrder(id).catch(err => console.error('[Warranty Admin] createWarrantiesForOrder error:', err));
+            } catch (e) {
+                console.error('[Warranty Admin] Lỗi require warrantyService:', e);
+            }
+        }
+        
         // Nếu đơn hàng đã giao/hoàn thành, cập nhật tất cả thanh toán thành công
         if (status === 'delivered' || status === 'completed') {
             // Cập nhật thanh toán COD thông thường
@@ -458,6 +476,14 @@ router.put('/orders/:id/cancel', async (req, res) => {
             'UPDATE don_hang SET trang_thai = ?, ly_do_huy = ? WHERE ma_don = ?', 
             ['cancelled', reason, id]
         );
+        
+        // Gửi email thông báo hủy đơn hàng (không block admin response)
+        try {
+            const { sendOrderStatusUpdate } = require('../services/emailService');
+            sendOrderStatusUpdate(id, 'cancelled').catch(err => console.error('[Email Admin] sendOrderStatusUpdate error:', err));
+        } catch (e) {
+            console.error('[Email Admin] Lỗi require emailService:', e);
+        }
         
         // Hoàn lại số lượng tồn kho
         const [orderItems] = await connection.query(
@@ -846,10 +872,111 @@ router.post('/products', async (req, res) => {
         }
         
         syncRAGProducts(); // Tự động đồng bộ RAG
-        
+
+        // [MỚI] Auto: gửi email "Sản phẩm mới phù hợp" cho top 50 KH match (chạy nền, không block response)
+        setImmediate(async () => {
+            try {
+                const { notifyMatchingCustomers } = require('../services/emailService');
+                const result = await notifyMatchingCustomers(productId, { limit: 50, sendImmediate: true });
+                console.log(`[Admin] Auto-notify new product #${productId}:`, result);
+            } catch (e) {
+                console.error('[Admin] Auto-notify error:', e.message);
+            }
+        });
+
         res.json({ success: true, message: 'Thêm sản phẩm thành công', data: { id: productId } });
     } catch (error) {
         console.error('Error adding product:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// POST /api/admin/products/:id/notify-customers - Trigger manual hoặc dryRun để preview KH match
+router.post('/products/:id/notify-customers', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const limit = parseInt(req.body?.limit) || 50;
+        const dryRun = req.body?.dryRun === true || req.body?.dryRun === 'true';
+
+        const { notifyMatchingCustomers, findMatchingCustomers } = require('../services/emailService');
+
+        if (dryRun) {
+            const data = await findMatchingCustomers(id, { limit });
+            return res.json({ success: true, dryRun: true, data });
+        }
+
+        const result = await notifyMatchingCustomers(id, { limit, sendImmediate: true });
+        res.json({ success: true, dryRun: false, data: result });
+    } catch (error) {
+        console.error('Error notify-customers endpoint:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// GET /api/admin/email-logs - Liệt kê lịch sử email đã gửi
+router.get('/email-logs', async (req, res) => {
+    try {
+        const page = Math.max(1, parseInt(req.query.page) || 1);
+        const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+        const offset = (page - 1) * limit;
+
+        const wheres = [];
+        const params = [];
+
+        if (req.query.loai_email) {
+            wheres.push('el.loai_email = ?');
+            params.push(req.query.loai_email);
+        }
+        if (req.query.ma_sp) {
+            wheres.push('el.ma_sp = ?');
+            params.push(parseInt(req.query.ma_sp));
+        }
+        if (req.query.ma_kh) {
+            wheres.push('el.ma_kh = ?');
+            params.push(parseInt(req.query.ma_kh));
+        }
+        if (req.query.trang_thai) {
+            wheres.push('el.trang_thai = ?');
+            params.push(req.query.trang_thai);
+        }
+        if (req.query.from) {
+            wheres.push('el.ngay_gui >= ?');
+            params.push(req.query.from);
+        }
+        if (req.query.to) {
+            wheres.push('el.ngay_gui <= ?');
+            params.push(req.query.to);
+        }
+
+        const whereSql = wheres.length > 0 ? `WHERE ${wheres.join(' AND ')}` : '';
+
+        const [totalRows] = await pool.query(
+            `SELECT COUNT(*) AS total FROM email_log el ${whereSql}`,
+            params
+        );
+        const total = totalRows[0].total;
+
+        const [rows] = await pool.query(
+            `SELECT el.ma_log, el.email_nhan, el.loai_email, el.ma_kh, el.ma_sp, el.ma_don,
+                    el.tieu_de, el.trang_thai, el.error_msg, el.ngay_gui,
+                    kh.ho_ten AS ten_kh,
+                    sp.ten_sp
+             FROM email_log el
+             LEFT JOIN khach_hang kh ON el.ma_kh = kh.ma_kh
+             LEFT JOIN san_pham sp ON el.ma_sp = sp.ma_sp
+             ${whereSql}
+             ORDER BY el.ngay_gui DESC
+             LIMIT ? OFFSET ?`,
+            [...params, limit, offset]
+        );
+
+        res.json({
+            success: true,
+            data: rows,
+            pagination: { page, limit, total, totalPages: Math.ceil(total / limit) }
+        });
+    } catch (error) {
+        console.error('Error /email-logs:', error);
         res.status(500).json({ success: false, message: error.message });
     }
 });
@@ -992,12 +1119,32 @@ router.put('/products/:id', async (req, res) => {
         
         const importPrice = parseFloat(gia_nhap) || (price * 0.7);
 
+        // [MỚI] Đọc tồn kho cũ để detect back-in-stock (0 → >0)
+        let oldStock = 0;
+        try {
+            const [oldRows] = await pool.query('SELECT so_luong_ton FROM san_pham WHERE ma_sp = ?', [id]);
+            oldStock = parseInt(oldRows[0]?.so_luong_ton) || 0;
+        } catch (e) { /* ignore */ }
+
         // Cập nhật sản phẩm
         await pool.query(
-            `UPDATE san_pham SET ten_sp = ?, ma_hang = ?, gia = ?, gia_nhap = ?, gia_giam = ?, bo_nho = ?, 
+            `UPDATE san_pham SET ten_sp = ?, ma_hang = ?, gia = ?, gia_nhap = ?, gia_giam = ?, bo_nho = ?,
              so_luong_ton = ?, mau_sac = ?, mo_ta_ngan = ?, mo_ta = ?, anh_dai_dien = ? WHERE ma_sp = ?`,
             [ten_sp, ma_hang, gia, importPrice, discountPrice, bo_nho, so_luong_ton, colorData, mo_ta_ngan, mo_ta, anh_dai_dien, id]
         );
+
+        // [AUTO] Back-in-stock trigger: 0 → >0
+        if (oldStock === 0 && stock > 0) {
+            setImmediate(async () => {
+                try {
+                    const { notifyBackInStock } = require('../services/emailService');
+                    const r = await notifyBackInStock(id);
+                    console.log(`[Back-in-stock] product=${id}:`, r);
+                } catch (e) {
+                    console.error('[Back-in-stock] error:', e.message);
+                }
+            });
+        }
         
         // Cập nhật thông số kỹ thuật nếu có
         if (cau_hinh) {
@@ -2657,10 +2804,11 @@ router.get('/promotions/:id', async (req, res) => {
 // POST /api/admin/promotions - Thêm khuyến mãi mới
 router.post('/promotions', checkSuperAdmin, async (req, res) => {
     try {
-        const { 
-            code, loai_km, loai, gia_tri, mo_ta, 
-            dieu_kien_toi_thieu, dieu_kien_toi_da, 
-            so_luong, ngay_bat_dau, ngay_ket_thuc, trang_thai 
+        const {
+            code, loai_km, loai, gia_tri, mo_ta,
+            dieu_kien_toi_thieu, dieu_kien_toi_da,
+            so_luong, ngay_bat_dau, ngay_ket_thuc, trang_thai,
+            ma_sp
         } = req.body;
         
         console.log('Adding promotion:', req.body);
@@ -2693,27 +2841,39 @@ router.post('/promotions', checkSuperAdmin, async (req, res) => {
         console.log('Formatted dates:', { startDate, endDate });
         
         const [result] = await pool.query(`
-            INSERT INTO khuyen_mai 
-            (code, loai_km, loai, gia_tri, mo_ta, dieu_kien_toi_thieu, dieu_kien_toi_da, so_luong, ngay_bat_dau, ngay_ket_thuc, trang_thai)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO khuyen_mai
+            (code, loai_km, loai, gia_tri, mo_ta, dieu_kien_toi_thieu, dieu_kien_toi_da, so_luong, ngay_bat_dau, ngay_ket_thuc, trang_thai, ma_sp)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [
-            code.toUpperCase(), 
-            loai_km || 'voucher', 
-            loai || 'percent', 
-            gia_tri, 
-            mo_ta || '', 
-            dieu_kien_toi_thieu || 0, 
-            dieu_kien_toi_da || null, 
-            so_luong || 100, 
-            startDate, 
-            endDate, 
-            trang_thai || 'active'
+            code.toUpperCase(),
+            loai_km || 'voucher',
+            loai || 'percent',
+            gia_tri,
+            mo_ta || '',
+            dieu_kien_toi_thieu || 0,
+            dieu_kien_toi_da || null,
+            so_luong || 100,
+            startDate,
+            endDate,
+            trang_thai || 'active',
+            ma_sp ? parseInt(ma_sp) : null
         ]);
-        
-        console.log('Promotion added with ID:', result.insertId);
-        
-        res.json({ 
-            success: true, 
+
+        console.log('Promotion added with ID:', result.insertId, 'ma_sp=', ma_sp || 'broadcast');
+
+        // [AUTO] Notify KH phù hợp (in-app + email) — chạy ngầm
+        setImmediate(async () => {
+            try {
+                const { notifyPromotionToCustomers } = require('../services/emailService');
+                const r = await notifyPromotionToCustomers(result.insertId);
+                console.log('[Promotion auto-notify]', r);
+            } catch (e) {
+                console.error('[Promotion auto-notify error]', e.message);
+            }
+        });
+
+        res.json({
+            success: true,
             message: 'Thêm khuyến mãi thành công',
             data: { id: result.insertId }
         });

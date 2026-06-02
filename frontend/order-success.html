@@ -151,7 +151,7 @@
   <!-- Confetti Container -->
   <div id="confetti-container"></div>
 
-  <main class="max-w-6xl mx-auto px-4 py-6 relative z-10">
+  <main class="max-w-7xl mx-auto px-4 py-6 relative z-10">
     
     <!-- Success Header Section -->
     <div class="bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl p-6 md:p-10 mb-6 text-white text-center relative overflow-hidden">
@@ -184,7 +184,26 @@
         </div>
       </div>
     </div>
-    
+
+    <!-- Thank You Voucher Banner (rendered dynamically nếu order có voucher tri ân) -->
+    <div id="thankYouVoucherBanner" class="hidden bg-gradient-to-r from-yellow-50 via-orange-50 to-yellow-50 border-2 border-dashed border-orange-400 rounded-2xl p-5 mb-6 shadow-sm">
+      <div class="flex items-center justify-between flex-wrap gap-3">
+        <div class="flex items-center gap-4">
+          <span class="text-4xl">🎁</span>
+          <div>
+            <div class="font-bold text-orange-700 text-lg" id="tyVoucherTitle">Voucher tri ân</div>
+            <div class="text-sm text-gray-600" id="tyVoucherDesc">Áp dụng cho lần mua tiếp theo</div>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <code id="tyVoucherCode" class="bg-white px-4 py-2 rounded-lg border-2 border-orange-300 font-mono text-base font-bold text-orange-700 select-all">XXXXXX</code>
+          <button onclick="copyThankYouCode()" class="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-semibold transition">
+            <i class="fas fa-copy mr-1"></i>Copy
+          </button>
+        </div>
+      </div>
+    </div>
+
 <div class="grid lg:grid-cols-3 gap-6">
       
       <!-- Left Column: Order Details -->
@@ -656,12 +675,36 @@ der Success Logic -->
 
       // Display order details
       displayOrderDetails(currentOrder);
-      
+
+      // [MỚI] Render voucher tri ân banner nếu có
+      displayThankYouVoucher(currentOrder);
+
       // Create confetti effect
       createConfetti();
-      
+
       // Load suggested products
       loadSuggestedProducts();
+    }
+
+    // [MỚI] Hiển thị banner voucher tri ân lưu trong order
+    function displayThankYouVoucher(order) {
+      const v = order && order.thankYouVoucher;
+      if (!v || !v.code) return;
+      const banner = document.getElementById('thankYouVoucherBanner');
+      if (!banner) return;
+      document.getElementById('tyVoucherTitle').textContent = `Voucher tri ân -${v.percent}%`;
+      document.getElementById('tyVoucherDesc').textContent = v.message || `Áp dụng trong ${v.expiryDays || 30} ngày tới`;
+      document.getElementById('tyVoucherCode').textContent = v.code;
+      banner.classList.remove('hidden');
+    }
+
+    function copyThankYouCode() {
+      const code = document.getElementById('tyVoucherCode').textContent.trim();
+      navigator.clipboard.writeText(code).then(() => {
+        showToast(`Đã copy mã ${code}!`, 'success');
+      }).catch(() => {
+        showToast('Không copy được, vui lòng chọn tay', 'error');
+      });
     }
     
     function displayOrderDetails(order) {
@@ -765,77 +808,85 @@ der Success Logic -->
       document.getElementById('total').textContent = formatPrice(order.pricing.total);
     }
     
-    // Load suggested products
+    // Render 1 card SP gợi ý — support cả 2 shape:
+    //  DB raw: {ma_sp, ten_sp, gia, gia_giam, anh_dai_dien, ten_hang}
+    //  API transformed: {id, name, price, oldPrice, discount, image, brand, rating, reviews}
+    function renderSuggestProductCard(product) {
+      const id = product.ma_sp || product.id;
+      const name = product.ten_sp || product.name || 'Sản phẩm';
+
+      // Price logic: ưu tiên giá hiện tại (gia / price), so với giá cũ (gia_giam = giá sau khi giảm, hoặc oldPrice)
+      let finalPrice, originalPrice;
+      if (product.gia_giam && parseFloat(product.gia_giam) > 0) {
+        // DB shape: gia là giá gốc, gia_giam là giá sau giảm
+        finalPrice = parseFloat(product.gia_giam);
+        originalPrice = parseFloat(product.gia) || finalPrice;
+      } else if (product.oldPrice) {
+        // API shape: price là giá hiện hành, oldPrice là giá gốc
+        finalPrice = parseFloat(product.price) || 0;
+        originalPrice = parseFloat(product.oldPrice) || finalPrice;
+      } else {
+        finalPrice = parseFloat(product.gia || product.price) || 0;
+        originalPrice = finalPrice;
+      }
+      const hasDiscount = originalPrice > finalPrice && finalPrice > 0;
+      const discount = product.discount || (hasDiscount ? Math.round((1 - finalPrice / originalPrice) * 100) : 0);
+
+      // Image
+      let productImage = product.anh_dai_dien || product.image || 'images/15-256.avif';
+      if (productImage && !productImage.startsWith('http') && !productImage.startsWith('images/')) {
+        productImage = `images/${productImage}`;
+      }
+
+      const brand = product.ten_hang || product.brand || 'Chính hãng';
+
+      return `
+        <a href="product-detail.html?id=${id}" class="product-suggest bg-white rounded-xl border border-gray-200 overflow-hidden transition-all duration-300 block hover:shadow-lg hover:-translate-y-0.5 hover:border-red-300">
+          <div class="aspect-square p-3 bg-gray-50 relative">
+            <img src="${productImage}" alt="${name}" class="w-full h-full object-contain" onerror="this.src='images/15-256.avif'">
+            ${discount > 0 ? `<span class="absolute top-2 left-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded">-${discount}%</span>` : ''}
+          </div>
+          <div class="p-3">
+            <h3 class="font-semibold text-gray-900 text-sm line-clamp-2 mb-2 min-h-[40px]">${name}</h3>
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-red-600 font-bold">${formatPrice(finalPrice)}</span>
+              ${hasDiscount ? `<span class="text-gray-400 text-xs line-through">${formatPrice(originalPrice)}</span>` : ''}
+            </div>
+            <div class="flex items-center gap-1 mt-2 text-xs text-gray-500">
+              <i class="fas fa-star text-yellow-400"></i>
+              <span>${product.rating || '4.5'}</span>
+              <span class="mx-1">|</span>
+              <span class="capitalize">${brand}</span>
+            </div>
+          </div>
+        </a>
+      `;
+    }
+
+    // Load suggested products — ưu tiên recommendedProducts từ RAG (lưu trong order),
+    // fallback fetch /api/products theo cùng category
     async function loadSuggestedProducts() {
       const container = document.getElementById('suggestedProducts');
-      
+
+      // Bước 1: nếu order có sẵn recommendedProducts từ backend (RAG) — dùng luôn
+      const fromRag = currentOrder?.recommendedProducts || [];
+      if (Array.isArray(fromRag) && fromRag.length > 0) {
+        container.innerHTML = fromRag.map(renderSuggestProductCard).join('');
+        return;
+      }
+
+      // Bước 2: fallback — fetch /api/products
       try {
-        // Get category from ordered items
-        let categoryId = null;
-        if (currentOrder && currentOrder.items && currentOrder.items.length > 0) {
-          categoryId = currentOrder.items[0].ma_loai || currentOrder.items[0].categoryId;
-        }
-        
-        // Fetch products
-        let url = `${API_URL}/products?limit=10`;
-        if (categoryId) {
-          url += `&category=${categoryId}`;
-        }
-        
-        const response = await fetch(url);
-        const data = await response.json();
-        
-        if (data.success && data.data && data.data.length > 0) {
-          // Filter out products already in order
-          const orderedIds = currentOrder?.items?.map(i => i.id || i.ma_sp) || [];
-          let products = data.data.filter(p => !orderedIds.includes(p.ma_sp));
-          
-          // Take first 5 products
-          products = products.slice(0, 5);
-          
-          if (products.length === 0) {
-            container.innerHTML = `
-              <div class="col-span-full text-center py-8">
-                <i class="fas fa-box-open text-4xl text-gray-300 mb-3"></i>
-                <p class="text-gray-500">Không có sản phẩm gợi ý</p>
-              </div>
-            `;
-            return;
-          }
-          
-          container.innerHTML = products.map(product => {
-            let productImage = product.anh_dai_dien || 'images/15-256.avif';
-            if (!productImage.startsWith('http') && !productImage.startsWith('images/')) {
-              productImage = `images/${productImage}`;
-            }
-            
-            const originalPrice = product.gia_goc || product.gia_ban * 1.2;
-            const discount = Math.round((1 - product.gia_ban / originalPrice) * 100);
-            
-            return `
-              <a href="product-detail.html?id=${product.ma_sp}" class="product-suggest bg-white rounded-xl border border-gray-200 overflow-hidden transition-all duration-300 block">
-                <div class="aspect-square p-3 bg-gray-50 relative">
-                  <img src="${productImage}" alt="${product.ten_sp}" class="w-full h-full object-contain" onerror="this.src='images/15-256.avif'">
-                  ${discount > 0 ? `<span class="absolute top-2 left-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded">-${discount}%</span>` : ''}
-                </div>
-                <div class="p-3">
-                  <h3 class="font-semibold text-gray-900 text-sm line-clamp-2 mb-2 min-h-[40px]">${product.ten_sp}</h3>
-                  <div class="flex items-center gap-2">
-                    <span class="text-red-600 font-bold">${formatPrice(product.gia_ban)}</span>
-                    ${discount > 0 ? `<span class="text-gray-400 text-xs line-through">${formatPrice(originalPrice)}</span>` : ''}
-                  </div>
-                  <div class="flex items-center gap-1 mt-2 text-xs text-gray-500">
-                    <i class="fas fa-star text-yellow-400"></i>
-                    <span>${product.rating || '4.5'}</span>
-                    <span class="mx-1">|</span>
-                    <span>Đã bán ${product.da_ban || Math.floor(Math.random() * 500 + 100)}</span>
-                  </div>
-                </div>
-              </a>
-            `;
-          }).join('');
-        } else {
-          // Fallback: show placeholder
+        const orderedIds = (currentOrder?.items || []).map(i => i.id || i.ma_sp);
+        const res = await fetch(`${API_URL}/products?limit=15`);
+        const data = await res.json();
+
+        // API có thể trả {success, data} hoặc thẳng array
+        const list = Array.isArray(data) ? data : (data.data || data.products || []);
+        const filtered = list.filter(p => !orderedIds.includes(p.ma_sp));
+        const top5 = filtered.slice(0, 5);
+
+        if (top5.length === 0) {
           container.innerHTML = `
             <div class="col-span-full text-center py-8">
               <i class="fas fa-box-open text-4xl text-gray-300 mb-3"></i>
@@ -843,7 +894,10 @@ der Success Logic -->
               <a href="products.html" class="text-red-600 hover:underline text-sm mt-2 inline-block">Xem tất cả sản phẩm</a>
             </div>
           `;
+          return;
         }
+
+        container.innerHTML = top5.map(renderSuggestProductCard).join('');
       } catch (error) {
         console.error('Error loading suggested products:', error);
         container.innerHTML = `

@@ -170,10 +170,52 @@ router.post('/track-click', async (req, res) => {
             [userId, productId]
         );
 
+        // [MỚI] Auto-extract sở thích: lấy tên hãng của SP đó, INSERT vào so_thich_khach_hang
+        // → KH chỉ cần xem 1 SP đã có 1 entry sở thích = hãng SP. Giải quyết cold-start.
+        try {
+            const [spRows] = await pool.query(
+                `SELECT hsx.ten_hang
+                 FROM san_pham sp
+                 LEFT JOIN hang_san_xuat hsx ON sp.ma_hang = hsx.ma_hang
+                 WHERE sp.ma_sp = ?`,
+                [productId]
+            );
+            const tu_khoa = spRows[0]?.ten_hang;
+            if (tu_khoa) {
+                await pool.query(
+                    `INSERT INTO so_thich_khach_hang (ma_kh, tu_khoa, kieu_tao, ngay_tao)
+                     VALUES (?, ?, 'auto', NOW())
+                     ON DUPLICATE KEY UPDATE ngay_tao = NOW()`,
+                    [userId, tu_khoa]
+                );
+            }
+        } catch (autoErr) {
+            console.log('[track-click] auto-interest skipped:', autoErr.message);
+        }
+
         res.json({ success: true, message: 'Đã cập nhật lượt xem sản phẩm' });
     } catch (error) {
         console.error('Track click error:', error);
         res.status(500).json({ success: false, message: 'Lỗi server khi ghi nhận lượt click sản phẩm' });
+    }
+});
+
+// DELETE /api/interests/user/:userId/:tu_khoa - KH tự xóa 1 sở thích của mình
+router.delete('/user/:userId/:tu_khoa', async (req, res) => {
+    try {
+        const userId = parseInt(req.params.userId);
+        const tu_khoa = decodeURIComponent(req.params.tu_khoa || '');
+        if (!userId || !tu_khoa) {
+            return res.status(400).json({ success: false, message: 'Thiếu userId hoặc tu_khoa' });
+        }
+        const [r] = await pool.query(
+            'DELETE FROM so_thich_khach_hang WHERE ma_kh = ? AND LOWER(tu_khoa) = LOWER(?)',
+            [userId, tu_khoa]
+        );
+        res.json({ success: true, deleted: r.affectedRows });
+    } catch (error) {
+        console.error('DELETE interest error:', error);
+        res.status(500).json({ success: false, message: error.message });
     }
 });
 

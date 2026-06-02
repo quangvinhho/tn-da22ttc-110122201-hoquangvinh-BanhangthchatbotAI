@@ -336,3 +336,75 @@ Traceback (most recent call last):
            ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 UnicodeEncodeError: 'charmap' codec can't encode character '\u1ea3' in position 14: character maps to <undefined>
 
+Traceback (most recent call last):
+  File "D:\GDDA\rag_service\main.py", line 92, in chat
+    answer = engine.process_chat(
+        request.message,
+    ...<2 lines>...
+        interests=request.interests
+    )
+  File "D:\GDDA\rag_service\rag_engine.py", line 661, in process_chat
+    return self.query_semantic(message, history, interests)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\GDDA\rag_service\rag_engine.py", line 356, in query_semantic
+    prompt = PromptTemplate(
+        template=system_template,
+        input_variables=["context", "question"]
+    )
+  File "D:\GDDA\rag_service\venv\Lib\site-packages\langchain_core\load\serializable.py", line 118, in __init__
+    super().__init__(*args, **kwargs)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "D:\GDDA\rag_service\venv\Lib\site-packages\pydantic\main.py", line 263, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+pydantic_core._pydantic_core.ValidationError: 1 validation error for PromptTemplate
+  Value error, Invalid format specifier in f-string template. Nested replacement fields are not allowed. [type=value_error, input_value={'template': '\n        B...'partial_variables': {}}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.13/v/value_error
+
+Traceback (most recent call last):
+  File "D:\GDDA\rag_service\main.py", line 92, in chat
+    answer = engine.process_chat(
+        request.message,
+    ...<2 lines>...
+        interests=request.interests
+    )
+  File "D:\GDDA\rag_service\rag_engine.py", line 661, in process_chat
+    return self.query_semantic(message, history, interests)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\GDDA\rag_service\rag_engine.py", line 356, in query_semantic
+    prompt = PromptTemplate(
+        template=system_template,
+        input_variables=["context", "question"]
+    )
+  File "D:\GDDA\rag_service\venv\Lib\site-packages\langchain_core\load\serializable.py", line 118, in __init__
+    super().__init__(*args, **kwargs)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "D:\GDDA\rag_service\venv\Lib\site-packages\pydantic\main.py", line 263, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+pydantic_core._pydantic_core.ValidationError: 1 validation error for PromptTemplate
+  Value error, Invalid format specifier in f-string template. Nested replacement fields are not allowed. [type=value_error, input_value={'template': '\n        B...'partial_variables': {}}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.13/v/value_error
+
+Traceback (most recent call last):
+  File "D:\GDDA\rag_service\main.py", line 92, in chat
+    answer = engine.process_chat(
+        request.message,
+    ...<2 lines>...
+        interests=request.interests
+    )
+  File "D:\GDDA\rag_service\rag_engine.py", line 661, in process_chat
+    return self.query_semantic(message, history, interests)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\GDDA\rag_service\rag_engine.py", line 356, in query_semantic
+    prompt = PromptTemplate(
+        template=system_template,
+        input_variables=["context", "question"]
+    )
+  File "D:\GDDA\rag_service\venv\Lib\site-packages\langchain_core\load\serializable.py", line 118, in __init__
+    super().__init__(*args, **kwargs)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "D:\GDDA\rag_service\venv\Lib\site-packages\pydantic\main.py", line 263, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+pydantic_core._pydantic_core.ValidationError: 1 validation error for PromptTemplate
+  Value error, Invalid format specifier in f-string template. Nested replacement fields are not allowed. [type=value_error, input_value={'template': '\n        B...'partial_variables': {}}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.13/v/value_error
+

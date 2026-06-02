@@ -130,6 +130,7 @@ const chatbotRoutes = require('./routes/chatbot');
 const chatbotKnowledgeRoutes = require('./routes/chatbot-knowledge');
 const recommendationRoutes = require('./routes/recommendations'); // ✅ Hook Route HML
 const interestRoutes = require('./routes/interests'); // ✅ Quản lý sở thích
+const warrantyRoutes = require('./routes/warranty'); // ✅ Quản lý bảo hành
 
 app.use('/api/products', productRoutes);
 app.use('/api/auth', authRoutes);
@@ -147,6 +148,8 @@ app.use('/api/chatbot', chatbotRoutes);
 app.use('/api/chatbot-knowledge', chatbotKnowledgeRoutes);
 app.use('/api/recommendations', recommendationRoutes); // ✅ Endpoint UI sử dụng
 app.use('/api/interests', interestRoutes); // ✅ Sở thích khách hàng
+app.use('/api/warranty', warrantyRoutes); // ✅ Quản lý bảo hành
+app.use('/api/wishlist', require('./routes/wishlist')); // ✅ SP yêu thích + auto subscribe
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -157,4 +160,11 @@ app.get('/api/health', (req, res) => {
 app.listen(PORT, () => {
     console.log(`Server đang chạy tại http://localhost:${PORT}`);
     console.log(`API endpoint: http://localhost:${PORT}/api`);
+
+    // Start cron jobs (pending payment reminder)
+    try {
+        require('./services/cronJobs').start();
+    } catch (e) {
+        console.error('[Cron] Failed to start:', e.message);
+    }
 });

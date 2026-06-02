@@ -204,7 +204,9 @@ class RAGEngine:
         if history:
             for msg in history[-5:]:  # Chỉ lấy 5 tin nhắn gần nhất để giữ context
                 role = "Khách hàng" if msg.get("role") == "user" else "Chatbot"
-                chat_history += f"{role}: {msg.get('content')}\n"
+                # Escape '{' '}' trong nội dung user/bot cũ để PromptTemplate không hiểu nhầm là placeholder
+                content_safe = str(msg.get('content', '')).replace("{", "{{").replace("}", "}}")
+                chat_history += f"{role}: {content_safe}\n"
 
         # [TỐI ƯU] Thay vì gọi LLM contextualize (tốn 2-4s), nối lịch sử vào query để ChromaDB tìm ngữ nghĩa
         standalone_question = question
@@ -229,7 +231,9 @@ class RAGEngine:
         # Cá nhân hóa dựa trên sở thích
         interests_instruction = ""
         if interests and len(interests) > 0:
-            interests_str = ", ".join(interests)
+            # Escape '{' '}' trong từng sở thích để PromptTemplate không hiểu nhầm là placeholder
+            interests_safe = [str(i).replace("{", "{{").replace("}", "}}") for i in interests]
+            interests_str = ", ".join(interests_safe)
             interests_instruction = f"LƯU Ý CÁ NHÂN HÓA: Khách hàng này có sở thích đặc biệt quan tâm tới: {interests_str}. Hãy ưu tiên nhấn mạnh các tính năng liên quan đến sở thích này khi tư vấn (Ví dụ nếu thích gaming, hãy nói nhiều về chip, pin, tản nhiệt... Nếu thích chụp ảnh, hãy nói về camera, AI...)."
 
         # [TỐI ƯU] Lấy Kiến thức chung từ RAM cache (thay vì MySQL mỗi lần)
@@ -267,7 +271,7 @@ class RAGEngine:
            - Mỗi sản phẩm bạn gợi ý BẮT BUỘC phải được chèn vào khung HTML này (thay thế các biến {{{{...}}}} bằng dữ liệu thật):
              <div style="display:flex; margin-top:10px; margin-bottom:10px; gap:15px; border: 1px solid #ddd; padding: 15px; border-radius: 8px; background-color: #fff;">
                <div style="flex-shrink: 0;">
-                 <img src="{{{{Anh}}}}" alt="{{{{Ten_san_pham}}}}" style="width:100px; height:auto; object-fit:contain;">
+                 <img src="images/{{{{Anh}}}}" alt="{{{{Ten_san_pham}}}}" style="width:100px; height:auto; object-fit:contain;">
                </div>
                <div style="flex-grow: 1;">
                  <div style="font-size:16px; font-weight:bold; color:#333; margin-bottom:5px;">{{{{Ten_san_pham}}}}</div>
@@ -431,7 +435,7 @@ QUY TẮC BẮT BUỘC:
 3. BẠN BẮT BUỘC PHẢI DÙNG HTML ĐỂ HIỂN THỊ SẢN PHẨM. Mỗi khi nói về một sản phẩm, BẮT BUỘC dùng thẻ HTML:
    <div style="display:flex; margin-top:10px; margin-bottom:10px; gap:15px; border: 1px solid #ddd; padding: 15px; border-radius: 8px; background-color: #fff;">
      <div style="flex-shrink: 0;">
-       <img src="{{{{Anh}}}}" alt="{{{{Ten_san_pham}}}}" style="width:100px; height:auto; object-fit:contain;">
+       <img src="images/{{{{Anh}}}}" alt="{{{{Ten_san_pham}}}}" style="width:100px; height:auto; object-fit:contain;">
      </div>
      <div style="flex-grow: 1;">
        <div style="font-size:16px; font-weight:bold; color:#333; margin-bottom:5px;">{{{{Ten_san_pham}}}}</div>

@@ -135,9 +135,9 @@ router.post('/send-otp', async (req, res) => {
             res.json({ success: true, message: 'Mã OTP đã được gửi đến email của bạn' });
         } catch (emailError) {
             console.error('Lỗi gửi email:', emailError);
-            // Vẫn trả về thành công để test (trong production cần xử lý khác)
-            console.log(`OTP for ${email}: ${otp}`); // Log OTP để test
-            res.json({ success: true, message: 'Mã OTP đã được gửi (kiểm tra console nếu email không nhận được)', otp_debug: otp });
+            // Log OTP vào server console để debug (KHÔNG trả về client)
+            console.log(`[DEV DEBUG] OTP for ${email}: ${otp}`);
+            res.json({ success: true, message: 'Mã OTP đã được gửi. Nếu không nhận được email, vui lòng thử lại sau.' });
         }
 
     } catch (error) {
@@ -195,8 +195,9 @@ router.post('/register', handleUpload, async (req, res) => {
             });
         }
 
-        // Kiểm tra OTP đã xác thực chưa (bỏ qua nếu skip_otp = true để test)
-        if (!skip_otp) {
+        // Kiểm tra OTP đã xác thực chưa (chỉ bỏ qua trong môi trường development)
+        const allowSkipOtp = skip_otp && process.env.NODE_ENV === 'development';
+        if (!allowSkipOtp) {
             const storedData = otpStore.get(email);
             if (!storedData || !storedData.verified) {
                 return res.status(400).json({ 
@@ -347,8 +348,8 @@ router.post('/admin/login', async (req, res) => {
 
         const user = admins[0];
 
-        // Compare password (plain text hoặc bcrypt)
-        const isMatch = user.mat_khau === mat_khau || await bcrypt.compare(mat_khau, user.mat_khau).catch(() => false);
+        // Compare password (chỉ dùng bcrypt hash, KHÔNG hỗ trợ plaintext)
+        const isMatch = await bcrypt.compare(mat_khau, user.mat_khau).catch(() => false);
 
         if (!isMatch) {
             return res.status(401).json({ 
@@ -431,8 +432,8 @@ router.post('/employee/login', async (req, res) => {
             });
         }
 
-        // Compare password (plain text hoặc bcrypt)
-        const isMatch = user.mat_khau === mat_khau || await bcrypt.compare(mat_khau, user.mat_khau).catch(() => false);
+        // Compare password (chỉ dùng bcrypt hash, KHÔNG hỗ trợ plaintext)
+        const isMatch = await bcrypt.compare(mat_khau, user.mat_khau).catch(() => false);
 
         if (!isMatch) {
             return res.status(401).json({ 
@@ -486,6 +487,12 @@ router.put('/profile/:id', handleUpload, async (req, res) => {
         const { id } = req.params;
         const { ho_ten, so_dt, dia_chi, gioi_tinh, ngay_sinh } = req.body;
         const avtFile = req.file;
+
+        // [BẢO MẬT] Kiểm tra quyền: chỉ chủ tài khoản hoặc admin mới được cập nhật
+        const sessionUser = req.session?.user;
+        if (!sessionUser || (String(sessionUser.ma_kh) !== String(id) && sessionUser.vai_tro !== 'admin')) {
+            return res.status(403).json({ success: false, message: 'Bạn không có quyền cập nhật hồ sơ này.' });
+        }
 
         // Kiểm tra user tồn tại
         const [existing] = await pool.query('SELECT * FROM khach_hang WHERE ma_kh = ?', [id]);
@@ -624,8 +631,8 @@ router.post('/forgot-password', async (req, res) => {
             res.json({ success: true, message: 'Mã OTP đã được gửi đến email của bạn' });
         } catch (emailError) {
             console.error('Lỗi gửi email:', emailError);
-            console.log(`Reset OTP for ${email}: ${otp}`);
-            res.json({ success: true, message: 'Mã OTP đã được gửi (kiểm tra console nếu email không nhận được)', otp_debug: otp });
+            console.log(`[DEV DEBUG] Reset OTP for ${email}: ${otp}`);
+            res.json({ success: true, message: 'Mã OTP đã được gửi. Nếu không nhận được email, vui lòng thử lại sau.' });
         }
 
     } catch (error) {
@@ -730,6 +737,12 @@ router.put('/change-password/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const { mat_khau_cu, mat_khau_moi } = req.body;
+
+        // [BẢO MẬT] Kiểm tra quyền: chỉ chủ tài khoản mới được đổi mật khẩu
+        const sessionUser = req.session?.user;
+        if (!sessionUser || String(sessionUser.ma_kh) !== String(id)) {
+            return res.status(403).json({ success: false, message: 'Bạn không có quyền đổi mật khẩu tài khoản này.' });
+        }
 
         if (!mat_khau_cu || !mat_khau_moi) {
             return res.status(400).json({ success: false, message: 'Vui lòng nhập đầy đủ mật khẩu cũ và mới' });

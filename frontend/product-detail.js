@@ -222,7 +222,10 @@ function renderProductDetail(productId) {
   // Sử dụng currentProduct nếu đã có (từ API), hoặc tìm trong PRODUCTS với so sánh lỏng
   const product = currentProduct || PRODUCTS.find(p => p.id == productId);
   currentProduct = product;
-  
+
+  // Load trạng thái wishlist (icon trái tim) sau khi có currentProduct
+  if (product) setTimeout(loadWishlistState, 100);
+
   if (!product) {
     const mainEl = document.querySelector('main');
     if (mainEl) {
@@ -924,9 +927,63 @@ async function buyNow() {
   window.location.href = 'checkout.html';
 }
 
-function addToWishlist() {
+async function addToWishlist() {
   if (!currentProduct) return;
-  showToast(`Đã thêm "${currentProduct.name}" vào danh sách yêu thích!`, 'success');
+  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  if (!user?.ma_kh) {
+    showToast('Vui lòng đăng nhập để dùng yêu thích', 'error');
+    setTimeout(() => { window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search); }, 1200);
+    return;
+  }
+  const ma_sp = currentProduct.id || currentProduct.ma_sp;
+  const btn = document.getElementById('wishlistBtn');
+  const heart = btn?.querySelector('i');
+  const isFavorite = heart?.classList.contains('fas');
+
+  try {
+    if (isFavorite) {
+      const r = await fetch(`${API_URL}/wishlist/${user.ma_kh}/${ma_sp}`, { method: 'DELETE' });
+      if (!r.ok) throw new Error('xoa wishlist that bai');
+      heart.classList.replace('fas', 'far');
+      heart.classList.remove('text-red-500');
+      btn.classList.remove('text-red-500');
+      showToast('Đã bỏ yêu thích', 'info');
+    } else {
+      const r = await fetch(`${API_URL}/wishlist`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ma_kh: user.ma_kh, ma_sp })
+      });
+      if (!r.ok) throw new Error('Lưu yêu thích thất bại');
+      heart.classList.replace('far', 'fas');
+      heart.classList.add('text-red-500');
+      btn.classList.add('text-red-500');
+      showToast('Đã thêm vào yêu thích! Bạn sẽ nhận thông báo khi SP giảm giá hoặc về hàng.', 'success');
+    }
+  } catch (e) {
+    showToast('Lỗi: ' + e.message, 'error');
+  }
+}
+
+// Load trạng thái wishlist (icon trái tim) khi vào trang SP
+async function loadWishlistState() {
+  if (!currentProduct) return;
+  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  if (!user?.ma_kh) return;
+  const ma_sp = currentProduct.id || currentProduct.ma_sp;
+  try {
+    const r = await fetch(`${API_URL}/wishlist/check/${user.ma_kh}/${ma_sp}`);
+    const d = await r.json();
+    if (d.success && d.isFavorite) {
+      const btn = document.getElementById('wishlistBtn');
+      const heart = btn?.querySelector('i');
+      if (heart) {
+        heart.classList.replace('far', 'fas');
+        heart.classList.add('text-red-500');
+      }
+      btn?.classList.add('text-red-500');
+    }
+  } catch (e) { /* silent */ }
 }
 
 // ===== TAB FUNCTIONS =====

@@ -162,6 +162,32 @@ def init_models_from_db():
 # Khởi tạo instance toàn cục
 _knn_store, _apriori_store = init_models_from_db()
 
+# [MỚI] Auto re-train mỗi 6 giờ — đảm bảo model bám theo đơn hàng mới phát sinh
+import threading
+_RETRAIN_INTERVAL_SEC = 6 * 3600  # 6h
+
+def _scheduled_retrain():
+    global _knn_store, _apriori_store
+    try:
+        print("[Retrain] Re-training KNN + Apriori from DB...")
+        new_knn, new_apriori = init_models_from_db()
+        if new_knn is not None:
+            _knn_store = new_knn
+        if new_apriori is not None:
+            _apriori_store = new_apriori
+        print("[Retrain] Done.")
+    except Exception as e:
+        print(f"[Retrain] Error: {e}")
+    finally:
+        t = threading.Timer(_RETRAIN_INTERVAL_SEC, _scheduled_retrain)
+        t.daemon = True
+        t.start()
+
+_retrain_timer = threading.Timer(_RETRAIN_INTERVAL_SEC, _scheduled_retrain)
+_retrain_timer.daemon = True
+_retrain_timer.start()
+print(f"[Retrain] Scheduled every {_RETRAIN_INTERVAL_SEC // 3600}h.")
+
 def get_interest_recommendations(user_id):
     """
     Lấy danh sách sản phẩm gợi ý dựa trên sở thích lưu trong so_thich_khach_hang.
@@ -241,41 +267,131 @@ def get_interest_recommendations(user_id):
         print(f"Error getting interest recommendations: {e}")
         return []
 
+def _normalize_pid(item):
+    """Chuẩn hóa product_id sang int nếu có thể, fallback giữ nguyên."""
+    try:
+        return int(item)
+    except (ValueError, TypeError):
+        return item
+
+def _fetch_brand_map(pids):
+    """Lấy {pid: ten_hang} cho list product_id — dùng để diversity round-robin."""
+    if not pids:
+        return {}
+    try:
+        conn = mysql.connector.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, database=DB_NAME)
+        cursor = conn.cursor(dictionary=True)
+        # Lọc chỉ pid integer (Apriori có thể trả string dummy)
+        int_pids = [p for p in pids if isinstance(p, int)]
+        if not int_pids:
+            cursor.close(); conn.close()
+            return {}
+        placeholders = ','.join(['%s'] * len(int_pids))
+        cursor.execute(
+            f"SELECT sp.ma_sp, hsx.ten_hang FROM san_pham sp "
+            f"LEFT JOIN hang_san_xuat hsx ON sp.ma_hang = hsx.ma_hang "
+            f"WHERE sp.ma_sp IN ({placeholders})",
+            tuple(int_pids)
+        )
+        rows = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return {r['ma_sp']: (r['ten_hang'] or 'unknown') for r in rows}
+    except Exception as e:
+        print(f"[Diversity] Lỗi fetch brand map: {e}")
+        return {}
+
+def _apply_diversity(sorted_pids, brand_map, max_per_brand=2):
+    """
+    Round-robin re-arrange để tránh quá max_per_brand SP cùng hãng liên tiếp.
+    Giữ nguyên tổng list, chỉ tráo thứ tự.
+    """
+    if not sorted_pids:
+        return []
+    result = []
+    pool = list(sorted_pids)
+    brand_count = {}  # đếm số SP của mỗi brand đã chèn LIÊN TIẾP gần đây
+
+    while pool:
+        chosen_idx = None
+        for i, pid in enumerate(pool):
+            b = brand_map.get(pid, 'unknown')
+            # Đếm số brand này đã xuất hiện trong window 2 cuối
+            recent_brands = [brand_map.get(p, 'unknown') for p in result[-max_per_brand:]]
+            if recent_brands.count(b) < max_per_brand:
+                chosen_idx = i
+                break
+        if chosen_idx is None:
+            # Không tìm thấy SP nào "đa dạng" — bắt buộc chọn item đầu
+            chosen_idx = 0
+        result.append(pool.pop(chosen_idx))
+    return result
+
 def mock_get_recommendation(user_id=None, cart_items=None):
     """
-    Hàm gợi ý (recommendation) hỗ trợ ngữ nghĩa chính xác hơn theo tài chính và nhu cầu mua kèm (Cross-sell/Up-sell).
+    Hybrid recommendation:
+      - Content-based (so_thich_khach_hang): trọng số 5
+      - Collaborative (KNN cosine): trọng số 3 (decay theo thứ hạng)
+      - Association Rules (Apriori): trọng số 2
+    Sau scoring → diversity round-robin: tối đa 2 SP cùng hãng trong 2 vị trí liên tiếp.
+    Trả về list product_id sắp xếp theo độ ưu tiên.
     """
-    results = []
-    seen = set()
+    scores = {}  # {pid: total_score}
 
-    def add_to_results(items):
-        for item in items:
-            try:
-                val = int(item)
-                if val not in seen:
-                    seen.add(val)
-                    results.append(val)
-            except (ValueError, TypeError):
-                if item not in seen:
-                    seen.add(item)
-                    results.append(item)
-
-    # 1. Lấy gợi ý dựa trên sở thích lưu trong so_thich_khach_hang
+    # --- A. Content-based (sở thích lưu DB) ---
     if user_id:
-        interest_recs = get_interest_recommendations(user_id)
-        add_to_results(interest_recs)
+        try:
+            content_recs = get_interest_recommendations(user_id)
+            for i, pid in enumerate(content_recs):
+                pid = _normalize_pid(pid)
+                # Item đầu được +5, giảm dần (tối thiểu +2)
+                w = max(5.0 - i * 0.3, 2.0)
+                scores[pid] = scores.get(pid, 0) + w
+        except Exception as e:
+            print(f"[Hybrid] Content-based lỗi: {e}")
 
-    # 2. Sau đó mới đến KNN (Collaborative Filtering)
+    # --- B. Collaborative Filtering KNN ---
     if user_id and _knn_store:
-        knn_recs = get_knn_recommendations(_knn_store, user_id)
-        add_to_results(knn_recs)
-        
-    # 3. Tiếp theo là Apriori (Association Rules)
+        try:
+            knn_recs = get_knn_recommendations(_knn_store, user_id)
+            for i, pid in enumerate(knn_recs):
+                pid = _normalize_pid(pid)
+                # Tối đa +3, giảm dần xuống +1
+                w = max(3.0 - i * 0.3, 1.0)
+                scores[pid] = scores.get(pid, 0) + w
+        except Exception as e:
+            print(f"[Hybrid] KNN lỗi: {e}")
+
+    # --- C. Apriori Cross-sell ---
     if cart_items and _apriori_store is not None:
-        apriori_recs = get_apriori_recommendations(_apriori_store, cart_items)
-        add_to_results(apriori_recs)
-        
-    return results
+        try:
+            apriori_recs = get_apriori_recommendations(_apriori_store, cart_items)
+            for i, pid in enumerate(apriori_recs):
+                pid = _normalize_pid(pid)
+                # Tối đa +2, giảm xuống +0.5
+                w = max(2.0 - i * 0.2, 0.5)
+                scores[pid] = scores.get(pid, 0) + w
+        except Exception as e:
+            print(f"[Hybrid] Apriori lỗi: {e}")
+
+    if not scores:
+        return []
+
+    # Sort theo score (tie-break: pid lớn = SP mới hơn = ưu tiên)
+    sorted_pids = sorted(
+        scores.keys(),
+        key=lambda p: (-scores[p], -(p if isinstance(p, int) else 0))
+    )
+
+    # --- DIVERSITY round-robin theo brand ---
+    brand_map = _fetch_brand_map(sorted_pids)
+    diversified = _apply_diversity(sorted_pids, brand_map, max_per_brand=2)
+
+    # Log lightweight để debug (giấu chi tiết score)
+    top_log = ', '.join([f"#{p}({brand_map.get(p, '?')[:6]}={scores[p]:.1f})" for p in diversified[:5]])
+    print(f"[Hybrid] user={user_id} top5: {top_log}")
+
+    return diversified
 
 def extract_interests_from_history(user_id):
     """

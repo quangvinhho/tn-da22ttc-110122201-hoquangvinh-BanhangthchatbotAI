@@ -81,7 +81,13 @@ function createProductContext(products) {
   if (!products || products.length === 0) return '';
   
   const productList = products.map(p => {
-    return `- ${p.name} | Hãng: ${p.brand || 'N/A'} | Giá: ${formatPrice(p.price)} | Giá số: ${p.price} | Bộ nhớ: ${p.storage || 'N/A'} | ID: ${p.id} | Ảnh: ${p.image || ''}`;
+    // Chuẩn hóa đường dẫn ảnh: thêm images/ nếu chưa có
+    let imagePath = p.image || '';
+    if (imagePath && !imagePath.startsWith('images/') && !imagePath.startsWith('http')) {
+      imagePath = `images/${imagePath}`;
+    }
+    
+    return `- ${p.name} | Hãng: ${p.brand || 'N/A'} | Giá: ${formatPrice(p.price)} | Giá số: ${p.price} | Bộ nhớ: ${p.storage || 'N/A'} | ID: ${p.id} | Ảnh: ${imagePath}`;
   }).join('\n');
   
   return `\n\n📱 DANH SÁCH SẢN PHẨM HIỆN CÓ TẠI CỬA HÀNG:\n${productList}`;

@@ -2,7 +2,54 @@ import sys
 import io
 import warnings
 
-# Stdout wrapping is skipped to avoid OSError [Errno 22] on background task pipes
+# Safe stream wrapper to prevent UnicodeEncodeError and OSError [Errno 22] on Windows console/pipes
+class SafeStream:
+    def __init__(self, original_stream):
+        self.stream = original_stream
+
+    def write(self, data):
+        if not data:
+            return 0
+        try:
+            return self.stream.write(data)
+        except (OSError, UnicodeEncodeError):
+            try:
+                # Fallback to sanitizing non-mappable/problematic characters
+                sanitized = data.encode('utf-8', errors='backslashreplace').decode('utf-8', errors='backslashreplace')
+                return self.stream.write(sanitized)
+            except Exception:
+                # Silence stream write errors completely
+                return len(data)
+
+    def flush(self):
+        try:
+            self.stream.flush()
+        except Exception:
+            pass
+
+    def __getattr__(self, name):
+        return getattr(self.stream, name)
+
+# Configure output streams to use UTF-8 and hook SafeStream wrapper
+if sys.stdout is not None:
+    try:
+        sys.stdout.reconfigure(encoding='utf-8', errors='backslashreplace')
+    except Exception:
+        try:
+            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='backslashreplace')
+        except Exception:
+            pass
+    sys.stdout = SafeStream(sys.stdout)
+
+if sys.stderr is not None:
+    try:
+        sys.stderr.reconfigure(encoding='utf-8', errors='backslashreplace')
+    except Exception:
+        try:
+            sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='backslashreplace')
+        except Exception:
+            pass
+    sys.stderr = SafeStream(sys.stderr)
 
 # Ẩn các cảnh báo không cần thiết từ thư viện (pandas, websockets, langchain) để làm sạch log
 warnings.filterwarnings("ignore")

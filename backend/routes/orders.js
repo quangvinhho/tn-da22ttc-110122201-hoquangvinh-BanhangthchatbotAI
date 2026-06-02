@@ -235,6 +235,86 @@ router.post('/', async (req, res) => {
 
     await connection.commit();
 
+    // [MỚI] Sinh voucher tri ân cho lần mua sau (chỉ áp dụng cho KH đã login)
+    let thankYouVoucher = null;
+    if (customerId) {
+      try {
+        const crypto = require('crypto');
+        const randomPart = crypto.randomBytes(3).toString('hex').toUpperCase();
+        const voucherCode = `THANKYOU-${orderId}-${randomPart}`;
+        const expiryDays = 30;
+        await pool.query(
+          `INSERT INTO khuyen_mai
+             (code, loai, loai_km, gia_tri, mo_ta, dieu_kien_toi_thieu,
+              ngay_bat_dau, ngay_ket_thuc, so_luong, so_luong_da_dung,
+              trang_thai, ngay_tao, ma_kh)
+           VALUES (?, 'percent', 'discount', 10, ?, 0,
+                   NOW(), DATE_ADD(NOW(), INTERVAL ? DAY), 1, 0,
+                   'active', NOW(), ?)`,
+          [voucherCode, `Tri ân khách hàng - giảm 10% cho đơn #${orderId}`, expiryDays, customerId]
+        );
+        thankYouVoucher = {
+          code: voucherCode,
+          percent: 10,
+          expiryDays,
+          message: 'Cảm ơn bạn đã mua sắm! Áp dụng mã này cho lần mua tiếp theo trong 30 ngày.'
+        };
+
+        // [MỚI] In-app notification cho voucher tri ân
+        try {
+          const { createInAppNotification } = require('../services/emailService');
+          await createInAppNotification({
+            ma_kh: customerId,
+            tieu_de: `🎁 Voucher tri ân -10% từ đơn #${orderId}`,
+            noi_dung: `Cảm ơn bạn đã mua sắm! Dùng mã ${voucherCode} để giảm 10% lần mua tiếp theo (hết hạn sau ${expiryDays} ngày).`,
+            loai: 'voucher',
+            lien_ket: '/promotions.html'
+          });
+        } catch (e) { /* silent — không phá order flow */ }
+      } catch (voucherErr) {
+        console.error('[Order] Không sinh được voucher tri ân:', voucherErr.message);
+      }
+    }
+
+    // [MỚI] Gọi RAG service để lấy gợi ý sản phẩm liên quan (fail-silent)
+    let recommendedProducts = [];
+    try {
+      const cartItemIds = (items || []).map(i => String(i.id));
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 3000);
+      const ragResponse = await fetch('http://127.0.0.1:8000/api/recommend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: customerId ? String(customerId) : null, cartItems: cartItemIds }),
+        signal: controller.signal
+      }).finally(() => clearTimeout(timeout));
+
+      if (ragResponse.ok) {
+        const ragData = await ragResponse.json();
+        const recIds = (ragData.recommendations || []).slice(0, 4);
+        if (recIds.length > 0) {
+          const placeholders = recIds.map(() => '?').join(',');
+          const [recRows] = await pool.query(
+            `SELECT sp.ma_sp, sp.ten_sp, sp.gia, sp.gia_giam, sp.anh_dai_dien,
+                    hsx.ten_hang
+             FROM san_pham sp
+             LEFT JOIN hang_san_xuat hsx ON sp.ma_hang = hsx.ma_hang
+             WHERE sp.ma_sp IN (${placeholders})
+             LIMIT 4`,
+            recIds
+          );
+          recommendedProducts = recRows;
+        }
+      }
+    } catch (recErr) {
+      console.log('[Order] RAG /recommend không khả dụng:', recErr.message);
+    }
+
+    // Dự kiến giao hàng: 2-3 ngày làm việc kể từ hôm nay
+    const today = new Date();
+    const estDelivery = new Date(today.getTime() + 3 * 24 * 60 * 60 * 1000);
+    const estimatedDelivery = estDelivery.toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
     res.json({
       success: true,
       data: {
@@ -242,9 +322,20 @@ router.post('/', async (req, res) => {
         message: isDeposit ? 'Đặt cọc thành công' : 'Đặt hàng thành công',
         isDeposit: isDeposit || false,
         depositAmount: depositAmount || 0,
-        remainingAmount: remainingAmount || 0
+        remainingAmount: remainingAmount || 0,
+        thankYouVoucher,
+        estimatedDelivery: `2-3 ngày làm việc (dự kiến ${estimatedDelivery})`,
+        recommendedProducts
       }
     });
+
+    // Gửi email cảm ơn & xác nhận đơn hàng tự động (không block response)
+    try {
+      const { sendOrderConfirmation } = require('../services/emailService');
+      sendOrderConfirmation(orderId).catch(err => console.error('[Email] sendOrderConfirmation error:', err));
+    } catch (e) {
+      console.error('[Email] Lỗi require emailService:', e);
+    }
 
   } catch (error) {
     await connection.rollback();
@@ -296,6 +387,14 @@ router.put('/:orderId/payment', async (req, res) => {
           [orderId]
         );
         console.log(`Order ${orderId} confirmed after deposit payment success`);
+        
+        // Gửi email thông báo trạng thái
+        try {
+          const { sendOrderStatusUpdate } = require('../services/emailService');
+          sendOrderStatusUpdate(orderId, 'confirmed').catch(err => console.error('[Email] sendOrderStatusUpdate error:', err));
+        } catch (e) {
+          console.error('[Email] Lỗi require emailService:', e);
+        }
       }
     } else if (paymentType === 'remaining') {
       // Cập nhật thanh toán phần còn lại
@@ -311,6 +410,22 @@ router.put('/:orderId/payment', async (req, res) => {
           `UPDATE don_hang SET trang_thai = 'completed' WHERE ma_don = ?`,
           [orderId]
         );
+        
+        // Gửi email thông báo trạng thái
+        try {
+          const { sendOrderStatusUpdate } = require('../services/emailService');
+          sendOrderStatusUpdate(orderId, 'completed').catch(err => console.error('[Email] sendOrderStatusUpdate error:', err));
+        } catch (e) {
+          console.error('[Email] Lỗi require emailService:', e);
+        }
+
+        // Tự động kích hoạt bảo hành điện tử
+        try {
+          const { createWarrantiesForOrder } = require('../services/warrantyService');
+          createWarrantiesForOrder(orderId).catch(err => console.error('[Warranty] createWarrantiesForOrder error:', err));
+        } catch (e) {
+          console.error('[Warranty] Lỗi require warrantyService:', e);
+        }
       }
     } else {
       // Cập nhật tất cả thanh toán của đơn hàng
@@ -325,6 +440,14 @@ router.put('/:orderId/payment', async (req, res) => {
           `UPDATE don_hang SET trang_thai = 'confirmed' WHERE ma_don = ?`,
           [orderId]
         );
+        
+        // Gửi email thông báo trạng thái
+        try {
+          const { sendOrderStatusUpdate } = require('../services/emailService');
+          sendOrderStatusUpdate(orderId, 'confirmed').catch(err => console.error('[Email] sendOrderStatusUpdate error:', err));
+        } catch (e) {
+          console.error('[Email] Lỗi require emailService:', e);
+        }
       }
     }
 
@@ -575,6 +698,14 @@ router.put('/:orderId/cancel', async (req, res) => {
       ['cancelled', orderId]
     );
     console.log('Order status updated to cancelled');
+    
+    // Gửi email thông báo hủy đơn
+    try {
+      const { sendOrderStatusUpdate } = require('../services/emailService');
+      sendOrderStatusUpdate(orderId, 'cancelled').catch(err => console.error('[Email] sendOrderStatusUpdate error:', err));
+    } catch (e) {
+      console.error('[Email] Lỗi require emailService:', e);
+    }
 
     // Hoàn lại số lượng tồn kho cho các sản phẩm
     const [orderItems] = await connection.query(
@@ -689,6 +820,14 @@ router.put('/:orderId/confirm-deposit', checkAdmin, async (req, res) => {
        WHERE ma_don = ?`,
       [orderId]
     );
+    
+    // Gửi email thông báo xác nhận cọc
+    try {
+      const { sendOrderStatusUpdate } = require('../services/emailService');
+      sendOrderStatusUpdate(orderId, 'confirmed').catch(err => console.error('[Email] sendOrderStatusUpdate error:', err));
+    } catch (e) {
+      console.error('[Email] Lỗi require emailService:', e);
+    }
 
     // Cập nhật thanh toán đặt cọc thành công
     await pool.query(
@@ -751,6 +890,22 @@ router.put('/:orderId/complete-remaining', checkAdmin, async (req, res) => {
       `UPDATE don_hang SET trang_thai = 'completed' WHERE ma_don = ?`,
       [orderId]
     );
+    
+    // Gửi email thông báo hoàn thành
+    try {
+      const { sendOrderStatusUpdate } = require('../services/emailService');
+      sendOrderStatusUpdate(orderId, 'completed').catch(err => console.error('[Email] sendOrderStatusUpdate error:', err));
+    } catch (e) {
+      console.error('[Email] Lỗi require emailService:', e);
+    }
+
+    // Tự động kích hoạt bảo hành điện tử
+    try {
+      const { createWarrantiesForOrder } = require('../services/warrantyService');
+      createWarrantiesForOrder(orderId).catch(err => console.error('[Warranty] createWarrantiesForOrder error:', err));
+    } catch (e) {
+      console.error('[Warranty] Lỗi require warrantyService:', e);
+    }
 
     // Cập nhật thanh toán còn lại thành công
     await pool.query(
@@ -859,6 +1014,14 @@ router.put('/:orderId/cancel-deposit', async (req, res) => {
        WHERE ma_don = ?`,
       [cancelReason || 'Khách hàng hủy đơn', refundAmount, orderId]
     );
+    
+    // Gửi email thông báo hủy đơn cọc
+    try {
+      const { sendOrderStatusUpdate } = require('../services/emailService');
+      sendOrderStatusUpdate(orderId, 'cancelled').catch(err => console.error('[Email] sendOrderStatusUpdate error:', err));
+    } catch (e) {
+      console.error('[Email] Lỗi require emailService:', e);
+    }
 
     // Hoàn lại số lượng tồn kho
     const [orderItems] = await connection.query(
