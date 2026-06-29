@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ thống Quản lý Kho Máy Lỗi - Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        body { font-family: 'Outfit', sans-serif; background: #f8fafc; }
+        .glassmorphism {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    <!-- Navbar -->
+    <header class="glassmorphism sticky top-0 z-30 w-full border-b border-slate-200/80 shadow-sm px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#d70018] to-[#b50012] flex items-center justify-center shadow-md shadow-red-500/20">
+                <i class="fas fa-warehouse text-white text-lg"></i>
+            </div>
+            <div>
+                <h1 class="text-lg font-bold text-slate-800">QuangHưng Mobile</h1>
+                <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Hệ thống Kho Máy Lỗi</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-4">
+            <span class="text-sm font-semibold text-slate-600" id="admin-name">Admin</span>
+            <a href="admin-doi-tra.html" class="px-4 py-2 border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition text-sm font-semibold flex items-center gap-2">
+                <i class="fas fa-rotate"></i> Quản lý Đổi Trả
+            </a>
+            <a href="admin.html" class="px-4 py-2 border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition text-sm font-semibold flex items-center gap-2">
+                <i class="fas fa-chart-line"></i> Dashboard chính
+            </a>
+            <button onclick="handleLogout()" class="px-4 py-2 bg-slate-800 text-white rounded-xl hover:bg-slate-900 transition text-sm font-semibold">
+                Đăng xuất
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 max-w-7xl mx-auto w-full px-6 py-8">
+        <!-- Header Section -->
+        <div class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h2 class="text-2xl font-bold text-slate-800">Quản lý Kho Máy Lỗi & Bảo Hành</h2>
+                <p class="text-slate-500 text-sm mt-0.5">Quản lý vòng đời thiết bị lỗi chờ trả hãng, rã xác lấy linh kiện, lưu kho hoặc trả khách</p>
+            </div>
+            <button onclick="openAddModal()" class="px-5 py-2.5 bg-[#d70018] hover:bg-[#b50012] text-white rounded-xl font-bold transition shadow-md shadow-red-500/10 text-sm flex items-center gap-2">
+                <i class="fas fa-plus"></i> Nhập máy lỗi thủ công
+            </button>
+        </div>
+
+        <!-- Stats Cards Grid -->
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+            <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-slate-50 text-slate-600 flex items-center justify-center text-xl"><i class="fas fa-boxes-stacked"></i></div>
+                <div>
+                    <span class="text-xs text-slate-400 font-bold block uppercase tracking-wider">Tổng máy lỗi</span>
+                    <span class="text-2xl font-bold text-slate-800" id="stat-total">0</span>
+                </div>
+            </div>
+            <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl"><i class="fas fa-spinner"></i></div>
+                <div>
+                    <span class="text-xs text-slate-400 font-bold block uppercase tracking-wider">Chờ xử lý</span>
+                    <span class="text-2xl font-bold text-amber-600" id="stat-pending">0</span>
+                </div>
+            </div>
+            <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl"><i class="fas fa-plane-departure"></i></div>
+                <div>
+                    <span class="text-xs text-slate-400 font-bold block uppercase tracking-wider">Đã gửi hãng</span>
+                    <span class="text-2xl font-bold text-blue-600" id="stat-sent">0</span>
+                </div>
+            </div>
+            <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-xl"><i class="fas fa-recycle"></i></div>
+                <div>
+                    <span class="text-xs text-slate-400 font-bold block uppercase tracking-wider">Rã linh kiện</span>
+                    <span class="text-2xl font-bold text-purple-600" id="stat-disassembled">0</span>
+                </div>
+            </div>
+            <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl"><i class="fas fa-circle-check"></i></div>
+                <div>
+                    <span class="text-xs text-slate-400 font-bold block uppercase tracking-wider">Lưu kho / Xong</span>
+                    <span class="text-2xl font-bold text-emerald-600" id="stat-stored">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter & Search Bar -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 mb-6 shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div class="flex flex-wrap items-center gap-4 w-full md:w-auto">
+                <div class="flex flex-col gap-1 w-full md:w-48">
+                    <label class="text-xs font-bold text-slate-400 uppercase">Trạng thái xử lý</label>
+                    <select id="filter-status" onchange="loadDefectiveList()" class="px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-slate-400 text-sm">
+                        <option value="">Tất cả trạng thái</option>
+                        <option value="cho_xu_ly">⏳ Chờ xử lý</option>
+                        <option value="gui_hang">✈️ Đã gửi hãng</option>
+                        <option value="ra_linh_kien">🔧 Rã linh kiện</option>
+                        <option value="luu_kho">📦 Đã lưu kho máy lỗi</option>
+                        <option value="da_tra_khach">🤝 Đã trả khách</option>
+                    </select>
+                </div>
+
+                <div class="flex flex-col gap-1 w-full md:w-48">
+                    <label class="text-xs font-bold text-slate-400 uppercase">Nguồn gốc phát sinh</label>
+                    <select id="filter-origin" onchange="loadDefectiveList()" class="px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-slate-400 text-sm">
+                        <option value="">Tất cả nguồn gốc</option>
+                        <option value="warranty">🛡️ Từ Yêu cầu bảo hành</option>
+                        <option value="return">🔄 Từ Yêu cầu đổi trả</option>
+                        <option value="manual">✍️ Nhập thủ công</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="relative w-full md:w-80 self-end md:self-auto">
+                <i class="fas fa-search absolute left-3.5 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+                <input type="text" id="search-input" onkeyup="searchTable()" placeholder="Tìm tên máy, IMEI, mã YC..." class="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-slate-400 transition text-sm">
+            </div>
+        </div>
+
+        <!-- Table Container -->
+        <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+            <div class="overflow-x-auto custom-scrollbar">
+                <table class="w-full border-collapse text-left text-sm">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs font-bold uppercase tracking-wider">
+                            <th class="py-4 px-6">ID Kho</th>
+                            <th class="py-4 px-6">Sản phẩm</th>
+                            <th class="py-4 px-6">Biến thể</th>
+                            <th class="py-4 px-6">IMEI / Serial</th>
+                            <th class="py-4 px-6">Nguồn gốc</th>
+                            <th class="py-4 px-6">Ngày vào kho</th>
+                            <th class="py-4 px-6">Trạng thái</th>
+                            <th class="py-4 px-6 max-w-xs">Ghi chú</th>
+                            <th class="py-4 px-6 text-center">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="defective-table-body" class="divide-y divide-slate-100 text-slate-700">
+                        <tr>
+                            <td colspan="9" class="py-8 text-center text-slate-400"><i class="fas fa-spinner animate-spin mr-2"></i>Đang tải danh sách thiết bị lỗi...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add Modal -->
+    <div id="add-modal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-lg w-full overflow-hidden transform transition duration-300">
+            <div class="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+                <h3 class="text-base font-bold text-slate-800"><i class="fas fa-plus-circle mr-2 text-[#d70018]"></i>Nhập máy lỗi thủ công</h3>
+                <button onclick="closeModal('add-modal')" class="text-slate-400 hover:text-slate-600 transition"><i class="fas fa-times text-lg"></i></button>
+            </div>
+            
+            <form id="add-form" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Chọn sản phẩm <span class="text-red-500">*</span></label>
+                    <select id="add-product" onchange="loadProductVariants(this.value, 'add-variant')" class="w-full px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-slate-400 transition" required>
+                        <option value="">-- Chọn sản phẩm --</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Chọn biến thể (Màu sắc / Dung lượng)</label>
+                    <select id="add-variant" class="w-full px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-slate-400 transition">
+                        <option value="">-- Chọn biến thể (Không có) --</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Số IMEI / Serial</label>
+                    <input type="text" id="add-imei" placeholder="Nhập IMEI (15 số) hoặc Serial của máy" class="w-full px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-slate-400 transition">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Nguồn gốc tạo</label>
+                        <select id="add-origin" class="w-full px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-slate-400 transition">
+                            <option value="manual">✍️ Nhập thủ công</option>
+                            <option value="warranty">🛡️ Từ Yêu cầu bảo hành</option>
+                            <option value="return">🔄 Từ Yêu cầu đổi trả</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Mã YC gốc (nếu có)</label>
+                        <input type="number" id="add-source-id" placeholder="Mã YC/Đơn hàng" class="w-full px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-slate-400 transition">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Trạng thái kho máy lỗi</label>
+                    <select id="add-status" class="w-full px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-slate-400 transition">
+                        <option value="cho_xu_ly">⏳ Chờ xử lý</option>
+                        <option value="gui_hang">✈️ Đã gửi hãng</option>
+                        <option value="ra_linh_kien">🔧 Rã linh kiện</option>
+                        <option value="luu_kho">📦 Đã lưu kho máy lỗi</option>
+                        <option value="da_tra_khach">🤝 Đã trả khách</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Ghi chú</label>
+                    <textarea id="add-note" rows="3" placeholder="Nhập tình trạng máy lỗi, lỗi phần cứng cụ thể..." class="w-full px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-slate-400 transition"></textarea>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" onclick="closeModal('add-modal')" class="px-5 py-2 border border-slate-200 rounded-xl text-slate-700 hover:bg-slate-50 transition font-semibold text-sm">Hủy</button>
+                    <button type="submit" class="px-5 py-2 bg-[#d70018] hover:bg-[#b50012] text-white rounded-xl font-bold transition shadow-md shadow-red-500/10 text-sm">Nhập kho máy lỗi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="edit-modal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-lg w-full overflow-hidden transform transition duration-300">
+            <div class="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+                <h3 class="text-base font-bold text-slate-800"><i class="fas fa-edit mr-2 text-[#d70018]"></i>Xử lý trạng thái máy lỗi</h3>
+                <button onclick="closeModal('edit-modal')" class="text-slate-400 hover:text-slate-600 transition"><i class="fas fa-times text-lg"></i></button>
+            </div>
+            
+            <form id="edit-form" class="p-6 space-y-4">
+                <input type="hidden" id="edit-id">
+                
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Sản phẩm lỗi</label>
+                    <input type="text" id="edit-product-display" disabled class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-slate-700 font-bold">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Cập nhật biến thể (Màu sắc / Dung lượng)</label>
+                    <select id="edit-variant" class="w-full px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-slate-400 transition">
+                        <option value="">-- Chọn biến thể --</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Số IMEI / Serial</label>
+                    <input type="text" id="edit-imei" placeholder="Nhập IMEI hoặc Serial" class="w-full px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-slate-400 transition">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Cập nhật trạng thái xử lý vật lý <span class="text-red-500">*</span></label>
+                    <select id="edit-status" class="w-full px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-slate-400 transition" required>
+                        <option value="cho_xu_ly">⏳ Chờ xử lý</option>
+                        <option value="gui_hang">✈️ Đã gửi hãng</option>
+                        <option value="ra_linh_kien">🔧 Rã linh kiện</option>
+                        <option value="luu_kho">📦 Đã lưu kho máy lỗi</option>
+                        <option value="da_tra_khach">🤝 Đã trả khách</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Ghi chú cập nhật</label>
+                    <textarea id="edit-note" rows="3" placeholder="Nhập lý do gửi trả hãng, rã các linh kiện gì..." class="w-full px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-slate-400 transition"></textarea>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" onclick="closeModal('edit-modal')" class="px-5 py-2 border border-slate-200 rounded-xl text-slate-700 hover:bg-slate-50 transition font-semibold text-sm">Hủy</button>
+                    <button type="submit" class="px-5 py-2 bg-[#d70018] hover:bg-[#b50012] text-white rounded-xl font-bold transition shadow-md shadow-red-500/10 text-sm">Xác nhận cập nhật</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        const API_URL = 'http://localhost:3000/api';
+        let allDefectiveItems = [];
+        let productList = [];
+
+        // ====== Kiểm tra quyền Admin đăng nhập ======
+        function checkAdminAuth() {
+            const adminData = JSON.parse(localStorage.getItem('adminData') || 'null');
+            const isAdmin = localStorage.getItem('isAdmin') === 'true';
+            
+            if (!adminData || !isAdmin) {
+                window.location.href = 'admin-login.html?redirect=admin-kho-loi.html';
+                return;
+            }
+            document.getElementById('admin-name').textContent = adminData.username || adminData.email || 'Admin';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAdminAuth();
+            loadDefectiveList();
+            loadDropdownProducts();
+        });
+
+        function handleLogout() {
+            localStorage.removeItem('adminData');
+            localStorage.removeItem('adminToken');
+            localStorage.removeItem('isAdmin');
+            localStorage.removeItem('isLoggedIn');
+            window.location.href = 'admin-login.html';
+        }
+
+        // Tải danh sách sản phẩm lỗi
+        async function loadDefectiveList() {
+            const status = document.getElementById('filter-status').value;
+            const origin = document.getElementById('filter-origin').value;
+            
+            let url = `${API_URL}/returns/warehouse/defective?`;
+            if (status) url += `status=${status}&`;
+            if (origin) url += `origin=${origin}&`;
+
+            try {
+                const response = await fetch(url, { method: 'GET', credentials: 'include' });
+                const resData = await response.json();
+                
+                if (resData.success) {
+                    allDefectiveItems = resData.data;
+                    updateStats();
+                    renderDefectiveTable(allDefectiveItems);
+                } else {
+                    document.getElementById('defective-table-body').innerHTML = `
+                        <tr>
+                            <td colspan="9" class="py-8 text-center text-red-500 font-semibold">Lỗi tải dữ liệu kho máy lỗi: ${resData.message}</td>
+                        </tr>
+                    `;
+                }
+            } catch (err) {
+                console.error(err);
+                document.getElementById('defective-table-body').innerHTML = `
+                    <tr>
+                        <td colspan="9" class="py-8 text-center text-red-500 font-semibold">Lỗi kết nối máy chủ kho máy lỗi.</td>
+                    </tr>
+                `;
+            }
+        }
+
+        // Cập nhật các chỉ số thống kê
+        function updateStats() {
+            const total = allDefectiveItems.length;
+            const pending = allDefectiveItems.filter(c => c.trang_thai === 'cho_xu_ly').length;
+            const sent = allDefectiveItems.filter(c => c.trang_thai === 'gui_hang').length;
+            const disassembled = allDefectiveItems.filter(c => c.trang_thai === 'ra_linh_kien').length;
+            const stored = allDefectiveItems.filter(c => ['luu_kho', 'da_tra_khach'].includes(c.trang_thai)).length;
+
+            document.getElementById('stat-total').textContent = total;
+            document.getElementById('stat-pending').textContent = pending;
+            document.getElementById('stat-sent').textContent = sent;
+            document.getElementById('stat-disassembled').textContent = disassembled;
+            document.getElementById('stat-stored').textContent = stored;
+        }
+
+        // Render bảng dữ liệu
+        function renderDefectiveTable(items) {
+            const tbody = document.getElementById('defective-table-body');
+            tbody.innerHTML = '';
+
+            if (items.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="9" class="py-8 text-center text-slate-400 font-semibold">Không tìm thấy máy lỗi nào trong kho.</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            items.forEach(item => {
+                let originBadge = `<span class="px-2 py-0.5 bg-slate-100 text-slate-600 border border-slate-200/50 rounded-lg text-xs font-semibold flex items-center gap-1 w-max"><i class="fas fa-user-edit text-[10px]"></i> Thủ công</span>`;
+                if (item.nguon_goc === 'warranty') {
+                    originBadge = `<span class="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200/50 rounded-lg text-xs font-semibold flex items-center gap-1 w-max"><i class="fas fa-shield-alt text-[10px]"></i> BH #${item.ma_nguon}</span>`;
+                } else if (item.nguon_goc === 'return') {
+                    originBadge = `<span class="px-2 py-0.5 bg-rose-50 text-rose-700 border border-rose-200/50 rounded-lg text-xs font-semibold flex items-center gap-1 w-max"><i class="fas fa-rotate text-[10px]"></i> ĐT #${item.ma_nguon}</span>`;
+                }
+
+                let statusBadge = `<span class="px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-250/30 text-xs font-bold rounded-full">⏳ Chờ xử lý</span>`;
+                if (item.trang_thai === 'gui_hang') {
+                    statusBadge = `<span class="px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-250/30 text-xs font-bold rounded-full">✈️ Đã gửi hãng</span>`;
+                } else if (item.trang_thai === 'ra_linh_kien') {
+                    statusBadge = `<span class="px-2.5 py-1 bg-purple-50 text-purple-700 border border-purple-250/30 text-xs font-bold rounded-full">🔧 Rã linh kiện</span>`;
+                } else if (item.trang_thai === 'luu_kho') {
+                    statusBadge = `<span class="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-250/30 text-xs font-bold rounded-full">📦 Đã lưu kho</span>`;
+                } else if (item.trang_thai === 'da_tra_khach') {
+                    statusBadge = `<span class="px-2.5 py-1 bg-slate-100 text-slate-700 border border-slate-250/30 text-xs font-bold rounded-full">🤝 Đã trả khách</span>`;
+                }
+
+                const dateStr = item.ngay_nhap ? new Date(item.ngay_nhap).toLocaleString('vi-VN') : '';
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition duration-150">
+                        <td class="py-4 px-6 font-bold text-slate-800">#${item.ma_kbh}</td>
+                        <td class="py-4 px-6 font-bold text-slate-800">${item.ten_sp}</td>
+                        <td class="py-4 px-6 text-slate-500 font-semibold">${item.mau_sac ? item.mau_sac + ' / ' + item.dung_luong : 'Mặc định'}</td>
+                        <td class="py-4 px-6 text-slate-600 font-bold">${item.imei || '<span class="text-slate-400 font-normal">Chưa cập nhật</span>'}</td>
+                        <td class="py-4 px-6">${originBadge}</td>
+                        <td class="py-4 px-6 text-xs text-slate-400 font-semibold">${dateStr}</td>
+                        <td class="py-4 px-6">${statusBadge}</td>
+                        <td class="py-4 px-6 max-w-xs truncate font-medium text-slate-500" title="${item.ghi_chu || ''}">${item.ghi_chu || ''}</td>
+                        <td class="py-4 px-6 text-center flex items-center justify-center gap-2">
+                            <button onclick="openEditModal(${item.ma_kbh})" class="px-3 py-1.5 bg-[#d70018] hover:bg-[#b50012] text-white font-bold rounded-xl shadow-sm text-xs transition">
+                                Xử lý
+                            </button>
+                            <button onclick="deleteDefective(${item.ma_kbh})" class="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-red-600 rounded-xl transition text-xs">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // Tải danh sách dropdown sản phẩm
+        async function loadDropdownProducts() {
+            try {
+                const response = await fetch(`${API_URL}/returns/warehouse/products`, { method: 'GET', credentials: 'include' });
+                const data = await response.json();
+                if (data.success) {
+                    productList = data.data;
+                    const addSelect = document.getElementById('add-product');
+                    addSelect.innerHTML = '<option value="">-- Chọn sản phẩm --</option>';
+                    productList.forEach(p => {
+                        addSelect.innerHTML += `<option value="${p.ma_sp}">${p.ten_sp}</option>`;
+                    });
+                }
+            } catch (err) { console.error('Error loading dropdown products:', err); }
+        }
+
+        // Tải danh sách dropdown biến thể
+        async function loadProductVariants(productId, variantSelectId, selectedVariantId = null) {
+            const select = document.getElementById(variantSelectId);
+            select.innerHTML = '<option value="">-- Đang tải biến thể... --</option>';
+            if (!productId) {
+                select.innerHTML = '<option value="">-- Chọn biến thể (Không có) --</option>';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/returns/warehouse/variants/${productId}`, { method: 'GET', credentials: 'include' });
+                const data = await response.json();
+                if (data.success) {
+                    select.innerHTML = '<option value="">-- Chọn biến thể (Không có) --</option>';
+                    data.data.forEach(v => {
+                        const selected = Number(v.ma_bt) === Number(selectedVariantId) ? 'selected' : '';
+                        select.innerHTML += `<option value="${v.ma_bt}" ${selected}>${v.mau_sac} / ${v.dung_luong}</option>`;
+                    });
+                }
+            } catch (err) {
+                console.error('Error loading variants:', err);
+                select.innerHTML = '<option value="">-- Lỗi tải biến thể --</option>';
+            }
+        }
+
+        // Tìm kiếm trên bảng
+        function searchTable() {
+            const query = document.getElementById('search-input').value.toLowerCase();
+            const rows = document.querySelectorAll('#defective-table-body tr');
+
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                if (text.includes(query)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        // Modal triggers
+        function openAddModal() {
+            document.getElementById('add-form').reset();
+            document.getElementById('add-variant').innerHTML = '<option value="">-- Chọn biến thể (Không có) --</option>';
+            document.getElementById('add-modal').classList.remove('hidden');
+        }
+
+        async function openEditModal(ma_kbh) {
+            const item = allDefectiveItems.find(c => c.ma_kbh === ma_kbh);
+            if (!item) return;
+
+            document.getElementById('edit-id').value = ma_kbh;
+            document.getElementById('edit-product-display').value = item.ten_sp;
+            document.getElementById('edit-imei').value = item.imei || '';
+            document.getElementById('edit-status').value = item.trang_thai;
+            document.getElementById('edit-note').value = item.ghi_chu || '';
+
+            await loadProductVariants(item.ma_sp, 'edit-variant', item.ma_bt);
+
+            document.getElementById('edit-modal').classList.remove('hidden');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        // Thêm máy lỗi thủ công
+        document.getElementById('add-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const ma_sp = document.getElementById('add-product').value;
+            const ma_bt = document.getElementById('add-variant').value;
+            const imei = document.getElementById('add-imei').value;
+            const nguon_goc = document.getElementById('add-origin').value;
+            const ma_nguon = document.getElementById('add-source-id').value;
+            const trang_thai = document.getElementById('add-status').value;
+            const ghi_chu = document.getElementById('add-note').value;
+
+            try {
+                const response = await fetch(`${API_URL}/returns/warehouse/defective`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ ma_sp, ma_bt, imei, nguon_goc, ma_nguon, trang_thai, ghi_chu })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    alert('Đã nhập kho máy lỗi thành công!');
+                    closeModal('add-modal');
+                    loadDefectiveList();
+                } else {
+                    alert(data.message || 'Lỗi nhập kho');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Lỗi kết nối máy chủ');
+            }
+        });
+
+        // Cập nhật máy lỗi
+        document.getElementById('edit-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const id = document.getElementById('edit-id').value;
+            const ma_bt = document.getElementById('edit-variant').value;
+            const imei = document.getElementById('edit-imei').value;
+            const trang_thai = document.getElementById('edit-status').value;
+            const ghi_chu = document.getElementById('edit-note').value;
+
+            try {
+                const response = await fetch(`${API_URL}/returns/warehouse/defective/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ ma_bt, imei, trang_thai, ghi_chu })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    alert('Cập nhật trạng thái máy lỗi thành công!');
+                    closeModal('edit-modal');
+                    loadDefectiveList();
+                } else {
+                    alert(data.message || 'Lỗi cập nhật');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Lỗi kết nối máy chủ');
+            }
+        });
+
+        // Xóa máy lỗi khỏi kho
+        async function deleteDefective(id) {
+            if (!confirm('Bạn có chắc chắn muốn xóa bản ghi máy lỗi này ra khỏi kho vật lý?')) return;
+
+            try {
+                const response = await fetch(`${API_URL}/returns/warehouse/defective/${id}`, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                if (data.success) {
+                    alert('Đã xóa bản ghi máy lỗi khỏi kho thành công!');
+                    loadDefectiveList();
+                } else {
+                    alert(data.message || 'Lỗi xóa bản ghi');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Lỗi kết nối máy chủ');
+            }
+        }
+    </script>
+</body>
+</html>
