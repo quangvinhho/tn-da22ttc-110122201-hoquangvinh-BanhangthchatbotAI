@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 
 <head>
@@ -231,11 +231,64 @@
             <div id="selected-address-empty" class="hidden text-center py-4">
               <i class="fas fa-map-marker-alt text-4xl text-gray-300 mb-3"></i>
               <p class="text-gray-500 mb-3">Chưa có địa chỉ nhận hàng</p>
-              <a href="profile.html#address" class="text-red-600 hover:text-red-700 font-semibold">
-                <i class="fas fa-plus mr-1"></i>Thêm địa chỉ ngay
-              </a>
+              <button type="button" onclick="showDirectAddressForm()" class="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-xl font-bold transition-all shadow-sm">
+                <i class="fas fa-plus mr-1"></i>Nhập địa chỉ trực tiếp
+              </button>
             </div>
           </div>
+
+          <!-- Direct Address Form (Nhập trực tiếp) -->
+          <div id="direct-address-form" class="hidden border border-gray-200 rounded-xl p-5 mt-4 bg-gray-50 space-y-4">
+            <div class="flex items-center justify-between border-b border-gray-200 pb-2">
+              <h3 class="font-bold text-gray-800 text-sm">Nhập địa chỉ nhận hàng trực tiếp</h3>
+              <button type="button" id="btn-back-to-saved-address" onclick="hideDirectAddressForm()" class="text-xs text-red-600 hover:text-red-700 font-semibold hidden">
+                <i class="fas fa-arrow-left mr-1"></i>Sử dụng địa chỉ đã lưu
+              </button>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Họ tên người nhận <span class="text-red-500">*</span></label>
+                <input type="text" id="direct-fullName" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 text-sm" placeholder="VD: Nguyễn Văn A">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Số điện thoại <span class="text-red-500">*</span></label>
+                <input type="text" id="direct-phone" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 text-sm" placeholder="VD: 0987654321">
+              </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Tỉnh / Thành phố <span class="text-red-500">*</span></label>
+                <select id="direct-province" onchange="onDirectProvinceChange(this.value)" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 text-sm bg-white">
+                  <option value="">Chọn Tỉnh/Thành phố</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Quận / Huyện <span class="text-red-500">*</span></label>
+                <select id="direct-district" onchange="onDirectDistrictChange(this.value)" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 text-sm bg-white" disabled>
+                  <option value="">Chọn Quận/Huyện</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Phường / Xã <span class="text-red-500">*</span></label>
+                <select id="direct-ward" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 text-sm bg-white" disabled>
+                  <option value="">Chọn Phường/Xã</option>
+                </select>
+              </div>
+            </div>
+            
+            <div>
+              <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Địa chỉ cụ thể <span class="text-red-500">*</span></label>
+              <input type="text" id="direct-address" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 text-sm" placeholder="Số nhà, tên đường, thôn/xóm...">
+            </div>
+            
+            <div class="flex items-center gap-2 pt-1">
+              <input type="checkbox" id="direct-save-checkbox" class="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500 cursor-pointer" checked>
+              <label for="direct-save-checkbox" class="text-xs text-gray-600 font-semibold cursor-pointer">Lưu địa chỉ này vào sổ địa chỉ</label>
+            </div>
+          </div>
+
           
           <!-- Hidden inputs để lưu thông tin địa chỉ đã chọn -->
           <input type="hidden" id="selectedAddressId" value="">

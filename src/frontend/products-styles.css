@@ -332,29 +332,28 @@
 #filterSidebar {
   width: 260px;
   flex-shrink: 0;
-  background: #ffffff;
-  border-radius: 12px;
-  border: 1px solid #f1f5f9;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
   position: relative;
   z-index: 10;
   /* flex items-stretch from parent will make this stretch to bottom */
 }
 
-/* Inner wrapper - để trải dài tự nhiên */
+/* Inner wrapper - để trải dài tự nhiên và dính theo màn hình */
 #filterSidebarInner {
   display: flex;
   flex-direction: column;
-  height: 100%; /* Đảm bảo container nội dung dài bằng khung trắng bên ngoài để sticky hoạt động */
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  position: sticky;
+  overflow: hidden; /* Giữ bo tròn viền khi nội dung cuộn */
 }
 
-/* Filter header - cố định (sticky) trên cùng */
+/* Filter header */
 #filterSidebarInner .filter-header {
   flex-shrink: 0;
   margin: 10px 10px 0 10px;
-  position: sticky;
-  top: 90px; /* Cách header chính 1 khoảng */
-  z-index: 30; /* Đảm bảo nổi lên trên các bộ lọc khi chúng trượt qua */
+  z-index: 30;
 }
 
 /* Filters container - dàn đều tự nhiên, trượt theo trang */
@@ -362,6 +361,7 @@
   flex: 1;
   padding: 10px;
   padding-bottom: 24px;
+  overflow-y: auto;
 }
 
 #filterSidebar .filter-scroll::-webkit-scrollbar {

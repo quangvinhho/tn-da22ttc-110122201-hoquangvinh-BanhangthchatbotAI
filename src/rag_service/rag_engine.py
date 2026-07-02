@@ -2144,7 +2144,7 @@ Trả lời lịch sự, thân thiện bằng tiếng Việt (HTML thuần, KHÔ
                 except Exception as e:
                     print(f"[RAG Memory Alt Other Brands] DB error: {e}")
             
-            db_products = same_brand_alts + other_brand_alts
+            db_products = same_brand_alts
             
             # Since we have loaded some products for context, last_recommended_ids should still be updated
             if db_products:

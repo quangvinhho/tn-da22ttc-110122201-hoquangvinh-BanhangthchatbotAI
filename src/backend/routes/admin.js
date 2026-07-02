@@ -5257,8 +5257,13 @@ router.post('/payroll/calculate', async (req, res) => {
             return res.status(400).json({ success: false, message: 'Vui lòng nhập tháng cần tính lương!' });
         }
         
-        // Lấy danh sách toàn bộ nhân viên hoạt động
-        const [employees] = await pool.query('SELECT ma_nv, ho_ten, luong_co_ban FROM nhan_vien WHERE trang_thai = "hoat_dong"');
+        // Lấy danh sách nhân viên hoạt động HOẶC có chấm công trong tháng đó (đảm bảo tính lương đầy đủ cho nhân viên dù đã bị khóa tài khoản)
+        const [employees] = await pool.query(`
+            SELECT DISTINCT nv.ma_nv, nv.ho_ten, nv.luong_co_ban
+            FROM nhan_vien nv
+            LEFT JOIN cham_cong cc ON nv.ma_nv = cc.ma_tai_khoan AND DATE_FORMAT(cc.ngay, '%Y-%m') = ?
+            WHERE nv.trang_thai = 'hoat_dong' OR cc.id IS NOT NULL
+        `, [month]);
         
         for (const emp of employees) {
             // Đếm số ca đã chấm công trong tháng
@@ -5274,9 +5279,9 @@ router.post('/payroll/calculate', async (req, res) => {
             // Tiền phạt trễ: 5,000đ mỗi phút trễ
             const tong_phat_tre = so_phut_tre * 5000;
             
-            // Lương thực lĩnh = (so_ca_lam * (luong_co_ban / 26)) - tong_phat_tre
-            const luong_theo_ca = emp.luong_co_ban / 26;
-            let luong_thuc_linh = (so_ca_lam * luong_theo_ca) - tong_phat_tre;
+            // Lương thực lĩnh = (so_ca_lam * (luong_co_ban / 26)) - tong_phat_tre (làm tròn số nguyên cho khớp tiền tệ VND)
+            const luong_theo_ca = Math.round(emp.luong_co_ban / 26);
+            let luong_thuc_linh = Math.round(so_ca_lam * luong_theo_ca) - tong_phat_tre;
             if (luong_thuc_linh < 0) luong_thuc_linh = 0;
             
             // Chèn hoặc cập nhật bảng lương

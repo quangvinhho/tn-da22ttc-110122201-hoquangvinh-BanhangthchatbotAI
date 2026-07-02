@@ -727,6 +727,85 @@
               setTimeout(() => toast.remove(), 300);
             }, 3000);
           }
+
+          // Hàm mua ngay nhanh
+          async function buyNowQuick(productId, productName, price, image) {
+            // Kiểm tra đăng nhập
+            const user = JSON.parse(localStorage.getItem('user') || 'null');
+            const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+            
+            if (!isLoggedIn || !user || !user.ma_kh) {
+              if (typeof showLoginRequiredModal === 'function') {
+                showLoginRequiredModal();
+              } else {
+                alert('Vui lòng đăng nhập để mua hàng');
+                window.location.href = 'login.html';
+              }
+              return;
+            }
+            
+            const API_URL = window.API_BASE_URL || 'http://localhost:3000/api';
+            const cartKey = `cart_user_${user.ma_kh}`;
+            
+            try {
+              const response = await fetch(`${API_URL}/cart`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  userId: user.ma_kh,
+                  productId: productId,
+                  quantity: 1,
+                  productInfo: {
+                    name: productName,
+                    price: price,
+                    image: image,
+                    color: 'Mặc định',
+                    storage: '128GB'
+                  }
+                })
+              });
+              const data = await response.json();
+              
+              if (data.success) {
+                let cart = JSON.parse(localStorage.getItem(cartKey) || '[]');
+                const existingIndex = cart.findIndex(item => item.id === productId);
+                
+                if (existingIndex > -1) {
+                  cart[existingIndex].quantity += 1;
+                } else {
+                  cart.push({
+                    id: productId,
+                    name: productName,
+                    price: price,
+                    image: image,
+                    quantity: 1
+                  });
+                }
+                localStorage.setItem(cartKey, JSON.stringify(cart));
+                window.location.href = 'checkout.html';
+              } else {
+                alert(data.message || 'Lỗi mua ngay');
+              }
+            } catch (error) {
+              console.error('Lỗi mua ngay:', error);
+              // Fallback: lưu vào localStorage
+              let cart = JSON.parse(localStorage.getItem(cartKey) || '[]');
+              const existingIndex = cart.findIndex(item => item.id === productId);
+              if (existingIndex > -1) {
+                cart[existingIndex].quantity += 1;
+              } else {
+                cart.push({
+                  id: productId,
+                  name: productName,
+                  price: price,
+                  image: image,
+                  quantity: 1
+                });
+              }
+              localStorage.setItem(cartKey, JSON.stringify(cart));
+              window.location.href = 'checkout.html';
+            }
+          }
         </script>
       </div>
 
@@ -799,6 +878,27 @@
                     const storage = product.storage ? ` ${product.storage}GB` : '';
                     const badge = index === 0 ? "BEST SELLER" : "MỚI RA MẮT";
                     const kPrice = new Intl.NumberFormat('vi-VN').format(product.price/1000) + 'k';
+                    const productNameEscaped = product.name.replace(/'/g, "\\'");
+                    
+                    const isOutOfStock = !product.stock || product.stock <= 0;
+                    const buttonsHtml = isOutOfStock ? `
+                      <div class="mt-3">
+                        <button disabled class="w-full bg-gray-200 text-gray-500 border border-gray-300 font-bold py-2 rounded-lg cursor-not-allowed text-xs flex items-center justify-center gap-2">
+                          <i class="fas fa-times-circle"></i> Hết hàng
+                        </button>
+                      </div>
+                    ` : `
+                      <div class="flex gap-2 mt-3">
+                        <button onclick="event.stopPropagation(); event.preventDefault(); buyNowQuick(${product.id}, '${productNameEscaped}', ${product.price}, '${product.image}')" 
+                          class="flex-1 bg-gradient-to-r from-red-600 to-red-500 text-white font-bold py-2 rounded-lg hover:from-red-700 hover:to-red-600 transition-all text-xs flex items-center justify-center gap-1.5 shadow-sm hover:shadow-md">
+                          <i class="fas fa-bolt text-[10px]"></i> Mua ngay
+                        </button>
+                        <button onclick="event.stopPropagation(); event.preventDefault(); addToCartQuick(${product.id}, '${productNameEscaped}', ${product.price}, '${product.image}')" 
+                          class="w-8 shrink-0 bg-red-50 text-red-600 border border-red-200 font-bold py-2 rounded-lg hover:bg-red-600 hover:text-white transition-all text-xs flex items-center justify-center" title="Thêm vào giỏ hàng">
+                          <i class="fas fa-cart-plus"></i>
+                        </button>
+                      </div>
+                    `;
                     
                     return `
                       <div class="product-card-hover rounded-xl p-3 relative group flex flex-col h-full bg-white border border-gray-100 hover:border-red-400 hover:shadow-lg transition-all duration-300">
@@ -843,6 +943,7 @@
                             </div>
                           </div>
                         </a>
+                        ${buttonsHtml}
                       </div>
                     `;
                   }).join('');
@@ -925,6 +1026,27 @@
                     const storage = product.storage ? ` ${product.storage}GB` : '';
                     const badge = index === 0 ? "BEST SELLER" : "MỚI RA MẮT";
                     const kPrice = new Intl.NumberFormat('vi-VN').format(product.price/1000) + 'k';
+                    const productNameEscaped = product.name.replace(/'/g, "\\'");
+                    
+                    const isOutOfStock = !product.stock || product.stock <= 0;
+                    const buttonsHtml = isOutOfStock ? `
+                      <div class="mt-3">
+                        <button disabled class="w-full bg-gray-200 text-gray-500 border border-gray-300 font-bold py-2 rounded-lg cursor-not-allowed text-xs flex items-center justify-center gap-2">
+                          <i class="fas fa-times-circle"></i> Hết hàng
+                        </button>
+                      </div>
+                    ` : `
+                      <div class="flex gap-2 mt-3">
+                        <button onclick="event.stopPropagation(); event.preventDefault(); buyNowQuick(${product.id}, '${productNameEscaped}', ${product.price}, '${product.image}')" 
+                          class="flex-1 bg-gradient-to-r from-red-600 to-red-500 text-white font-bold py-2 rounded-lg hover:from-red-700 hover:to-red-600 transition-all text-xs flex items-center justify-center gap-1.5 shadow-sm hover:shadow-md">
+                          <i class="fas fa-bolt text-[10px]"></i> Mua ngay
+                        </button>
+                        <button onclick="event.stopPropagation(); event.preventDefault(); addToCartQuick(${product.id}, '${productNameEscaped}', ${product.price}, '${product.image}')" 
+                          class="w-8 shrink-0 bg-red-50 text-red-600 border border-red-200 font-bold py-2 rounded-lg hover:bg-red-600 hover:text-white transition-all text-xs flex items-center justify-center" title="Thêm vào giỏ hàng">
+                          <i class="fas fa-cart-plus"></i>
+                        </button>
+                      </div>
+                    `;
                     
                     return `
                       <div class="product-card-hover rounded-xl p-3 relative group flex flex-col h-full bg-white border border-gray-100 hover:border-red-400 hover:shadow-lg transition-all duration-300">
@@ -969,6 +1091,7 @@
                             </div>
                           </div>
                         </a>
+                        ${buttonsHtml}
                       </div>
                     `;
                   }).join('');

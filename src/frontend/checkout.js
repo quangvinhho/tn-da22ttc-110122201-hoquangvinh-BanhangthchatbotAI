@@ -900,6 +900,73 @@ function applyVoucher() {
 
 // ===== VALIDATE FORM =====
 function validateForm() {
+  const directForm = document.getElementById('direct-address-form');
+  const isDirectMode = directForm && !directForm.classList.contains('hidden');
+  
+  if (isDirectMode) {
+    const dFullName = document.getElementById('direct-fullName').value.trim();
+    const dPhone = document.getElementById('direct-phone').value.trim();
+    const dProvinceSelect = document.getElementById('direct-province');
+    const dDistrictSelect = document.getElementById('direct-district');
+    const dWardSelect = document.getElementById('direct-ward');
+    const dAddress = document.getElementById('direct-address').value.trim();
+    
+    if (!dFullName || !dPhone || dProvinceSelect.value === "" || dDistrictSelect.value === "" || dWardSelect.value === "" || !dAddress) {
+      showToast('Vui lòng điền đầy đủ thông tin địa chỉ nhận hàng trực tiếp!', 'error');
+      return false;
+    }
+    
+    const phoneRegex = /^(0|\+84)[0-9]{9}$/;
+    if (!phoneRegex.test(dPhone.replace(/\s/g, ''))) {
+      showToast('Số điện thoại không hợp lệ!', 'error');
+      return false;
+    }
+    
+    // Copy to hidden inputs
+    document.getElementById('fullName').value = dFullName;
+    document.getElementById('phone').value = dPhone;
+    document.getElementById('province').value = dProvinceSelect.value;
+    document.getElementById('district').value = dDistrictSelect.value;
+    document.getElementById('ward').value = dWardSelect.value;
+    document.getElementById('address').value = dAddress;
+    
+    // Set text elements so fullAddress logic works
+    let provTextEl = document.getElementById('province-text');
+    if (!provTextEl) {
+      provTextEl = document.createElement('span');
+      provTextEl.id = 'province-text';
+      provTextEl.style.display = 'none';
+      document.body.appendChild(provTextEl);
+    }
+    provTextEl.textContent = dProvinceSelect.options[dProvinceSelect.selectedIndex].text;
+    
+    let distTextEl = document.getElementById('district-text');
+    if (!distTextEl) {
+      distTextEl = document.createElement('span');
+      distTextEl.id = 'district-text';
+      distTextEl.style.display = 'none';
+      document.body.appendChild(distTextEl);
+    }
+    distTextEl.textContent = dDistrictSelect.options[dDistrictSelect.selectedIndex].text;
+    
+    let wardTextEl = document.getElementById('ward-text');
+    if (!wardTextEl) {
+      wardTextEl = document.createElement('span');
+      wardTextEl.id = 'ward-text';
+      wardTextEl.style.display = 'none';
+      document.body.appendChild(wardTextEl);
+    }
+    wardTextEl.textContent = dWardSelect.options[dWardSelect.selectedIndex].text;
+    
+    // Optionally: if the checkbox is checked, save this address to user profile
+    const saveCheckbox = document.getElementById('direct-save-checkbox');
+    if (saveCheckbox && saveCheckbox.checked) {
+      saveDirectAddressToProfile(dFullName, dPhone, dProvinceSelect.options[dProvinceSelect.selectedIndex].text, dDistrictSelect.options[dDistrictSelect.selectedIndex].text, dWardSelect.options[dWardSelect.selectedIndex].text, dAddress);
+    }
+    
+    return true;
+  }
+
   const fullName = document.getElementById('fullName').value.trim();
   const phone = document.getElementById('phone').value.trim();
   const province = document.getElementById('province').value;
@@ -910,7 +977,7 @@ function validateForm() {
   // Kiểm tra đã chọn địa chỉ chưa
   if (!fullName || !phone || !province || !district || !ward || !address) {
     showToast('Vui lòng chọn địa chỉ nhận hàng!', 'error');
-    openSelectAddressModal();
+    showDirectAddressForm();
     return false;
   }
   
@@ -2105,6 +2172,7 @@ async function completeOrder(orderData) {
   
   // Clear checkout_items (sản phẩm đã chọn để thanh toán)
   localStorage.removeItem('checkout_items');
+  sessionStorage.removeItem('checkout-form-state');
   
   // Clear cart and pending order - dùng đúng cart key
   const cartKey = getCartKey();
@@ -2547,7 +2615,12 @@ let selectedAddressData = null;
 
 async function autoFillUserInfo() {
   const user = JSON.parse(localStorage.getItem('user') || 'null');
-  if (!user || !user.ma_kh) return;
+  if (!user || !user.ma_kh) {
+    document.getElementById('selected-address-loading').classList.add('hidden');
+    document.getElementById('selected-address-empty').classList.add('hidden');
+    showDirectAddressForm();
+    return;
+  }
   
   // Load địa chỉ mặc định từ API
   try {
@@ -2558,25 +2631,35 @@ async function autoFillUserInfo() {
     
     if (data.success && data.data) {
       selectAddress(data.data);
+      const btnBack = document.getElementById('btn-back-to-saved-address');
+      if (btnBack) btnBack.classList.remove('hidden');
     } else {
-      // Không có địa chỉ nào
-      document.getElementById('selected-address-empty').classList.remove('hidden');
+      document.getElementById('selected-address-empty').classList.add('hidden');
+      showDirectAddressForm();
     }
   } catch (error) {
     console.error('Error loading default address:', error);
     document.getElementById('selected-address-loading').classList.add('hidden');
-    document.getElementById('selected-address-empty').classList.remove('hidden');
+    document.getElementById('selected-address-empty').classList.add('hidden');
+    showDirectAddressForm();
   }
   
   // Điền email từ user profile
   if (user.email) {
     document.getElementById('email').value = user.email;
   }
+
+  // Restore form state preservation if exists
+  restoreFormState();
 }
 
 // Chọn địa chỉ (set vào form)
 function selectAddress(address) {
   selectedAddressData = address;
+  
+  // Hide direct form when saved address is selected
+  const directForm = document.getElementById('direct-address-form');
+  if (directForm) directForm.classList.add('hidden');
   
   // Update hidden inputs
   document.getElementById('selectedAddressId').value = address.ma_dia_chi;
@@ -2612,7 +2695,250 @@ function selectAddress(address) {
       </div>
     `;
   }
+  
+  saveFormState();
 }
+
+// ===== DIRECT ADDRESS FORM FUNCTIONS =====
+function showDirectAddressForm() {
+  const directForm = document.getElementById('direct-address-form');
+  if (directForm) {
+    directForm.classList.remove('hidden');
+    initDirectAddressDropdowns();
+  }
+  
+  // Hide saved address contents
+  document.getElementById('selected-address-content').classList.add('hidden');
+  document.getElementById('selected-address-empty').classList.add('hidden');
+  
+  // If they have saved address, show the toggle back button
+  const btnBack = document.getElementById('btn-back-to-saved-address');
+  if (btnBack) {
+    if (selectedAddressData) {
+      btnBack.classList.remove('hidden');
+    } else {
+      btnBack.classList.add('hidden');
+    }
+  }
+  
+  registerFormStateListeners();
+  saveFormState();
+}
+
+function hideDirectAddressForm() {
+  const directForm = document.getElementById('direct-address-form');
+  if (directForm) directForm.classList.add('hidden');
+  
+  if (selectedAddressData) {
+    selectAddress(selectedAddressData);
+  } else {
+    document.getElementById('selected-address-empty').classList.remove('hidden');
+  }
+  
+  saveFormState();
+}
+
+function initDirectAddressDropdowns() {
+  const provinceSelect = document.getElementById('direct-province');
+  if (!provinceSelect || typeof VIETNAM_ADDRESS === 'undefined') return;
+  
+  // If already populated, don't repeat
+  if (provinceSelect.options.length > 1) return;
+  
+  provinceSelect.innerHTML = '<option value="">Chọn Tỉnh/Thành phố</option>';
+  
+  const sortedProvinces = Object.entries(VIETNAM_ADDRESS).sort((a, b) => a[1].name.localeCompare(b[1].name));
+  sortedProvinces.forEach(([key, prov]) => {
+    const opt = document.createElement('option');
+    opt.value = key;
+    opt.textContent = prov.name;
+    provinceSelect.appendChild(opt);
+  });
+}
+
+function onDirectProvinceChange(provinceKey) {
+  const districtSelect = document.getElementById('direct-district');
+  const wardSelect = document.getElementById('direct-ward');
+  if (!districtSelect || !wardSelect) return;
+  
+  districtSelect.innerHTML = '<option value="">Chọn Quận/Huyện</option>';
+  wardSelect.innerHTML = '<option value="">Chọn Phường/Xã</option>';
+  wardSelect.disabled = true;
+  
+  if (!provinceKey || typeof VIETNAM_ADDRESS === 'undefined') {
+    districtSelect.disabled = true;
+    saveFormState();
+    return;
+  }
+  
+  const prov = VIETNAM_ADDRESS[provinceKey];
+  if (!prov || !prov.districts) {
+    districtSelect.disabled = true;
+    saveFormState();
+    return;
+  }
+  
+  const sortedDistricts = Object.entries(prov.districts).sort((a, b) => a[1].name.localeCompare(b[1].name));
+  sortedDistricts.forEach(([key, dist]) => {
+    const opt = document.createElement('option');
+    opt.value = key;
+    opt.textContent = dist.name;
+    districtSelect.appendChild(opt);
+  });
+  
+  districtSelect.disabled = false;
+  saveFormState();
+}
+
+function onDirectDistrictChange(districtKey) {
+  const provinceKey = document.getElementById('direct-province').value;
+  const wardSelect = document.getElementById('direct-ward');
+  if (!wardSelect) return;
+  
+  wardSelect.innerHTML = '<option value="">Chọn Phường/Xã</option>';
+  
+  if (!provinceKey || !districtKey || typeof VIETNAM_ADDRESS === 'undefined') {
+    wardSelect.disabled = true;
+    saveFormState();
+    return;
+  }
+  
+  const prov = VIETNAM_ADDRESS[provinceKey];
+  if (!prov || !prov.districts) {
+    wardSelect.disabled = true;
+    saveFormState();
+    return;
+  }
+  
+  const dist = prov.districts[districtKey];
+  if (!dist || !dist.wards) {
+    wardSelect.disabled = true;
+    saveFormState();
+    return;
+  }
+  
+  const sortedWards = Object.entries(dist.wards).sort((a, b) => a[1].name.localeCompare(b[1].name));
+  sortedWards.forEach(([key, ward]) => {
+    const opt = document.createElement('option');
+    opt.value = key;
+    opt.textContent = ward.name;
+    wardSelect.appendChild(opt);
+  });
+  
+  wardSelect.disabled = false;
+  saveFormState();
+}
+
+async function saveDirectAddressToProfile(fullName, phone, provinceName, districtName, wardName, detailAddress) {
+  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  if (!user || !user.ma_kh) return;
+  
+  try {
+    const res = await fetch(`${API_URL}/address`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ma_kh: user.ma_kh,
+        ho_ten_nguoi_nhan: fullName,
+        so_dien_thoai: phone,
+        tinh_thanh: provinceName,
+        quan_huyen: districtName,
+        phuong_xa: wardName,
+        dia_chi_cu_the: detailAddress,
+        loai_dia_chi: 'nha_rieng',
+        mac_dinh: 1
+      })
+    });
+    const data = await res.json();
+    if (data.success) {
+      console.log('Saved direct address to profile successfully');
+    }
+  } catch (error) {
+    console.error('Error saving direct address to profile:', error);
+  }
+}
+
+// ===== CHECKOUT FORM STATE PRESERVATION =====
+function saveFormState() {
+  const fields = {
+    'direct-fullName': document.getElementById('direct-fullName')?.value || '',
+    'direct-phone': document.getElementById('direct-phone')?.value || '',
+    'direct-province': document.getElementById('direct-province')?.value || '',
+    'direct-district': document.getElementById('direct-district')?.value || '',
+    'direct-ward': document.getElementById('direct-ward')?.value || '',
+    'direct-address': document.getElementById('direct-address')?.value || '',
+    'note': document.getElementById('note')?.value || '',
+    'email': document.getElementById('email')?.value || '',
+    'direct-mode-active': document.getElementById('direct-address-form') && !document.getElementById('direct-address-form').classList.contains('hidden') ? 'true' : 'false'
+  };
+  sessionStorage.setItem('checkout-form-state', JSON.stringify(fields));
+}
+
+function restoreFormState() {
+  const saved = sessionStorage.getItem('checkout-form-state');
+  if (!saved) return;
+  
+  try {
+    const fields = JSON.parse(saved);
+    
+    if (document.getElementById('note') && fields['note']) document.getElementById('note').value = fields['note'];
+    if (document.getElementById('email') && fields['email']) document.getElementById('email').value = fields['email'];
+    
+    if (fields['direct-mode-active'] === 'true') {
+      showDirectAddressForm();
+      
+      if (document.getElementById('direct-fullName')) document.getElementById('direct-fullName').value = fields['direct-fullName'];
+      if (document.getElementById('direct-phone')) document.getElementById('direct-phone').value = fields['direct-phone'];
+      
+      if (fields['direct-province']) {
+        const provinceSelect = document.getElementById('direct-province');
+        if (provinceSelect) {
+          provinceSelect.value = fields['direct-province'];
+          onDirectProvinceChange(fields['direct-province']);
+          
+          if (fields['direct-district']) {
+            const districtSelect = document.getElementById('direct-district');
+            if (districtSelect) {
+              districtSelect.value = fields['direct-district'];
+              onDirectDistrictChange(fields['direct-district']);
+              
+              if (fields['direct-ward']) {
+                const wardSelect = document.getElementById('direct-ward');
+                if (wardSelect) {
+                  wardSelect.value = fields['direct-ward'];
+                }
+              }
+            }
+          }
+        }
+      }
+      
+      if (document.getElementById('direct-address')) document.getElementById('direct-address').value = fields['direct-address'];
+    }
+  } catch (e) {
+    console.error('Error restoring form state:', e);
+  }
+}
+
+function registerFormStateListeners() {
+  const ids = [
+    'direct-fullName', 'direct-phone', 'direct-province', 
+    'direct-district', 'direct-ward', 'direct-address', 
+    'note', 'email'
+  ];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      // Remove any existing listener first to prevent duplicates
+      el.removeEventListener('input', saveFormState);
+      el.removeEventListener('change', saveFormState);
+      
+      el.addEventListener('input', saveFormState);
+      el.addEventListener('change', saveFormState);
+    }
+  });
+}
+
 
 // Mở modal chọn địa chỉ
 async function openSelectAddressModal() {

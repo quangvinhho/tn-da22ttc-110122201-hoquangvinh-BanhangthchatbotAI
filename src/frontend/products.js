@@ -267,8 +267,11 @@ function filterByBrand(brand) {
 }
 
 function toggleBrandFilter(brand) {
-    const checkbox = document.querySelector(`.brand-filter[value="${brand}"]`);
-    const isChecked = checkbox ? checkbox.checked : false;
+    const isChecked = Array.from(document.querySelectorAll(`.brand-filter[value="${brand}"]`))
+        .some(cb => cb.checked);
+        
+    // Đồng bộ trạng thái checkbox giữa desktop và mobile
+    document.querySelectorAll(`.brand-filter[value="${brand}"]`).forEach(cb => cb.checked = isChecked);
     
     // Bỏ tích tất cả các checkbox brand khác (chỉ cho phép chọn 1)
     document.querySelectorAll('.brand-filter').forEach(cb => {
@@ -288,8 +291,11 @@ function toggleBrandFilter(brand) {
 }
 
 function toggleAccessoryFilter(type) {
-    const checkbox = document.querySelector(`.accessory-filter[value="${type}"]`);
-    const isChecked = checkbox ? checkbox.checked : false;
+    const isChecked = Array.from(document.querySelectorAll(`.accessory-filter[value="${type}"]`))
+        .some(cb => cb.checked);
+        
+    // Đồng bộ trạng thái checkbox giữa desktop và mobile
+    document.querySelectorAll(`.accessory-filter[value="${type}"]`).forEach(cb => cb.checked = isChecked);
     
     // Bỏ tích tất cả các checkbox accessory khác (chỉ cho phép chọn 1)
     document.querySelectorAll('.accessory-filter').forEach(cb => {
@@ -310,8 +316,11 @@ function toggleAccessoryFilter(type) {
 
 // Hàm toggle chung cho tất cả các loại filter - chỉ cho phép chọn 1 ô
 function toggleSingleFilter(filterClass, value) {
-    const checkbox = document.querySelector(`.${filterClass}[value="${value}"]`);
-    const isChecked = checkbox ? checkbox.checked : false;
+    const isChecked = Array.from(document.querySelectorAll(`.${filterClass}[value="${value}"]`))
+        .some(cb => cb.checked);
+        
+    // Đồng bộ trạng thái checkbox giữa desktop và mobile
+    document.querySelectorAll(`.${filterClass}[value="${value}"]`).forEach(cb => cb.checked = isChecked);
     
     // Bỏ tích tất cả các checkbox khác trong cùng nhóm (chỉ cho phép chọn 1)
     document.querySelectorAll(`.${filterClass}`).forEach(cb => {
@@ -369,8 +378,36 @@ function toggleFeatureFilter(value) {
 }
 
 function applyCustomPriceRange() {
-    const min = document.getElementById('minPrice')?.value;
-    const max = document.getElementById('maxPrice')?.value;
+    const minInputs = document.querySelectorAll('[id="minPrice"]');
+    const maxInputs = document.querySelectorAll('[id="maxPrice"]');
+    
+    let min = '';
+    let max = '';
+    
+    // Lấy giá trị không rỗng đầu tiên từ các ô nhập
+    minInputs.forEach(input => {
+        if (input.value) min = input.value;
+    });
+    maxInputs.forEach(input => {
+        if (input.value) max = input.value;
+    });
+    
+    // Nếu cả hai đều rỗng, lấy từ các ô đang hiển thị thực tế
+    if (!min || !max) {
+        minInputs.forEach(input => {
+            const rect = input.getBoundingClientRect();
+            if (rect.width > 0 && rect.height > 0) min = input.value;
+        });
+        maxInputs.forEach(input => {
+            const rect = input.getBoundingClientRect();
+            if (rect.width > 0 && rect.height > 0) max = input.value;
+        });
+    }
+    
+    // Đồng bộ giá trị giữa các ô nhập desktop và mobile
+    minInputs.forEach(input => input.value = min);
+    maxInputs.forEach(input => input.value = max);
+    
     if (min && max) {
         selectedPriceRanges = [`${min}-${max}`];
         document.querySelectorAll('.price-filter').forEach(cb => cb.checked = false);
@@ -449,15 +486,13 @@ function updateFilterTags() {
 }
 
 function removeBrandFilter(brand) {
-    const checkbox = document.querySelector(`.brand-filter[value="${brand}"]`);
-    if (checkbox) checkbox.checked = false;
+    document.querySelectorAll(`.brand-filter[value="${brand}"]`).forEach(cb => cb.checked = false);
     selectedBrands = selectedBrands.filter(b => b !== brand);
     applyFilters();
 }
 
 function removePriceFilter(range) {
-    const checkbox = document.querySelector(`.price-filter[value="${range}"]`);
-    if (checkbox) checkbox.checked = false;
+    document.querySelectorAll(`.price-filter[value="${range}"]`).forEach(cb => cb.checked = false);
     selectedPriceRanges = selectedPriceRanges.filter(r => r !== range);
     applyFilters();
 }
@@ -468,7 +503,12 @@ function clearAllFilters() {
     selectedCategories = [];
     searchQuery = '';
     
-    document.querySelectorAll('.brand-filter, .price-filter').forEach(cb => cb.checked = false);
+    // Bỏ tích tất cả checkbox thuộc mọi nhóm lọc trên cả desktop và mobile
+    document.querySelectorAll('.brand-filter, .price-filter, .os-filter, .rom-filter, .connect-filter, .battery-filter, .network-filter, .ram-filter, .sd-filter, .screen-filter, .refresh-filter, .feature-filter, .accessory-filter').forEach(cb => cb.checked = false);
+    
+    // Xóa trắng toàn bộ ô nhập khoảng giá tự do
+    document.querySelectorAll('[id="minPrice"]').forEach(input => input.value = '');
+    document.querySelectorAll('[id="maxPrice"]').forEach(input => input.value = '');
     
     updateFilterTags();
     currentPage = 1;
@@ -1103,30 +1143,85 @@ function parseUrlParams() {
     const brand = params.get('brand');
     const category = params.get('category');
     const search = params.get('search');
+    const type = params.get('type');
     
     if (brand) {
-        selectedBrands = [brand];
-        const checkbox = document.querySelector(`.brand-filter[value="${brand}"]`);
+        selectedBrands = [brand.toLowerCase()];
+        const checkbox = document.querySelector(`.brand-filter[value="${brand.toLowerCase()}"]`);
         if (checkbox) checkbox.checked = true;
     }
     
     if (category) {
-        selectedCategories = [category];
+        const catLower = category.toLowerCase();
+        if (catLower === 'phukien') {
+            selectedCategories = ['phukien'];
+        } else if (catLower === 'ipad' || catLower === 'tablet') {
+            searchQuery = 'tab';
+        } else if (catLower === 'dongho' || catLower === 'smartwatch') {
+            searchQuery = 'watch';
+        } else if (catLower === 'amthanh' || catLower === 'audio') {
+            selectedCategories = ['phukien'];
+            selectedAccessoryTypes = ['tainghe'];
+            const checkbox = document.querySelector(`.accessory-filter[value="tainghe"]`);
+            if (checkbox) checkbox.checked = true;
+        } else if (catLower === 'sac' || catLower === 'sacduphong') {
+            selectedCategories = ['phukien'];
+            selectedAccessoryTypes = ['sac'];
+            const checkbox = document.querySelector(`.accessory-filter[value="sac"]`);
+            if (checkbox) checkbox.checked = true;
+        } else if (catLower === 'cap') {
+            selectedCategories = ['phukien'];
+            selectedAccessoryTypes = ['cap'];
+            const checkbox = document.querySelector(`.accessory-filter[value="cap"]`);
+            if (checkbox) checkbox.checked = true;
+        } else if (catLower === 'oplung') {
+            selectedCategories = ['phukien'];
+            selectedAccessoryTypes = ['oplung'];
+            const checkbox = document.querySelector(`.accessory-filter[value="oplung"]`);
+            if (checkbox) checkbox.checked = true;
+        } else if (catLower === 'kinhcuongluc' || catLower === 'cuongluc') {
+            selectedCategories = ['phukien'];
+            selectedAccessoryTypes = ['cuongluc'];
+            const checkbox = document.querySelector(`.accessory-filter[value="cuongluc"]`);
+            if (checkbox) checkbox.checked = true;
+        } else if (catLower === 'camera') {
+            searchQuery = 'camera';
+        } else if (catLower === 'mang') {
+            searchQuery = 'mạng';
+        } else if (catLower === 'dienthoai' || catLower === 'phone') {
+            selectedCategories = ['dienthoai'];
+        } else if (catLower === 's26ultra') {
+            searchQuery = 's24 ultra';
+        } else if (catLower === 'iphone17') {
+            searchQuery = 'iphone 17';
+        } else {
+            selectedCategories = [category];
+        }
+    }
+    
+    if (type) {
+        selectedAccessoryTypes = [type.toLowerCase()];
+        const checkbox = document.querySelector(`.accessory-filter[value="${type.toLowerCase()}"]`);
+        if (checkbox) checkbox.checked = true;
+        selectedCategories = ['phukien'];
     }
     
     if (search) {
         searchQuery = search;
     }
 
-    const isAccessorySearch = search && (
-        search.toLowerCase().includes('ốp') ||
-        search.toLowerCase().includes('sạc') ||
-        search.toLowerCase().includes('cáp') ||
-        search.toLowerCase().includes('tai nghe') ||
-        search.toLowerCase().includes('cường lực')
+    const isAccessorySearch = (category === 'phukien' || type ||
+        ['amthanh', 'sac', 'cap', 'oplung', 'kinhcuongluc', 'cuongluc', 'sacduphong'].includes(category?.toLowerCase()) ||
+        (search && (
+            search.toLowerCase().includes('ốp') ||
+            search.toLowerCase().includes('sạc') ||
+            search.toLowerCase().includes('cáp') ||
+            search.toLowerCase().includes('tai nghe') ||
+            search.toLowerCase().includes('cường lực')
+        ))
     );
     
-    if (category === 'phukien' || isAccessorySearch) {
+    if (isAccessorySearch) {
         const accFilter = document.getElementById('accessoryFilter');
         if (accFilter) accFilter.style.display = 'block';
     }
@@ -1176,6 +1271,40 @@ function initFilterSidebarScroll() {
     setTimeout(adjustSidebar, 1500);
 }
 
+// Hàm nhân bản bộ lọc sang giao diện di động (Mobile)
+function initMobileFilters() {
+    const mobileContent = document.getElementById('mobileFilterContent');
+    const desktopFilters = document.querySelector('#filterSidebarInner .filter-scroll');
+    
+    if (mobileContent && desktopFilters) {
+        mobileContent.innerHTML = '';
+        const clone = desktopFilters.cloneNode(true);
+        mobileContent.appendChild(clone);
+        
+        // Đồng bộ trạng thái checked của tất cả checkbox ban đầu từ desktop sang mobile
+        desktopFilters.querySelectorAll('input[type="checkbox"]').forEach(desktopCb => {
+            const val = desktopCb.value;
+            const classes = Array.from(desktopCb.classList);
+            if (classes.length > 0) {
+                // Sử dụng class đầu tiên làm selector (ví dụ: brand-filter, price-filter...)
+                const cls = classes[0];
+                const mobileCb = mobileContent.querySelector(`.${cls}[value="${val}"]`);
+                if (mobileCb) {
+                    mobileCb.checked = desktopCb.checked;
+                }
+            }
+        });
+        
+        // Đồng bộ giá trị của ô nhập khoảng giá tự do ban đầu
+        const minVal = document.querySelector('#filterSidebarInner #minPrice')?.value;
+        const maxVal = document.querySelector('#filterSidebarInner #maxPrice')?.value;
+        if (minVal || maxVal) {
+            mobileContent.querySelectorAll('[id="minPrice"]').forEach(inp => inp.value = minVal || '');
+            mobileContent.querySelectorAll('[id="maxPrice"]').forEach(inp => inp.value = maxVal || '');
+        }
+    }
+}
+
 // --- INITIALIZE ---
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('Products page initializing...');
@@ -1211,6 +1340,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Render products
         renderProducts();
         updateFilterTags();
+        
+        // Nhân bản bộ lọc sang sidebar mobile
+        initMobileFilters();
         
         // Khởi tạo điều chỉnh sidebar khi scroll
         initFilterSidebarScroll();

@@ -458,6 +458,41 @@
     const messagesContainer = document.getElementById('ai-chat-messages');
     messagesContainer.innerHTML = '';
     
+    // Thử load từ sessionStorage trước để giữ trạng thái mượt mà khi chuyển trang
+    const savedHistory = sessionStorage.getItem('ai-chatbot-messages-history');
+    const savedConvId = sessionStorage.getItem('ai-chatbot-current-conversation-id');
+    
+    if (savedHistory) {
+      try {
+        const messages = JSON.parse(savedHistory);
+        if (savedConvId) {
+          currentConversationId = parseInt(savedConvId) || savedConvId;
+        }
+        
+        // Temporarily detach save to avoid endless loop or writing duplicates during restore
+        const originalSave = saveChatHistory;
+        saveChatHistory = () => {};
+        
+        messages.forEach(msg => {
+          if (msg.role === 'user') {
+            addUserMessage(msg.content, msg.isHTML);
+          } else {
+            addBotMessage(msg.content, true);
+          }
+        });
+        
+        // Restore save handler
+        saveChatHistory = originalSave;
+        
+        if (userId) {
+          loadConversations();
+        }
+        return;
+      } catch (e) {
+        console.error('Error loading saved chat history:', e);
+      }
+    }
+    
     if (!userId) {
       addBotMessage('Xin chào! Tôi là QuangHưng, trợ lý AI của QuangHưng Mobile. 📱\n\nTôi có thể giúp bạn tư vấn điện thoại, thông tin khuyến mãi, bảo hành và nhiều hơn nữa.\n\n💡 Đăng nhập để lưu lịch sử chat của bạn!');
       renderSuggestions(DEFAULT_SUGGESTIONS);
@@ -511,6 +546,7 @@
     
     messagesContainer.appendChild(messageDiv);
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    saveChatHistory();
   }
   
   let currentUtterance = null;
@@ -709,6 +745,25 @@
     };
   }
   
+  // Save chat history to sessionStorage
+  function saveChatHistory() {
+    const container = document.getElementById('ai-chat-messages');
+    if (!container) return;
+    const messages = [];
+    container.querySelectorAll('.ai-message').forEach(el => {
+      const isUser = el.classList.contains('user');
+      const contentEl = el.querySelector('.ai-msg-content');
+      const content = contentEl ? contentEl.innerHTML : el.innerHTML;
+      messages.push({
+        role: isUser ? 'user' : 'bot',
+        content: content,
+        isHTML: !isUser
+      });
+    });
+    sessionStorage.setItem('ai-chatbot-messages-history', JSON.stringify(messages));
+    sessionStorage.setItem('ai-chatbot-current-conversation-id', currentConversationId || '');
+  }
+
   // Add user message
   function addUserMessage(text, isHTML = false) {
     const messagesContainer = document.getElementById('ai-chat-messages');
@@ -721,6 +776,7 @@
     }
     messagesContainer.appendChild(messageDiv);
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    saveChatHistory();
   }
   
   // Show typing indicator
@@ -831,6 +887,7 @@
 
     if (!customMessage) {
       input.value = '';
+      sessionStorage.removeItem('ai-chatbot-draft-input');
     }
     removePreviewImage();
     input.disabled = true;
@@ -900,31 +957,36 @@
         chatWindow.classList.toggle('active');
 
         if (chatWindow.classList.contains('active')) {
+          sessionStorage.setItem('ai-chatbot-active', 'true');
           hideTooltip();
           window.dispatchEvent(new CustomEvent('chatbot-opened'));
 
           const userChanged = checkUserChanged();
 
           if (!historyLoaded || userChanged) {
-          await loadInitialChat();
-          historyLoaded = true;
+            await loadInitialChat();
+            historyLoaded = true;
+          }
+          const draftInput = sessionStorage.getItem('ai-chatbot-draft-input');
+          if (draftInput) {
+            input.value = draftInput;
+          }
+          input.focus();
+        } else {
+          sessionStorage.setItem('ai-chatbot-active', 'false');
+          showTooltip();
+          window.dispatchEvent(new CustomEvent('chatbot-closed'));
         }
-        input.focus();
-      } else {
+      });
+      
+      // Close chat
+      closeBtn.addEventListener('click', () => {
+        chatWindow.classList.remove('active');
+        sessionStorage.setItem('ai-chatbot-active', 'false');
+        closeSidebar();
         showTooltip();
-        // Phát sự kiện để hiện floating share
         window.dispatchEvent(new CustomEvent('chatbot-closed'));
-      }
-    });
-    
-    // Close chat
-    closeBtn.addEventListener('click', () => {
-      chatWindow.classList.remove('active');
-      closeSidebar();
-      showTooltip();
-      // Phát sự kiện để hiện floating share
-      window.dispatchEvent(new CustomEvent('chatbot-closed'));
-    });
+      });
     
     // Toggle sidebar
     menuBtn.addEventListener('click', () => {
@@ -986,7 +1048,28 @@
         // Fallback graceful — trang hiện tại chưa load helper cart
         alert('Không thể thêm vào giỏ ở trang này. Vui lòng vào trang chi tiết sản phẩm.');
       }
-    });
+    // Auto-open chatbot if it was active in sessionStorage
+    const wasActive = sessionStorage.getItem('ai-chatbot-active') === 'true';
+    if (wasActive) {
+      chatWindow.classList.add('active');
+      hideTooltip();
+      
+      const userChanged = checkUserChanged();
+      loadInitialChat().then(() => {
+        historyLoaded = true;
+        const draftInput = sessionStorage.getItem('ai-chatbot-draft-input');
+        if (draftInput && input) {
+          input.value = draftInput;
+        }
+        if (input) input.focus();
+      });
+    }
+
+    if (input) {
+      input.addEventListener('input', () => {
+        sessionStorage.setItem('ai-chatbot-draft-input', input.value);
+      });
+    }
 
     // Pre-load / warm up voices for browsers that load them asynchronously
     if (typeof window !== 'undefined' && window.speechSynthesis) {

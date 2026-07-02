@@ -123,15 +123,7 @@ Hãy nhận định dòng sản phẩm và màu sắc cụ thể nào đang đem
 
         const messages = [{ role: 'user', content: prompt }];
         
-        // Try Gemini first
-        if (callGemini) {
-            const geminiResult = await callGemini(systemPrompt, messages, { temperature: 0.6, maxTokens: 600 });
-            if (geminiResult.ok && geminiResult.text) {
-                return geminiResult.text;
-            }
-        }
-        
-        // Fallback to Groq
+        // Try Groq first (highly reliable with multiple fallback API keys)
         if (callGroqWithRetry) {
             const groqResult = await callGroqWithRetry({
                 model: 'llama-3.3-70b-versatile',
@@ -144,6 +136,15 @@ Hãy nhận định dòng sản phẩm và màu sắc cụ thể nào đang đem
             });
             if (groqResult.ok) {
                 return groqResult.data.choices[0]?.message?.content || "Không có phản hồi từ AI.";
+            }
+            console.warn('[AI Report] Groq failed, trying fallback to Gemini:', groqResult.error);
+        }
+        
+        // Fallback to Gemini
+        if (callGemini) {
+            const geminiResult = await callGemini(systemPrompt, messages, { temperature: 0.6, maxTokens: 600 });
+            if (geminiResult.ok && geminiResult.text) {
+                return geminiResult.text;
             }
         }
         
@@ -312,18 +313,23 @@ router.get('/profit-data', checkAdmin, checkSuperAdmin, async (req, res) => {
         const periodLabel = getPeriodLabel(period, fromDate, toDate, year, month);
 
         // A. Summary stats (Revenue vs Import COGS)
-        const [[summary]] = await pool.query(`
-            SELECT 
-                COALESCE(SUM(ct.so_luong * ct.gia), 0) as total_revenue,
-                COALESCE(SUM(ct.so_luong * ct.gia_nhap), 0) as total_cost
+        const [[revSummary]] = await pool.query(`
+            SELECT COALESCE(SUM(tong_tien), 0) as total_revenue
+            FROM don_hang
+            WHERE thoi_gian >= ? AND thoi_gian <= ?
+            AND trang_thai != 'cancelled'
+        `, [start, end]);
+
+        const [[costSummary]] = await pool.query(`
+            SELECT COALESCE(SUM(ct.so_luong * ct.gia_nhap), 0) as total_cost
             FROM chi_tiet_don_hang ct
             JOIN don_hang dh ON ct.ma_don = dh.ma_don
             WHERE dh.thoi_gian >= ? AND dh.thoi_gian <= ?
             AND dh.trang_thai != 'cancelled'
         `, [start, end]);
 
-        const totalRevenue = parseFloat(summary.total_revenue);
-        const totalCost = parseFloat(summary.total_cost);
+        const totalRevenue = parseFloat(revSummary.total_revenue);
+        const totalCost = parseFloat(costSummary.total_cost);
         const totalProfit = totalRevenue - totalCost;
         const margin = totalRevenue > 0 ? ((totalProfit / totalRevenue) * 100).toFixed(1) : '0';
 
@@ -347,18 +353,28 @@ router.get('/profit-data', checkAdmin, checkSuperAdmin, async (req, res) => {
         `, [start, end]);
 
         // C. Monthly details for chart comparison (Revenue vs Cost vs Profit)
-        const [monthlyFinancials] = await pool.query(`
+        const [monthlyFinancialsRaw] = await pool.query(`
             SELECT 
                 DATE_FORMAT(dh.thoi_gian, '%m/%Y') as label,
-                SUM(ct.so_luong * ct.gia) as revenue,
-                SUM(ct.so_luong * ct.gia_nhap) as cost
-            FROM chi_tiet_don_hang ct
-            JOIN don_hang dh ON ct.ma_don = dh.ma_don
-            WHERE dh.thoi_gian >= ? AND dh.thoi_gian <= ?
-            AND dh.trang_thai != 'cancelled'
+                SUM(dh.tong_tien) as revenue,
+                SUM(cost_sub.total_cost) as cost
+            FROM don_hang dh
+            JOIN (
+                SELECT ma_don, SUM(so_luong * gia_nhap) as total_cost
+                FROM chi_tiet_don_hang
+                GROUP BY ma_don
+            ) cost_sub ON dh.ma_don = cost_sub.ma_don
+            WHERE dh.thoi_gian >= ? AND dh.thoi_gian <= ? AND dh.trang_thai != 'cancelled'
             GROUP BY DATE_FORMAT(dh.thoi_gian, '%m/%Y')
             ORDER BY MIN(dh.thoi_gian)
         `, [start, end]);
+
+        const monthlyFinancials = monthlyFinancialsRaw.map(f => ({
+            label: f.label,
+            revenue: parseFloat(f.revenue),
+            cost: parseFloat(f.cost),
+            profit: parseFloat(f.revenue) - parseFloat(f.cost)
+        }));
 
         res.json({
             success: true,
@@ -372,12 +388,7 @@ router.get('/profit-data', checkAdmin, checkSuperAdmin, async (req, res) => {
                     margin
                 },
                 topProducts,
-                monthlyFinancials: monthlyFinancials.map(f => ({
-                    label: f.label,
-                    revenue: parseFloat(f.revenue),
-                    cost: parseFloat(f.cost),
-                    profit: parseFloat(f.revenue) - parseFloat(f.cost)
-                }))
+                monthlyFinancials
             }
         });
     } catch (error) {
@@ -393,18 +404,23 @@ router.get('/profit-ai-advice', checkAdmin, checkSuperAdmin, async (req, res) =>
         const { start, end } = getDateRange(period, fromDate, toDate, year, month);
         const periodLabel = getPeriodLabel(period, fromDate, toDate, year, month);
 
-        const [[summary]] = await pool.query(`
-            SELECT 
-                COALESCE(SUM(ct.so_luong * ct.gia), 0) as total_revenue,
-                COALESCE(SUM(ct.so_luong * ct.gia_nhap), 0) as total_cost
+        const [[revSummary]] = await pool.query(`
+            SELECT COALESCE(SUM(tong_tien), 0) as total_revenue
+            FROM don_hang
+            WHERE thoi_gian >= ? AND thoi_gian <= ?
+            AND trang_thai != 'cancelled'
+        `, [start, end]);
+
+        const [[costSummary]] = await pool.query(`
+            SELECT COALESCE(SUM(ct.so_luong * ct.gia_nhap), 0) as total_cost
             FROM chi_tiet_don_hang ct
             JOIN don_hang dh ON ct.ma_don = dh.ma_don
             WHERE dh.thoi_gian >= ? AND dh.thoi_gian <= ?
             AND dh.trang_thai != 'cancelled'
         `, [start, end]);
 
-        const totalRevenue = parseFloat(summary.total_revenue);
-        const totalCost = parseFloat(summary.total_cost);
+        const totalRevenue = parseFloat(revSummary.total_revenue);
+        const totalCost = parseFloat(costSummary.total_cost);
         const totalProfit = totalRevenue - totalCost;
         const margin = totalRevenue > 0 ? ((totalProfit / totalRevenue) * 100).toFixed(1) : '0';
 
@@ -471,10 +487,14 @@ router.get('/export/excel', checkAdmin, checkSuperAdmin, async (req, res) => {
         const [profitData] = await pool.query(`
             SELECT 
                 DATE_FORMAT(dh.thoi_gian, '%m/%Y') as month_str, 
-                SUM(ct.so_luong * ct.gia) as revenue,
-                SUM(ct.so_luong * ct.gia_nhap) as cost
-            FROM chi_tiet_don_hang ct
-            JOIN don_hang dh ON ct.ma_don = dh.ma_don
+                SUM(dh.tong_tien) as revenue,
+                SUM(cost_sub.total_cost) as cost
+            FROM don_hang dh
+            JOIN (
+                SELECT ma_don, SUM(so_luong * gia_nhap) as total_cost
+                FROM chi_tiet_don_hang
+                GROUP BY ma_don
+            ) cost_sub ON dh.ma_don = cost_sub.ma_don
             WHERE dh.thoi_gian >= ? AND dh.thoi_gian <= ? AND dh.trang_thai != 'cancelled'
             GROUP BY DATE_FORMAT(dh.thoi_gian, '%m/%Y')
             ORDER BY MIN(dh.thoi_gian)
