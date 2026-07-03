@@ -31,6 +31,64 @@ const checkSuperAdmin = (req, res, next) => {
     next();
 };
 
+const checkPermission = (moduleName) => {
+    const modulesToCheck = Array.isArray(moduleName) ? moduleName : [moduleName];
+    return (req, res, next) => {
+        if (!req.session || !req.session.user) {
+            return res.status(401).json({
+                success: false,
+                message: 'Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.',
+                code: 'AUTH_REQUIRED'
+            });
+        }
+
+        // Superadmin có toàn quyền
+        if (req.session.user.quyen === 'superadmin') {
+            return next();
+        }
+
+        // Kiểm tra phân quyền chi tiết của nhân viên
+        let allowed = [];
+        if (req.session.user.allowed_modules) {
+            try {
+                allowed = typeof req.session.user.allowed_modules === 'string'
+                    ? JSON.parse(req.session.user.allowed_modules)
+                    : req.session.user.allowed_modules;
+            } catch (e) {
+                console.error('Error parsing allowed_modules in checkPermission middleware:', e);
+            }
+        }
+
+        const hasDynamicPerm = modulesToCheck.some(m => Array.isArray(allowed) && allowed.includes(m));
+        if (hasDynamicPerm) {
+            return next();
+        }
+
+        // Fallback: Kiểm tra phân quyền theo vai trò mặc định
+        const role = req.session.user.quyen;
+        const defaultRolePermissions = {
+            'banhang': ['nav-orders', 'nav-products', 'nav-brands', 'nav-imei', 'nav-shifts', 'nav-attendance', 'nav-pos', 'nav-warranties', 'nav-promotions'],
+            'kho': ['nav-products', 'nav-inventory', 'nav-brands', 'nav-colors', 'nav-storages', 'nav-imei', 'nav-shifts', 'nav-attendance'],
+            'ketoan': ['nav-revenue-report', 'nav-expenses', 'nav-profit-report', 'nav-payroll', 'nav-shifts', 'nav-attendance'],
+            'cskh': ['nav-chatbot-rag', 'nav-notifications', 'nav-reviews', 'nav-contacts', 'nav-warranties', 'nav-shifts', 'nav-attendance'],
+            'nhanvien': ['nav-orders', 'nav-products', 'nav-brands', 'nav-shifts', 'nav-attendance', 'nav-pos', 'nav-reviews', 'nav-warranties']
+        };
+
+        const roleAllowed = defaultRolePermissions[role] || [];
+        const hasRolePerm = modulesToCheck.some(m => roleAllowed.includes(m));
+        if (hasRolePerm) {
+            return next();
+        }
+
+        return res.status(403).json({
+            success: false,
+            message: `Bạn không có quyền thực hiện chức năng này (yêu cầu quyền: ${modulesToCheck.join(', ')}).`,
+            code: 'PERMISSION_DENIED'
+        });
+    };
+};
+
+
 // ==================== DATE PARSING HELPER ====================
 function getDateRange(period, fromDate, toDate, year, month) {
     let start, end;
@@ -306,7 +364,7 @@ router.get('/revenue-ai-advice', checkAdmin, async (req, res) => {
 });
 
 // 2. GET /api/admin/reports/profit-data
-router.get('/profit-data', checkAdmin, checkSuperAdmin, async (req, res) => {
+router.get('/profit-data', checkAdmin, checkPermission('nav-profit-report'), async (req, res) => {
     try {
         const { period = 'month', fromDate, toDate, year, month } = req.query;
         const { start, end } = getDateRange(period, fromDate, toDate, year, month);
@@ -398,7 +456,7 @@ router.get('/profit-data', checkAdmin, checkSuperAdmin, async (req, res) => {
 });
 
 // 2.5 GET /api/admin/reports/profit-ai-advice
-router.get('/profit-ai-advice', checkAdmin, checkSuperAdmin, async (req, res) => {
+router.get('/profit-ai-advice', checkAdmin, checkPermission('nav-profit-report'), async (req, res) => {
     try {
         const { period = 'month', fromDate, toDate, year, month } = req.query;
         const { start, end } = getDateRange(period, fromDate, toDate, year, month);
@@ -457,7 +515,7 @@ router.get('/profit-ai-advice', checkAdmin, checkSuperAdmin, async (req, res) =>
 });
 
 // 3. GET /api/admin/reports/export/excel
-router.get('/export/excel', checkAdmin, checkSuperAdmin, async (req, res) => {
+router.get('/export/excel', checkAdmin, checkPermission(['nav-revenue-report', 'nav-profit-report']), async (req, res) => {
     try {
         const { period = 'month', fromDate, toDate, year, month } = req.query;
         const { start, end } = getDateRange(period, fromDate, toDate, year, month);
@@ -585,7 +643,7 @@ router.get('/export/excel', checkAdmin, checkSuperAdmin, async (req, res) => {
 });
 
 // 4. GET /api/admin/reports/export/word
-router.get('/export/word', checkAdmin, checkSuperAdmin, async (req, res) => {
+router.get('/export/word', checkAdmin, checkPermission(['nav-revenue-report', 'nav-profit-report']), async (req, res) => {
     try {
         const { period = 'month', fromDate, toDate, year, month } = req.query;
         const { start, end } = getDateRange(period, fromDate, toDate, year, month);

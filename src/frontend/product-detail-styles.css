@@ -23,13 +23,7 @@
 
 .main-image-container img {
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
-  cursor: zoom-in;
-}
-
-/* Zoom 2x theo vị trí cursor — kích hoạt bằng class .zoom-active đặt khi mouseenter */
-.main-image-container.zoom-active img {
-  transform: scale(2);
-  transition: transform 0.1s linear;
+  cursor: pointer;
 }
 
 /* ===== LIGHTBOX ===== */

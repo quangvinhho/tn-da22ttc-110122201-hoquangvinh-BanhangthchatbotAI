@@ -481,11 +481,7 @@ function renderThumbnails(input) {
     thumb.setAttribute('data-index', i);
     thumb.onclick = () => selectThumbnail(i, img);
 
-    const safeBadge = colorBadge
-      ? `<div class="absolute -top-1 -right-1 max-w-[80px] truncate px-1.5 py-0.5 rounded bg-red-500 text-white text-[10px] font-semibold shadow" title="${colorBadge}">${colorBadge}</div>`
-      : '';
-
-    if (isFirst && !colorBadge) {
+    if (isFirst) {
       thumb.innerHTML = `
         <div class="relative w-full h-full">
           <img src="${img}" alt="Ảnh ${i + 1}" class="w-full h-full object-contain" onerror="this.parentElement.parentElement.style.display='none'" />
@@ -495,7 +491,7 @@ function renderThumbnails(input) {
         </div>
       `;
     } else {
-      thumb.innerHTML = `${safeBadge}<img src="${img}" alt="Ảnh ${i + 1}" class="w-full h-full object-contain" onerror="this.parentElement.style.display='none'" />`;
+      thumb.innerHTML = `<img src="${img}" alt="Ảnh ${i + 1}" class="w-full h-full object-contain" onerror="this.parentElement.style.display='none'" />`;
     }
 
     container.appendChild(thumb);
@@ -2280,24 +2276,13 @@ function _lightboxKeyHandler(e) {
     else if (e.key === 'ArrowRight') lightboxNav(1);
 }
 
-// Zoom-hover ảnh chính theo vị trí cursor + click mở lightbox
+// Click mở lightbox (đã bỏ hiệu ứng zoom-hover ảnh chính)
 function _initMainImageInteractions() {
     const container = document.querySelector('.main-image-container');
     const mainImage = document.getElementById('mainProductImage');
     if (!container || !mainImage || container._zoomInit) return;
     container._zoomInit = true;
 
-    container.addEventListener('mouseenter', () => container.classList.add('zoom-active'));
-    container.addEventListener('mouseleave', () => {
-        container.classList.remove('zoom-active');
-        mainImage.style.transformOrigin = 'center center';
-    });
-    container.addEventListener('mousemove', (e) => {
-        const rect = container.getBoundingClientRect();
-        const x = ((e.clientX - rect.left) / rect.width) * 100;
-        const y = ((e.clientY - rect.top) / rect.height) * 100;
-        mainImage.style.transformOrigin = `${x}% ${y}%`;
-    });
     mainImage.addEventListener('click', () => openLightbox(mainImage.src));
 }
 

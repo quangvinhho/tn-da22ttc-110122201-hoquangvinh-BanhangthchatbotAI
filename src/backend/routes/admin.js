@@ -297,6 +297,7 @@ const checkSuperAdmin = (req, res, next) => {
 
 // Middleware kiểm tra quyền truy cập module chi tiết (dành cho nhân viên) hoặc SuperAdmin
 const checkPermission = (moduleName) => {
+    const modulesToCheck = Array.isArray(moduleName) ? moduleName : [moduleName];
     return (req, res, next) => {
         if (!req.session || !req.session.user) {
             return res.status(401).json({
@@ -323,17 +324,35 @@ const checkPermission = (moduleName) => {
             }
         }
 
-        if (Array.isArray(allowed) && allowed.includes(moduleName)) {
+        const hasDynamicPerm = modulesToCheck.some(m => Array.isArray(allowed) && allowed.includes(m));
+        if (hasDynamicPerm) {
+            return next();
+        }
+
+        // Fallback: Kiểm tra phân quyền theo vai trò mặc định
+        const role = req.session.user.quyen;
+        const defaultRolePermissions = {
+            'banhang': ['nav-orders', 'nav-products', 'nav-brands', 'nav-imei', 'nav-shifts', 'nav-attendance', 'nav-pos', 'nav-warranties', 'nav-promotions'],
+            'kho': ['nav-products', 'nav-inventory', 'nav-brands', 'nav-colors', 'nav-storages', 'nav-imei', 'nav-shifts', 'nav-attendance'],
+            'ketoan': ['nav-revenue-report', 'nav-expenses', 'nav-profit-report', 'nav-payroll', 'nav-shifts', 'nav-attendance'],
+            'cskh': ['nav-chatbot-rag', 'nav-notifications', 'nav-reviews', 'nav-contacts', 'nav-warranties', 'nav-shifts', 'nav-attendance'],
+            'nhanvien': ['nav-orders', 'nav-products', 'nav-brands', 'nav-shifts', 'nav-attendance', 'nav-pos', 'nav-reviews', 'nav-warranties']
+        };
+
+        const roleAllowed = defaultRolePermissions[role] || [];
+        const hasRolePerm = modulesToCheck.some(m => roleAllowed.includes(m));
+        if (hasRolePerm) {
             return next();
         }
 
         return res.status(403).json({
             success: false,
-            message: `Bạn không có quyền thực hiện chức năng này (yêu cầu quyền: ${moduleName}).`,
+            message: `Bạn không có quyền thực hiện chức năng này (yêu cầu quyền: ${modulesToCheck.join(', ')}).`,
             code: 'PERMISSION_DENIED'
         });
     };
 };
+
 
 // Áp dụng middleware cho TẤT CẢ routes trong router này
 router.use(checkAdmin);
@@ -2188,7 +2207,7 @@ router.get('/dashboard', async (req, res) => {
 // ==================== ADVANCED DASHBOARD ANALYTICS ====================
 
 // GET /api/admin/dashboard/revenue - Doanh thu theo khoảng thời gian (tuần/tháng/năm)
-router.get('/dashboard/revenue', checkSuperAdmin, async (req, res) => {
+router.get('/dashboard/revenue', checkPermission(['nav-dashboard', 'nav-revenue-report']), async (req, res) => {
     try {
         const { period = 'week', year, month } = req.query;
         const currentYear = year || new Date().getFullYear();
@@ -2393,7 +2412,7 @@ router.get('/dashboard/revenue', checkSuperAdmin, async (req, res) => {
 });
 
 // GET /api/admin/dashboard/inventory - Thống kê tồn kho
-router.get('/dashboard/inventory', checkSuperAdmin, async (req, res) => {
+router.get('/dashboard/inventory', checkPermission(['nav-dashboard', 'nav-inventory']), async (req, res) => {
     try {
         // Tổng quan tồn kho
         const [[inventoryStats]] = await pool.query(`
@@ -2465,7 +2484,7 @@ router.get('/dashboard/inventory', checkSuperAdmin, async (req, res) => {
 });
 
 // GET /api/admin/dashboard/sales-analytics - Phân tích bán hàng chi tiết
-router.get('/dashboard/sales-analytics', checkSuperAdmin, async (req, res) => {
+router.get('/dashboard/sales-analytics', checkPermission('nav-dashboard'), async (req, res) => {
     try {
         // Top sản phẩm bán chạy
         const [topProducts] = await pool.query(`
@@ -2548,7 +2567,7 @@ router.get('/dashboard/sales-analytics', checkSuperAdmin, async (req, res) => {
 });
 
 // GET /api/admin/dashboard/overview - Tổng quan dashboard với so sánh
-router.get('/dashboard/overview', checkSuperAdmin, async (req, res) => {
+router.get('/dashboard/overview', checkPermission('nav-dashboard'), async (req, res) => {
     try {
         const today = new Date();
         const currentMonth = today.getMonth() + 1;
@@ -2786,7 +2805,7 @@ router.get('/dashboard/overview', checkSuperAdmin, async (req, res) => {
 // ==================== MONTHLY STATS FILTER ====================
 
 // GET /api/admin/dashboard/monthly-stats - Lấy thống kê theo tháng cụ thể
-router.get('/dashboard/monthly-stats', checkSuperAdmin, async (req, res) => {
+router.get('/dashboard/monthly-stats', checkPermission('nav-dashboard'), async (req, res) => {
     try {
         const { month, year } = req.query;
         
@@ -3156,7 +3175,7 @@ router.delete('/news/:id', checkSuperAdmin, async (req, res) => {
 // ==================== CONTACT MANAGEMENT ====================
 
 // GET /api/admin/contacts - Lấy tất cả liên hệ
-router.get('/contacts', checkSuperAdmin, async (req, res) => {
+router.get('/contacts', checkPermission('nav-contacts'), async (req, res) => {
     try {
         const { status } = req.query;
         let query = 'SELECT * FROM lien_he';
@@ -3178,7 +3197,7 @@ router.get('/contacts', checkSuperAdmin, async (req, res) => {
 });
 
 // GET /api/admin/contacts/stats - Thống kê liên hệ
-router.get('/contacts/stats', checkSuperAdmin, async (req, res) => {
+router.get('/contacts/stats', checkPermission('nav-contacts'), async (req, res) => {
     try {
         const [[stats]] = await pool.query(`
             SELECT 
@@ -3477,7 +3496,7 @@ router.get('/notifications', async (req, res) => {
 // ==================== KHUYẾN MÃI (PROMOTIONS) ====================
 
 // GET /api/admin/promotions - Lấy tất cả khuyến mãi
-router.get('/promotions', checkSuperAdmin, async (req, res) => {
+router.get('/promotions', checkPermission('nav-promotions'), async (req, res) => {
     try {
         const [promotions] = await pool.query(`
             SELECT km.*,
@@ -3572,7 +3591,7 @@ router.get('/promotions/:id', async (req, res) => {
 });
 
 // POST /api/admin/promotions - Thêm khuyến mãi mới
-router.post('/promotions', checkSuperAdmin, async (req, res) => {
+router.post('/promotions', checkPermission('nav-promotions'), async (req, res) => {
     try {
         const {
             code, loai_km, loai, gia_tri, mo_ta,
@@ -3658,7 +3677,7 @@ router.post('/promotions', checkSuperAdmin, async (req, res) => {
 });
 
 // PUT /api/admin/promotions/:id - Cập nhật khuyến mãi
-router.put('/promotions/:id', checkSuperAdmin, async (req, res) => {
+router.put('/promotions/:id', checkPermission('nav-promotions'), async (req, res) => {
     try {
         const { id } = req.params;
         const { 
@@ -3720,7 +3739,7 @@ router.put('/promotions/:id', checkSuperAdmin, async (req, res) => {
 });
 
 // DELETE /api/admin/promotions/:id - Xóa khuyến mãi
-router.delete('/promotions/:id', checkSuperAdmin, async (req, res) => {
+router.delete('/promotions/:id', checkPermission('nav-promotions'), async (req, res) => {
     try {
         const { id } = req.params;
         

@@ -1855,7 +1855,7 @@ Trả lời (HTML thuần, KHÔNG dùng markdown **/*, có thể dùng <br>, <st
               message: message,
               userId: userId,
               conversationId: currentConversationId,
-              history: history.slice(0, -1),
+              history: history,
               interests: userInterests,
               context_state: contextState
             }),

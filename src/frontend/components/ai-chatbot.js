@@ -7,6 +7,7 @@
   let historyLoaded = false;
   let sidebarOpen = false;
   let currentImageBase64 = null;
+  let isRestoringHistory = false;
   // Lấy userId từ localStorage
   function getUserId() {
     try {
@@ -469,9 +470,8 @@
           currentConversationId = parseInt(savedConvId) || savedConvId;
         }
         
-        // Temporarily detach save to avoid endless loop or writing duplicates during restore
-        const originalSave = saveChatHistory;
-        saveChatHistory = () => {};
+        // Temporarily set flag to avoid writing duplicates during restore
+        isRestoringHistory = true;
         
         messages.forEach(msg => {
           if (msg.role === 'user') {
@@ -481,8 +481,8 @@
           }
         });
         
-        // Restore save handler
-        saveChatHistory = originalSave;
+        // Reset flag
+        isRestoringHistory = false;
         
         if (userId) {
           loadConversations();
@@ -747,6 +747,7 @@
   
   // Save chat history to sessionStorage
   function saveChatHistory() {
+    if (isRestoringHistory) return;
     const container = document.getElementById('ai-chat-messages');
     if (!container) return;
     const messages = [];
@@ -1048,6 +1049,7 @@
         // Fallback graceful — trang hiện tại chưa load helper cart
         alert('Không thể thêm vào giỏ ở trang này. Vui lòng vào trang chi tiết sản phẩm.');
       }
+    });
     // Auto-open chatbot if it was active in sessionStorage
     const wasActive = sessionStorage.getItem('ai-chatbot-active') === 'true';
     if (wasActive) {

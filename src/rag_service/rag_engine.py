@@ -80,6 +80,50 @@ def detect_brand_from_text(text: str) -> str:
             
     return None
 
+def detect_brands_from_text(text: str) -> list:
+    if not text:
+        return []
+    import re
+    t = remove_diacritics(text.lower())
+    brands = []
+    
+    # 1. Apple/iPhone
+    if re.search(r'\bip(?:\s*\d+|\s*(?:x|xr|xs|pro|max|plus|pm))+\b', t) or re.search(r'\bip\b', t) or 'iphone' in t or 'apple' in t:
+        brands.append('Apple')
+        
+    # 2. Samsung
+    if re.search(r'\bss(?:\s*s?\d+|\s*ultra|\s*u)?\b', t) or re.search(r'\bss\b', t) or 'samsung' in t or 'galaxy' in t:
+        brands.append('Samsung')
+        
+    # 3. Xiaomi
+    if re.search(r'\bmi(?:\s*\d+)?\b', t) or re.search(r'\bmi\b', t) or 'xiaomi' in t or 'redmi' in t or 'poco' in t:
+        brands.append('Xiaomi')
+        
+    # 4. Oppo
+    if 'oppo' in t or (re.search(r'\bop\b', t) and not is_accessory(text)):
+        brands.append('Oppo')
+        
+    # 5. Other brands
+    other_brands = {
+        'vivo': 'Vivo',
+        'realme': 'Realme',
+        'sony': 'Sony',
+        'xperia': 'Sony',
+        'google': 'Google',
+        'pixel': 'Google',
+        'asus': 'Asus',
+        'rog': 'Asus',
+        'tecno': 'Tecno',
+        'nokia': 'Nokia',
+        'huawei': 'Huawei',
+        'honor': 'Honor'
+    }
+    for kw, brand in other_brands.items():
+        if kw in t:
+            brands.append(brand)
+            
+    return list(set(brands))
+
 def is_accessory(name: str) -> bool:
     if not name:
         return False
@@ -219,6 +263,80 @@ DB_PASS = _DB_PASS_RAW or "Vinh123456789@"
 DB_NAME = os.getenv("DB_NAME", "QHUNG")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 
+import json
+import time
+import threading
+
+class ChatbotCache:
+    def __init__(self):
+        self.redis_client = None
+        self.in_memory_cache = {}
+        self.lock = threading.Lock()
+        
+        # Thử kết nối tới Redis nếu được cấu hình
+        redis_host = os.getenv("REDIS_HOST")
+        if redis_host:
+            try:
+                import redis
+                redis_port = int(os.getenv("REDIS_PORT", 6379))
+                redis_db = int(os.getenv("REDIS_DB", 0))
+                redis_password = os.getenv("REDIS_PASSWORD", None)
+                self.redis_client = redis.Redis(
+                    host=redis_host, 
+                    port=redis_port, 
+                    db=redis_db, 
+                    password=redis_password,
+                    socket_timeout=2
+                )
+                self.redis_client.ping()
+                print("[ChatbotCache] Connected to Redis successfully.")
+            except Exception as e:
+                print(f"[ChatbotCache] Redis connection failed, falling back to In-Memory: {e}")
+                self.redis_client = None
+
+    def get(self, key: str):
+        if self.redis_client:
+            try:
+                val = self.redis_client.get(key)
+                if val:
+                    return json.loads(val.decode("utf-8"))
+            except Exception as e:
+                print(f"[ChatbotCache] Redis get error: {e}")
+        else:
+            with self.lock:
+                entry = self.in_memory_cache.get(key)
+                if entry:
+                    # Kiểm tra xem cache đã hết hạn chưa (TTL)
+                    if time.time() - entry["timestamp"] < entry["ttl"]:
+                        return entry["value"]
+                    else:
+                        del self.in_memory_cache[key]
+        return None
+
+    def set(self, key: str, value: Any, ttl: int = 3600):
+        if self.redis_client:
+            try:
+                self.redis_client.setex(key, ttl, json.dumps(value))
+            except Exception as e:
+                print(f"[ChatbotCache] Redis set error: {e}")
+        else:
+            with self.lock:
+                self.in_memory_cache[key] = {
+                    "value": value,
+                    "timestamp": time.time(),
+                    "ttl": ttl
+                }
+
+    def clear(self):
+        if self.redis_client:
+            try:
+                self.redis_client.flushdb()
+            except Exception as e:
+                print(f"[ChatbotCache] Redis flush error: {e}")
+        else:
+            with self.lock:
+                self.in_memory_cache.clear()
+
 class RAGEngine:
     def __init__(self):
         # 1. Setup LLM
@@ -252,6 +370,9 @@ class RAGEngine:
         self._last_freshness_check = 0
         self._FRESHNESS_CHECK_TTL = 300  # 5 phút giữa các lần so checksum
         
+        # 6. Caching system (Redis with In-memory fallback)
+        self.cache = ChatbotCache()
+        
         # Try to load existing vector store or create a new one
         if os.path.exists(self.vector_dir):
             self.vectorstore = Chroma(persist_directory=self.vector_dir, embedding_function=self.embeddings)
@@ -264,9 +385,22 @@ class RAGEngine:
         import re
         t = text.lower()
         
+        # 1. Brands
         t = re.sub(r'\bss\b', 'samsung', t)
         t = re.sub(r'\bip\b', 'iphone', t)
         
+        # 2. iPhone models (ip 15 pm -> iphone 15 pro max)
+        t = re.sub(r'\bip\s*(\d+)\s*prm\b', r'iphone \1 pro max', t)
+        t = re.sub(r'\bip\s*(\d+)\s*pm\b', r'iphone \1 pro max', t)
+        t = re.sub(r'\bip\s*(\d+)\s*p\b', r'iphone \1 pro', t)
+        t = re.sub(r'\b(\d+)\s*prm\b', r'\1 pro max', t)
+        t = re.sub(r'\b(\d+)\s*pm\b', r'\1 pro max', t)
+        t = re.sub(r'\b(\d+)\s*p\b', r'\1 pro', t)
+        
+        # 3. Samsung Galaxy models (s24u -> s24 ultra)
+        t = re.sub(r'\bs\s*(\d+)\s*u\b', r's\1 ultra', t)
+        
+        # 4. Accessories and terms
         synonyms = {
             r'\bop\s+luong\b': 'ốp lưng',
             r'\bop\s+lung\b': 'ốp lưng',
@@ -283,7 +417,6 @@ class RAGEngine:
             r'\bpin\s+du\s+phong\b': 'pin dự phòng',
             r'\bsac\s+du\s+phong\b': 'sạc dự phòng'
         }
-        
         for pattern, repl in synonyms.items():
             t = re.sub(pattern, repl, t)
             
@@ -291,6 +424,19 @@ class RAGEngine:
         t = re.sub(r'\bốp\b(?!po)', 'ốp lưng', t)
         t = re.sub(r'\bhong\b', 'không', t)
         t = re.sub(r'\bhông\b', 'không', t)
+        
+        # 5. Price slang: "5 củ" -> "5 triệu", "500k" -> "500.000", "5 lít" -> "500.000"
+        t = re.sub(r'\b(\d+)\s*(?:cu|củ)\b', r'\1 triệu', t)
+        t = re.sub(r'\b(\d+)\s*k\b', r'\1.000', t)
+        t = re.sub(r'\b(\d+)\s*(?:canh|cành)\b', r'\1.000', t)
+        t = re.sub(r'\b(\d+)\s*(?:lit|lít|xi|xị)\b', lambda m: str(int(m.group(1)) * 100) + ".000", t)
+        
+        # 6. Chat slang shorthand
+        t = re.sub(r'\bbh\b', 'bảo hành', t)
+        t = re.sub(r'\bdt\b', 'điện thoại', t)
+        t = re.sub(r'\bcl\b', 'cường lực', t)
+        t = re.sub(r'\btn\b', 'tai nghe', t)
+        t = re.sub(r'\bgop\b', 'trả góp', t)
         
         return t
             
@@ -427,7 +573,11 @@ class RAGEngine:
         mà không phải chờ rebuild Chroma (vài giây)."""
         self._knowledge_cache = None
         self._knowledge_cache_time = 0
-        print("[RAG] Knowledge RAM cache invalidated.")
+        self._static_mappings_cache = None
+        self._static_mappings_cache_time = 0
+        if hasattr(self, 'cache'):
+            self.cache.clear()
+        print("[RAG] Knowledge RAM cache and dynamic cache invalidated.")
         return True
 
     def query_kpi(self, question: str) -> str:
@@ -842,6 +992,51 @@ class RAGEngine:
         except Exception as e:
             print(f"Error fetching knowledge: {e}")
             return self._knowledge_cache or ""
+
+    def _get_static_knowledge_mappings(self):
+        """
+        Lấy tất cả các từ khóa và nội dung tương ứng từ bảng chatbot_knowledge
+        để phục vụ so khớp trực tiếp (Fast-Path).
+        """
+        import time
+        now = time.time()
+        
+        # Trả về mapping đã có trong RAM cache nếu chưa hết hạn
+        if hasattr(self, '_static_mappings_cache') and self._static_mappings_cache is not None:
+            if (now - self._static_mappings_cache_time) < self._KNOWLEDGE_CACHE_TTL:
+                return self._static_mappings_cache
+                
+        mappings = {}
+        try:
+            conn = mysql.connector.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, database=DB_NAME)
+            cursor = conn.cursor(dictionary=True)
+            # Lấy tất cả tri thức đang hoạt động
+            cursor.execute("SELECT title, content, keywords FROM chatbot_knowledge WHERE is_active = 1")
+            rows = cursor.fetchall()
+            cursor.close()
+            conn.close()
+            
+            for r in rows:
+                content = r['content']
+                title = r['title'].strip().lower()
+                
+                # Ánh xạ từ tiêu đề chính (title)
+                mappings[title] = content
+                
+                # Ánh xạ từ các từ khóa phụ (keywords)
+                keywords_str = r.get('keywords') or ""
+                if keywords_str:
+                    # Tách các từ khóa phân cách bằng dấu phẩy
+                    keywords = [k.strip().lower() for k in keywords_str.split(',') if k.strip()]
+                    for kw in keywords:
+                        mappings[kw] = content
+                        
+            self._static_mappings_cache = mappings
+            self._static_mappings_cache_time = now
+            return mappings
+        except Exception as e:
+            print(f"[Fast-Path] Lỗi load static mappings từ DB: {e}")
+            return getattr(self, '_static_mappings_cache', {}) or {}
 
     def _get_db_product_signature(self):
         """Trả về set (ma_sp, ten_sp, gia, anh_dai_dien) — checksum SP đang bán trong MySQL."""
@@ -1583,35 +1778,9 @@ class RAGEngine:
             return "PRODUCT_LINK"
             
         # Quick check for installment queries
-        if any(kw in q_lower for kw in ["tra gop", "lai suat", "home credit", "fe credit", "gop bao nhieu", "gop sao"]):
+        if any(kw in q_lower for kw in ["tra gop", "lai suat", "home credit", "fe credit", "gop bao nhieu", "gop sao", "mua gop"]):
             return "INSTALLMENT_QUERY"
             
-        prompt_text = f"""Phân loại ý định của câu hỏi khách hàng sau đây sang một trong các loại:
-1. PRODUCT_LINK: Khi khách hỏi xin đường dẫn link sản phẩm, hỏi "link đâu", "gửi link".
-2. INSTALLMENT_QUERY: Hỏi về chính sách, thủ tục, lãi suất mua trả góp.
-3. COMPARE_PRODUCTS: So sánh cấu hình, giá cả của hai hoặc nhiều mẫu điện thoại cụ thể.
-4. PRODUCT_DETAIL: Hỏi chi tiết thông số kỹ thuật, cấu hình của một điện thoại cụ thể.
-5. PRICE_QUERY: Hỏi giá bán của một điện thoại cụ thể.
-6. COLOR_QUERY: Hỏi về màu sắc có sẵn của điện thoại cụ thể.
-7. STORAGE_QUERY: Hỏi về phiên bản bộ nhớ của điện thoại cụ thể.
-8. PRODUCT_SEARCH: Tìm kiếm sản phẩm phù hợp ngân sách, nhu cầu (ví dụ: "điện thoại 5 triệu", "tư vấn máy chơi game", "dưới 5tr mua máy gì").
-9. GENERAL_FAQ: Hỏi địa chỉ, giờ mở cửa, chính sách bảo hành, đổi trả, ship hàng, hoặc chào hỏi thông thường.
-
-Lịch sử trò chuyện gần nhất:
-{history_str}
-
-Câu hỏi khách hàng: "{question}"
-
-Chỉ trả về TÊN LOẠI ý định duy nhất (ví dụ: PRODUCT_SEARCH), không giải thích gì thêm."""
-        try:
-            res = self.llm.invoke(prompt_text)
-            intent = res.content.strip().upper()
-            valid_intents = {"PRODUCT_LINK", "INSTALLMENT_QUERY", "COMPARE_PRODUCTS", "PRODUCT_DETAIL", "PRICE_QUERY", "COLOR_QUERY", "STORAGE_QUERY", "PRODUCT_SEARCH", "GENERAL_FAQ"}
-            for vi in valid_intents:
-                if vi in intent:
-                    return vi
-        except Exception as e:
-            print(f"[IntentClassifier] Error: {e}")
         return "PRODUCT_SEARCH"
 
     def extract_entities(self, question: str, context_state: dict):
@@ -1626,11 +1795,13 @@ Chỉ trả về TÊN LOẠI ý định duy nhất (ví dụ: PRODUCT_SEARCH), k
             context_state["product_type"] = "phone"
 
         # 2. Extract brand
-        brand = detect_brand_from_text(question)
-        if brand:
-            context_state["brand"] = brand
+        detected_brands = detect_brands_from_text(question)
+        if detected_brands:
+            context_state["brands"] = detected_brands
+            context_state["brand"] = detected_brands[0]
         elif any(kw in q_lower for kw in ["hang khac", "may khac", "dt khac", "hang nao khac"]):
             context_state.pop("brand", None)
+            context_state.pop("brands", None)
             
         # 3. Extract price limit
         price_const = parse_price_constraint(question)
@@ -1676,65 +1847,97 @@ Chỉ trả về TÊN LOẠI ý định duy nhất (ví dụ: PRODUCT_SEARCH), k
             context_state["confirmed"] = False
 
     def db_product_search(self, context_state: dict, user_asked_for_accessory: bool) -> list:
-        brand = context_state.get("brand")
+        # 1. Fetch all active products
+        query = """
+            SELECT sp.ma_sp, sp.ten_sp, sp.gia, sp.anh_dai_dien, sp.bo_nho,
+                   hsx.ten_hang,
+                   ch.ram, ch.chip, ch.pin, ch.man_hinh, ch.camera, sp.so_luong_ton
+            FROM san_pham sp
+            LEFT JOIN hang_san_xuat hsx ON sp.ma_hang = hsx.ma_hang
+            LEFT JOIN cau_hinh ch ON sp.ma_sp = ch.ma_sp
+            WHERE sp.so_luong_ton > 0
+            ORDER BY sp.gia ASC
+        """
+        all_products = []
+        try:
+            conn = mysql.connector.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, database=DB_NAME)
+            cursor = conn.cursor(dictionary=True)
+            cursor.execute(query)
+            all_products = cursor.fetchall()
+            cursor.close()
+            conn.close()
+        except Exception as e:
+            print(f"[DB Search All] Error: {e}")
+            return []
+
+        # 2. Extract brand(s) and price from context_state
+        brands = context_state.get("brands")
+        if not brands and context_state.get("brand"):
+            brands = [context_state.get("brand")]
         price_const = context_state.get("price_constraint")
         
-        def run_query(b_val):
-            query_cond = []
-            params = []
-            if b_val:
-                query_cond.append("LOWER(hsx.ten_hang) = %s")
-                params.append(b_val.lower())
+        # 3. Check for specific model name match in history or current question
+        import unicodedata, re
+        
+        def get_core_words(s):
+            s = s.lower()
+            s = ''.join(c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn')
+            s = s.replace('đ', 'd').replace('Đ', 'd')
+            words = set(re.findall(r'\b\w+\b', s))
+            common = {'gb', 'ram', 'tb', '5g', '4g', 'lte', 'pro', 'max', 'plus', 'cu', 'moi', 'chinh', 'hang', 'viet', 'nam', 'mau', 'sac', 'samsung', 'galaxy', 'iphone', 'apple', 'xiaomi', 'redmi', 'poco', 'oppo', 'vivo', 'realme', 'sony', 'xperia', 'google', 'pixel', 'vsmart', 'asus', 'rog', 'tecno', 'nokia'}
+            filtered_words = set()
+            for w in words:
+                if w in common:
+                    continue
+                if re.search(r'\d+gb', w):
+                    continue
+                filtered_words.add(w)
+            return filtered_words
+
+        q_norm = remove_diacritics((context_state.get("last_query") or "") + " " + (context_state.get("current_query") or ""))
+            
+        matched_by_name = []
+        for p in all_products:
+            core_words = get_core_words(p['ten_sp'])
+            is_acc = is_accessory(p['ten_sp'])
+            if user_asked_for_accessory != is_acc:
+                continue
+            if core_words and all(w in q_norm for w in core_words):
+                matched_by_name.append(p)
+                
+        if matched_by_name:
+            print(f"[DB Search] Matched {len(matched_by_name)} products by name keywords: {[p['ten_sp'] for p in matched_by_name]}")
+            return matched_by_name
+
+        # 4. Fallback to Brand + Price filter
+        filtered = []
+        for p in all_products:
+            is_acc = is_accessory(p['ten_sp'])
+            if user_asked_for_accessory != is_acc:
+                continue
+            
+            # Brand filter (supports multiple brands)
+            if brands:
+                p_brand = p['ten_hang'] or ''
+                if not any(b.lower() == p_brand.lower() for b in brands):
+                    continue
+            
+            # Price filter
             if price_const:
                 op = price_const.get("op")
                 val = price_const.get("val")
-                if op == "max":
-                    query_cond.append("sp.gia <= %s")
-                    params.append(val)
-                elif op == "min":
-                    query_cond.append("sp.gia >= %s")
-                    params.append(val)
-            query_cond.append("sp.so_luong_ton > 0")
-            where_clause = " AND ".join(query_cond) if query_cond else "1=1"
-            
-            query = f"""
-                SELECT sp.ma_sp, sp.ten_sp, sp.gia, sp.anh_dai_dien, sp.bo_nho,
-                       hsx.ten_hang,
-                       ch.ram, ch.chip, ch.pin, ch.man_hinh, ch.camera, sp.so_luong_ton
-                FROM san_pham sp
-                LEFT JOIN hang_san_xuat hsx ON sp.ma_hang = hsx.ma_hang
-                LEFT JOIN cau_hinh ch ON sp.ma_sp = ch.ma_sp
-                WHERE {where_clause}
-                ORDER BY sp.gia ASC
-            """
-            try:
-                conn = mysql.connector.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, database=DB_NAME)
-                cursor = conn.cursor(dictionary=True)
-                cursor.execute(query, tuple(params))
-                res = cursor.fetchall()
-                cursor.close()
-                conn.close()
-                return res
-            except Exception as e:
-                print(f"[DB Search Internal] Error: {e}")
-                return []
-                
-        # 1. Search with brand constraint
-        products = run_query(brand)
-        filtered = []
-        for p in products:
-            is_acc = is_accessory(p['ten_sp'])
-            if not user_asked_for_accessory and is_acc:
-                continue
-            if user_asked_for_accessory and not is_acc:
-                continue
+                p_price = p['gia'] or 0
+                if op == "max" and p_price > val:
+                    continue
+                elif op == "min" and p_price < val:
+                    continue
+                    
             filtered.append(p)
             
-        # 2. If no accessories found and we had a brand constraint, try relaxing brand constraint
-        if not filtered and brand and user_asked_for_accessory:
-            print(f"[DB Search] No accessories found for brand {brand}. Relaxing brand constraint...")
-            products_relaxed = run_query(None)
-            for p in products_relaxed:
+        # 5. If accessory search with brand returns empty, relax brand constraint
+        if not filtered and brands and user_asked_for_accessory:
+            print(f"[DB Search] No accessories found for brands {brands}. Relaxing brand constraint...")
+            for p in all_products:
                 if is_accessory(p['ten_sp']):
                     filtered.append(p)
                     
@@ -2007,6 +2210,9 @@ Chỉ trả về TÊN LOẠI ý định duy nhất (ví dụ: PRODUCT_SEARCH), k
         if context_state is None:
             context_state = {}
             
+        context_state["last_query"] = context_state.get("current_query") or ""
+        context_state["current_query"] = question
+            
         # Format history string
         history_str = ""
         if history:
@@ -2192,6 +2398,8 @@ QUY TẮC BẮT BUỘC:
 </div>
 (BẮT BUỘC thay [[Anh]] bằng chính xác trường "Ảnh" của sản phẩm đó, bao gồm cả "images/products/..." ở đầu. BẮT BUỘC thay thế các biến khác bằng dữ liệu chuẩn).
 4. TUYỆT ĐỐI KHÔNG dùng bất kỳ ký hiệu Markdown nào (như `**`, `*`, `-`, `#`, ` ``` `). Chỉ dùng HTML cơ bản như `<br>`, `<strong>`, `<b>`.
+5. LIÊN KẾT NGỮ CẢNH: Luôn luôn đọc kỹ <Lịch sử trò chuyện> để hiểu ngữ cảnh hiện tại. Nếu khách hàng hỏi những câu rút gọn hoặc dùng đại từ thay thế (ví dụ: "chiếc thứ hai", "máy đó", "màu khác có không", "bao nhiêu tiền"), bạn phải đối chiếu lịch sử trò chuyện để xác định chính xác sản phẩm khách đang nói đến trước khi trả lời.
+6. PHONG CÁCH TỰ NHIÊN: Hãy trả lời bằng giọng điệu vô cùng thân thiện, tự nhiên, đậm chất giao tiếp đời thường của người Việt. Hãy sử dụng linh hoạt các đại từ xưng hô thân mật (như "dạ", "em", "anh/chị") và các trợ từ ở cuối câu để tăng tính gần gũi (như "nhá", "nhé", "ạ", "nhen", "nha", "đồ á", "nè"). Tránh giọng điệu máy móc, cứng nhắc hoặc quá trang nghiêm.
 
 {interests_instruction}
 {price_note}
@@ -2313,7 +2521,37 @@ Câu hỏi viết lại đầy đủ nghĩa:"""
             context_state = {}
             
         message = self.normalize_query(message)
+        message_clean = message.strip().lower()
+        
+        # 1. KIỂM TRA FAST-PATH (So khớp từ khóa tĩnh từ chatbot_knowledge)
+        # Giúp trả về ngay các câu trả lời tĩnh (địa chỉ, giờ làm việc, chính sách...) 
+        # mà không cần gọi LLM hay ChromaDB, tiết kiệm 100% chi phí Groq API.
+        static_mappings = self._get_static_knowledge_mappings()
+        if message_clean in static_mappings:
+            print(f"[Fast-Path Hit] Trả về trực tiếp nội dung tĩnh cho: '{message_clean}'")
+            return static_mappings[message_clean], context_state
             
+        # Kiểm tra xem có keyword nào là con của câu hỏi không (đối với câu hỏi ngắn)
+        # Ví dụ: "địa chỉ shop là gì" chứa "địa chỉ shop" hoặc "địa chỉ cửa hàng"
+        for kw, content in static_mappings.items():
+            # Chỉ áp dụng so khớp con với từ khóa có độ dài từ 8 ký tự trở lên để tránh match sai các từ ngắn
+            if len(kw) >= 8 and kw in message_clean:
+                print(f"[Fast-Path Substring Hit] Trực tiếp cho: '{kw}' từ câu hỏi: '{message_clean}'")
+                return content, context_state
+                
+        # 2. KIỂM TRA CHAT CACHE (Bộ nhớ đệm câu trả lời động từ LLM)
+        # Khóa cache bao gồm nội dung câu hỏi + lịch sử 2 câu cuối (để giữ ngữ cảnh)
+        history_key = ""
+        if history:
+            history_key = "_".join([f"{m.get('role', '')}:{m.get('content', '')[:50]}" for m in history[-2:]])
+        cache_key = f"chat_cache:{message_clean}:{history_key}"
+        
+        cached_res = self.cache.get(cache_key)
+        if cached_res:
+            print(f"[Cache Hit] Trả về kết quả từ bộ nhớ đệm cho: '{message_clean}'")
+            return cached_res["response"], cached_res["context_state"]
+            
+        # 3. NẾU CACHE MISS -> CHẠY PIPELINE RAG + LLM BÌNH THƯỜNG
         try:
             self._ensure_vectorstore_fresh()
         except Exception as e:
@@ -2333,6 +2571,15 @@ Câu hỏi viết lại đầy đủ nghĩa:"""
         rewritten_message = self.rewrite_query(message, history)
         
         ans, updated_state = self.query_semantic_state(rewritten_message, history, interests, context_state)
+        
+        # 4. LƯU KẾT QUẢ VÀO CACHE (Thời hạn TTL: 1 tiếng = 3600s)
+        # Không lưu cache nếu có lỗi hoặc không có nội dung hợp lệ
+        if ans and "chưa được cấu hình khóa API" not in ans and "lỗi khóa API" not in ans:
+            self.cache.set(cache_key, {
+                "response": ans,
+                "context_state": updated_state
+            }, ttl=3600)
+            
         return ans, updated_state
 
 # Khởi tạo singleton instance
