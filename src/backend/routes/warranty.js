@@ -61,9 +61,9 @@ router.post('/check', requireLogin, async (req, res) => {
       FROM phieu_bao_hanh pbh
       JOIN san_pham sp ON pbh.ma_sp = sp.ma_sp
       JOIN don_hang dh ON pbh.ma_don = dh.ma_don
-      WHERE (pbh.so_imei = ? OR pbh.so_serial = ? OR pbh.ma_don = ?)
+      WHERE (pbh.so_imei = ? OR pbh.so_serial = ? OR pbh.ma_don = ? OR dh.order_code = ?)
     `;
-    const params = [searchQuery, searchQuery, searchQuery];
+    const params = [searchQuery, searchQuery, searchQuery, searchQuery];
 
     if (!isAdmin) {
       // Khách hàng chỉ tra cứu được phiếu BH mà họ là chủ sở hữu hoặc người mua đơn hàng
@@ -81,8 +81,8 @@ router.post('/check', requireLogin, async (req, res) => {
         `SELECT pbh.*, dh.trang_thai as trang_thai_don, dh.ma_kh as ma_kh_don 
          FROM phieu_bao_hanh pbh
          JOIN don_hang dh ON pbh.ma_don = dh.ma_don
-         WHERE pbh.so_imei = ? OR pbh.so_serial = ? OR pbh.ma_don = ? LIMIT 1`,
-        [searchQuery, searchQuery, searchQuery]
+         WHERE pbh.so_imei = ? OR pbh.so_serial = ? OR pbh.ma_don = ? OR dh.order_code = ? LIMIT 1`,
+        [searchQuery, searchQuery, searchQuery, searchQuery]
       );
       if (exists.length > 0 && !isAdmin) {
         const item = exists[0];

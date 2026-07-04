@@ -138,7 +138,6 @@ async function initCart() {
   }
   
   renderCart();
-  renderSuggestedProducts();
   initEventListeners();
 }
 
@@ -316,6 +315,7 @@ function renderCart() {
   
   updateSummary();
   updateSelectAllState();
+  renderSuggestedProducts();
 }
 
 // Get badge class based on type
@@ -725,30 +725,114 @@ function initEventListeners() {
 }
 
 // Render suggested products
-function renderSuggestedProducts() {
+// Render suggested products using AI backend
+async function renderSuggestedProducts() {
   const container = document.getElementById('suggested-products');
+  if (!container) return;
   
-  container.innerHTML = suggestedProducts.map(product => `
-    <a href="product-detail.html?id=${product.id}" class="product-suggest bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden transition duration-300">
-      <div class="relative p-4 bg-gradient-to-br from-gray-50 to-white">
-        <span class="absolute top-3 left-3 bg-${product.badgeColor}-500 text-white text-[10px] font-bold px-2 py-1 rounded-full">${product.badge}</span>
-        <img src="${product.image}" alt="${product.name}" class="w-full h-40 md:h-48 object-contain" onerror="this.src='images/15-256.avif'">
+  const user = getUser();
+  const userId = user ? user.ma_kh : null;
+  // Chuẩn hóa danh sách ID sản phẩm hiện có trong giỏ hàng gửi đi
+  const formattedCartItems = cartItems.map(i => 'PROD' + (i.id || i.ma_sp));
+
+  try {
+    container.innerHTML = `
+      <div class="col-span-full text-center py-12 text-gray-400">
+        <i class="fas fa-spinner fa-spin text-2xl text-red-500 mb-2"></i>
+        <p class="text-xs text-gray-500">AI Đang phân tích giỏ hàng để gợi ý phù hợp...</p>
       </div>
-      <div class="p-4">
-        <h3 class="font-bold text-gray-800 text-sm md:text-base line-clamp-2 mb-2 min-h-[40px]">${product.name}</h3>
-        <div class="flex items-center gap-1 mb-2">
-          <div class="flex text-yellow-400 text-xs">
-            ${renderStars(product.rating)}
+    `;
+
+    const res = await fetch(`${API_URL}/recommendations`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: userId, cartItems: formattedCartItems })
+    });
+    const result = await res.json();
+
+    let displayProducts = [];
+    if (result.success && result.data && result.data.length > 0) {
+      displayProducts = result.data.slice(0, 4).map(p => {
+        // Tính toán badge giảm giá hoặc dán nhãn gợi ý
+        let badge = 'AI Đề xuất';
+        let badgeColor = 'orange';
+        if (p.oldPrice && p.oldPrice > p.price) {
+          const pct = Math.round((p.oldPrice - p.price) / p.oldPrice * 100);
+          badge = `-${pct}%`;
+          badgeColor = 'red';
+        }
+        
+        let imgUrl = p.image || 'images/15-256.avif';
+        if (imgUrl && !imgUrl.startsWith('images/') && !imgUrl.startsWith('http')) {
+          imgUrl = 'images/' + imgUrl;
+        }
+
+        return {
+          id: p.id,
+          name: p.name + (p.storage ? ` ${p.storage}GB` : ''),
+          price: p.price,
+          originalPrice: p.oldPrice || null,
+          image: imgUrl,
+          rating: 5,
+          reviews: Math.floor(Math.random() * 150) + 40,
+          badge: badge,
+          badgeColor: badgeColor
+        };
+      });
+    } else {
+      displayProducts = suggestedProducts;
+    }
+
+    container.innerHTML = displayProducts.map(product => `
+      <a href="product-detail.html?id=${product.id}" class="product-suggest bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden transition duration-300 hover:shadow-md flex flex-col h-full">
+        <div class="relative p-4 bg-gradient-to-br from-gray-50/50 to-white flex items-center justify-center h-44 md:h-48">
+          <span class="absolute top-3 left-3 bg-${product.badgeColor}-500 text-white text-[10px] font-bold px-2 py-1 rounded-full z-10">${product.badge}</span>
+          <img src="${product.image}" alt="${product.name}" class="max-w-full max-h-full object-contain hover:scale-105 transition duration-300" onerror="this.src='images/15-256.avif'">
+        </div>
+        <div class="p-4 flex-1 flex flex-col justify-between">
+          <div>
+            <h3 class="font-bold text-gray-800 text-sm md:text-base line-clamp-2 mb-2 min-h-[40px] hover:text-red-600 transition" title="${product.name}">${product.name}</h3>
+            <div class="flex items-center gap-1 mb-2">
+              <div class="flex text-yellow-400 text-xs">
+                ${renderStars(product.rating)}
+              </div>
+              <span class="text-xs text-gray-400">(${product.reviews})</span>
+            </div>
           </div>
-          <span class="text-xs text-gray-400">(${product.reviews})</span>
+          <div class="flex items-baseline gap-2">
+            <span class="text-lg md:text-xl font-black text-red-600">${formatPrice(product.price)}</span>
+            ${product.originalPrice ? `<span class="text-xs text-gray-400 line-through">${formatPrice(product.originalPrice)}</span>` : ''}
+          </div>
         </div>
-        <div class="flex items-baseline gap-2">
-          <span class="text-lg md:text-xl font-black text-red-600">${formatPrice(product.price)}</span>
-          ${product.originalPrice ? `<span class="text-xs text-gray-400 line-through">${formatPrice(product.originalPrice)}</span>` : ''}
+      </a>
+    `).join('');
+
+  } catch (error) {
+    console.warn('Lỗi kết nối API gợi ý, sử dụng fallback dữ liệu tĩnh:', error.message);
+    container.innerHTML = suggestedProducts.map(product => `
+      <a href="product-detail.html?id=${product.id}" class="product-suggest bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden transition duration-300 hover:shadow-md flex flex-col h-full">
+        <div class="relative p-4 bg-gradient-to-br from-gray-50/50 to-white flex items-center justify-center h-44 md:h-48">
+          <span class="absolute top-3 left-3 bg-${product.badgeColor}-500 text-white text-[10px] font-bold px-2 py-1 rounded-full z-10">${product.badge}</span>
+          <img src="${product.image}" alt="${product.name}" class="max-w-full max-h-full object-contain hover:scale-105 transition duration-300" onerror="this.src='images/15-256.avif'">
         </div>
-      </div>
-    </a>
-  `).join('');
+        <div class="p-4 flex-1 flex flex-col justify-between">
+          <div>
+            <h3 class="font-bold text-gray-800 text-sm md:text-base line-clamp-2 mb-2 min-h-[40px] hover:text-red-600 transition" title="${product.name}">${product.name}</h3>
+            <div class="flex items-center gap-1 mb-2">
+              <div class="flex text-yellow-400 text-xs">
+                ${renderStars(product.rating)}
+              </div>
+              <span class="text-xs text-gray-400">(${product.reviews})</span>
+            </div>
+          </div>
+          <div class="flex items-baseline gap-2">
+            <span class="text-lg md:text-xl font-black text-red-600">${formatPrice(product.price)}</span>
+            ${product.originalPrice ? `<span class="text-xs text-gray-400 line-through">${formatPrice(product.originalPrice)}</span>` : ''}
+          </div>
+        </div>
+      </a>
+    `).join('');
+  }
 }
 
 // Render star rating

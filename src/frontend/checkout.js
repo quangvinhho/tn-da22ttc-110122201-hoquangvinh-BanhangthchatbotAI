@@ -2661,6 +2661,10 @@ function selectAddress(address) {
   const directForm = document.getElementById('direct-address-form');
   if (directForm) directForm.classList.add('hidden');
   
+  // Show display container
+  const displayContainer = document.getElementById('selected-address-display');
+  if (displayContainer) displayContainer.classList.remove('hidden');
+  
   // Update hidden inputs
   document.getElementById('selectedAddressId').value = address.ma_dia_chi;
   document.getElementById('fullName').value = address.ho_ten_nguoi_nhan;
@@ -2707,6 +2711,10 @@ function showDirectAddressForm() {
     initDirectAddressDropdowns();
   }
   
+  // Hide saved address display container completely
+  const displayContainer = document.getElementById('selected-address-display');
+  if (displayContainer) displayContainer.classList.add('hidden');
+  
   // Hide saved address contents
   document.getElementById('selected-address-content').classList.add('hidden');
   document.getElementById('selected-address-empty').classList.add('hidden');
@@ -2728,6 +2736,10 @@ function showDirectAddressForm() {
 function hideDirectAddressForm() {
   const directForm = document.getElementById('direct-address-form');
   if (directForm) directForm.classList.add('hidden');
+  
+  // Show display container
+  const displayContainer = document.getElementById('selected-address-display');
+  if (displayContainer) displayContainer.classList.remove('hidden');
   
   if (selectedAddressData) {
     selectAddress(selectedAddressData);
@@ -2817,11 +2829,11 @@ function onDirectDistrictChange(districtKey) {
     return;
   }
   
-  const sortedWards = Object.entries(dist.wards).sort((a, b) => a[1].name.localeCompare(b[1].name));
-  sortedWards.forEach(([key, ward]) => {
+  const sortedWards = [...dist.wards].sort((a, b) => a.localeCompare(b, 'vi'));
+  sortedWards.forEach(ward => {
     const opt = document.createElement('option');
-    opt.value = key;
-    opt.textContent = ward.name;
+    opt.value = ward;
+    opt.textContent = ward;
     wardSelect.appendChild(opt);
   });
   

@@ -65,10 +65,10 @@ router.post('/claim', requireLogin, async (req, res) => {
     const isAdmin = sessionUser.vai_tro === 'admin';
     const userId = sessionUser.ma_kh;
 
-    // 1. Kiểm tra đơn hàng tồn tại + trạng thái
+    // 1. Kiểm tra đơn hàng tồn tại + trạng thái (hỗ trợ cả ma_don và order_code)
     const [orders] = await pool.query(
-      `SELECT ma_don, ma_kh, trang_thai, thoi_gian FROM don_hang WHERE ma_don = ?`,
-      [ma_don]
+      `SELECT ma_don, ma_kh, trang_thai, thoi_gian FROM don_hang WHERE ma_don = ? OR order_code = ?`,
+      [ma_don, ma_don]
     );
 
     if (orders.length === 0) {
@@ -76,6 +76,7 @@ router.post('/claim', requireLogin, async (req, res) => {
     }
 
     const order = orders[0];
+    const actualMaDon = order.ma_don;
 
     // 2. Xác thực quyền sở hữu
     if (!isAdmin && Number(order.ma_kh) !== Number(userId)) {
@@ -97,7 +98,7 @@ router.post('/claim', requireLogin, async (req, res) => {
     // 4. Kiểm tra sản phẩm có trong đơn hàng không
     const [items] = await pool.query(
       `SELECT ma_sp FROM chi_tiet_don_hang WHERE ma_don = ? AND ma_sp = ?`,
-      [ma_don, ma_sp]
+      [actualMaDon, ma_sp]
     );
     if (items.length === 0) {
       return res.status(400).json({
@@ -131,7 +132,7 @@ router.post('/claim', requireLogin, async (req, res) => {
     // 6. Kiểm tra xem sản phẩm trong đơn hàng này đã được tạo yêu cầu đổi trả chưa (tránh spam)
     const [existingClaims] = await pool.query(
       `SELECT ma_ycdt FROM yeu_cau_doi_tra WHERE ma_don = ? AND ma_sp = ? AND trang_thai IN ('pending', 'approved', 'processing')`,
-      [ma_don, ma_sp]
+      [actualMaDon, ma_sp]
     );
     if (existingClaims.length > 0) {
       return res.status(400).json({
@@ -147,7 +148,7 @@ router.post('/claim', requireLogin, async (req, res) => {
     const [result] = await pool.query(
       `INSERT INTO yeu_cau_doi_tra (ma_don, ma_kh, ma_sp, ly_do, loai, hinh_anh, trang_thai)
        VALUES (?, ?, ?, ?, ?, ?, 'pending')`,
-      [ma_don, finalCustomerId, ma_sp, ly_do.trim(), loai, imgStr]
+      [actualMaDon, finalCustomerId, ma_sp, ly_do.trim(), loai, imgStr]
     );
 
     res.json({

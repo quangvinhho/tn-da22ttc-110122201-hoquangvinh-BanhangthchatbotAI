@@ -60,6 +60,23 @@ async function sendOrderConfirmation(orderId) {
         }
 
         const order = orders[0];
+
+        // [FIX] In-app notification: luôn insert nếu là khách hàng đã đăng nhập (không phụ thuộc việc có email hay không)
+        if (order.ma_kh) {
+            try {
+                const displayOrderId = order.order_code || orderId;
+                await createInAppNotification({
+                    ma_kh: order.ma_kh,
+                    tieu_de: `🎉 Đặt hàng thành công #${displayOrderId}`,
+                    noi_dung: `Đơn hàng tổng ${formatCurrency(parseFloat(order.tong_tien) || 0)} đã được tiếp nhận. Chúng tôi sẽ liên hệ giao hàng sớm nhất.`,
+                    loai: 'order_update',
+                    lien_ket: '/profile.html#orders'
+                });
+                console.log(`[EmailService] Đã tạo in-app notification cho user ${order.ma_kh} về đơn hàng #${displayOrderId}`);
+            } catch (notifErr) {
+                console.error('[EmailService] Lỗi tạo in-app notification:', notifErr.message);
+            }
+        }
         
         // Lấy email khách hàng: Ưu tiên email tài khoản khach_hang, nếu không có thì không gửi
         const recipientEmail = order.kh_email;
@@ -229,16 +246,7 @@ async function sendOrderConfirmation(orderId) {
             `
         };
 
-        // In-app notification: luôn insert (KHÔNG phụ thuộc email gửi thành công/thất bại)
-        if (order.ma_kh) {
-            await createInAppNotification({
-                ma_kh: order.ma_kh,
-                tieu_de: `🎉 Đặt hàng thành công #${orderId}`,
-                noi_dung: `Đơn hàng tổng ${formatCurrency(parseFloat(order.tong_tien) || 0)} đã được tiếp nhận. Chúng tôi sẽ liên hệ giao hàng sớm nhất.`,
-                loai: 'order_update',
-                lien_ket: '/profile.html#orders'
-            });
-        }
+
 
         // Gửi email (có thể fail nếu Gmail xuống — in-app vẫn được giữ)
         try {

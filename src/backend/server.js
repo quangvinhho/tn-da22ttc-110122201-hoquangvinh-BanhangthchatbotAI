@@ -91,6 +91,7 @@ testConnection();
     ['update_product_colors',             './migrations/update_product_colors'],
     ['create_phone_variants',             './migrations/create_phone_variants'],
     ['seed_product_discounts',            './migrations/seed_product_discounts'],
+    ['add_order_code_column',             './migrations/add_order_code_column'],
   ];
   for (const [name, mod] of steps) {
     try {
@@ -117,7 +118,9 @@ app.use(cors({
   origin: function(origin, callback) {
     // Cho phép requests không có origin (cùng origin, Postman, mobile apps)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
+    // Cho phép tất cả các cổng localhost / 127.0.0.1 trong phát triển để tránh lỗi cổng Live Server khác nhau (5501, 5503...)
+    const isLocal = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+    if (allowedOrigins.includes(origin) || isLocal) {
       return callback(null, true);
     }
     return callback(null, false);
@@ -157,7 +160,8 @@ app.use((req, res, next) => {
   if (req.path.startsWith('/api/payment/momo/ipn')) return next();
   const origin = req.headers.origin || (req.headers.referer ? new URL(req.headers.referer).origin : null);
   if (!origin) return next(); // mobile / curl / postman; rate limit + auth đã chặn
-  if (allowedRequestOrigins.has(origin)) return next();
+  const isLocal = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+  if (allowedRequestOrigins.has(origin) || isLocal) return next();
   return res.status(403).json({ success: false, message: 'Origin không hợp lệ.' });
 });
 

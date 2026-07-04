@@ -2,6 +2,23 @@ const express = require('express');
 const router = express.Router();
 const { pool } = require('../config/database');
 
+// Helper: chuyển orderId dạng DH... hoặc ma_don dạng số về ma_don thực tế trong DB
+async function resolveOrderId(orderIdOrCode) {
+  if (!orderIdOrCode) return orderIdOrCode;
+  try {
+    const [rows] = await pool.query(
+      'SELECT ma_don FROM don_hang WHERE ma_don = ? OR order_code = ? LIMIT 1', 
+      [orderIdOrCode, orderIdOrCode]
+    );
+    if (rows.length > 0) {
+      return rows[0].ma_don;
+    }
+  } catch (err) {
+    console.error('[resolveOrderId] Error:', err.message);
+  }
+  return orderIdOrCode;
+}
+
 // Middleware kiểm tra quyền admin cho các route nhạy cảm
 const checkAdmin = (req, res, next) => {
   if (!req.session || !req.session.user || req.session.user.vai_tro !== 'admin') {
@@ -40,7 +57,8 @@ router.post('/', async (req, res) => {
       depositAmount,      // Số tiền đặt cọc
       depositPercent,     // Phần trăm đặt cọc (10%, 30%, 50%)
       remainingAmount,    // Số tiền còn lại cần thanh toán
-      isDeposit           // Có phải đơn đặt cọc không
+      isDeposit,          // Có phải đơn đặt cọc không
+      orderId: customOrderId // Mã đơn hàng tùy chỉnh từ frontend
     } = req.body;
 
     // Xử lý voucher - hỗ trợ cả cách cũ (voucherCode) và cách mới (freeshipVoucher, discountVoucher)
@@ -107,11 +125,11 @@ router.post('/', async (req, res) => {
     const actualDepositAmount = isDeposit ? (depositAmount || 0) : 0;
     const actualRemainingAmount = isDeposit ? (remainingAmount || 0) : 0;
 
-    // Tạo đơn hàng với thông tin đặt cọc
+    // Tạo đơn hàng với thông tin đặt cọc và order_code
     const [orderResult] = await connection.query(
-      `INSERT INTO don_hang (ma_kh, ten_nguoi_nhan, so_dt, dia_chi_nhan, tong_tien, trang_thai, ma_km, loai_don, tien_dat_coc, tien_con_lai, trang_thai_coc)
-       VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?)`,
-      [customerId || null, customerName, phone, address, total, maKm, orderType, actualDepositAmount, actualRemainingAmount, depositStatus]
+      `INSERT INTO don_hang (ma_kh, ten_nguoi_nhan, so_dt, dia_chi_nhan, tong_tien, trang_thai, ma_km, loai_don, tien_dat_coc, tien_con_lai, trang_thai_coc, order_code)
+       VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?)`,
+      [customerId || null, customerName, phone, address, total, maKm, orderType, actualDepositAmount, actualRemainingAmount, depositStatus, customOrderId || null]
     );
     
     const orderId = orderResult.insertId;
@@ -360,7 +378,8 @@ router.post('/', async (req, res) => {
 // PUT /api/orders/:orderId/payment - Cập nhật trạng thái thanh toán
 router.put('/:orderId/payment', async (req, res) => {
   try {
-    const { orderId } = req.params;
+    const rawOrderId = req.params.orderId;
+    const orderId = await resolveOrderId(rawOrderId);
     const { status, transactionId, paymentType } = req.body;
 
     // Gia cố bảo mật: kiểm tra đơn hàng tồn tại và phân quyền sở hữu
@@ -476,7 +495,8 @@ router.put('/:orderId/payment', async (req, res) => {
 // GET /api/orders/:orderId - Lấy thông tin đơn hàng
 router.get('/:orderId', async (req, res) => {
   try {
-    const { orderId } = req.params;
+    const rawOrderId = req.params.orderId;
+    const orderId = await resolveOrderId(rawOrderId);
 
     const [orders] = await pool.query(
       `SELECT dh.*
@@ -641,7 +661,8 @@ router.put('/:orderId/cancel', async (req, res) => {
     connection = await pool.getConnection();
     await connection.beginTransaction();
     
-    const { orderId } = req.params;
+    const rawOrderId = req.params.orderId;
+    const orderId = await resolveOrderId(rawOrderId);
     const { userId, cancelReason } = req.body;
 
     console.log('=== Cancel Order Request ===');
@@ -840,7 +861,8 @@ router.put('/:orderId/cancel', async (req, res) => {
 // PUT /api/orders/:orderId/confirm-deposit - Admin xác nhận đã nhận tiền đặt cọc
 router.put('/:orderId/confirm-deposit', checkAdmin, async (req, res) => {
   try {
-    const { orderId } = req.params;
+    const rawOrderId = req.params.orderId;
+    const orderId = await resolveOrderId(rawOrderId);
     const { adminId, note } = req.body;
 
     console.log('=== Confirm Deposit Request ===');
@@ -915,7 +937,8 @@ router.put('/:orderId/confirm-deposit', checkAdmin, async (req, res) => {
 // PUT /api/orders/:orderId/complete-remaining - Admin xác nhận đã thu tiền còn lại (khi giao hàng)
 router.put('/:orderId/complete-remaining', checkAdmin, async (req, res) => {
   try {
-    const { orderId } = req.params;
+    const rawOrderId = req.params.orderId;
+    const orderId = await resolveOrderId(rawOrderId);
     const { adminId } = req.body;
 
     console.log('=== Complete Remaining Payment ===');
@@ -998,7 +1021,8 @@ router.put('/:orderId/cancel-deposit', async (req, res) => {
     connection = await pool.getConnection();
     await connection.beginTransaction();
     
-    const { orderId } = req.params;
+    const rawOrderId = req.params.orderId;
+    const orderId = await resolveOrderId(rawOrderId);
     const { userId, cancelReason, isAdmin } = req.body;
 
     console.log('=== Cancel Deposit Order ===');

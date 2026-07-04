@@ -6,7 +6,7 @@ const { pool } = require('../config/database');
 // Gọi Python Service (Microservice)
 router.post('/', async (req, res) => {
     try {
-        const { userId, cartItems } = req.body;
+        const { userId, cartItems, currentProductId } = req.body;
         
         if (!userId) {
             return res.json({ success: true, data: [], source: 'no_user' });
@@ -37,7 +37,8 @@ router.post('/', async (req, res) => {
                 image: p.image,
                 color: p.color,
                 storage: p.storage,
-                brand: p.brand
+                brand: p.brand,
+                explanation: p.explanation || null // Nhãn tag nguồn thuật toán từ AI
             };
         };
 
@@ -120,16 +121,22 @@ router.post('/', async (req, res) => {
         }
 
         let recommendedProductIds = [];
+        let explanationMap = {};
         try {
-            // Cố gắng gọi sang AI/Python service
-            // Bắt lỗi với timeout trung bình (5000ms) để không làm đơ web nếu Python lỗi
-            const pythonResponse = await axios.post('http://127.0.0.1:8000/api/recommend', {
-                userId: userId ? String(userId) : null,
-                cartItems: cartItems
-            }, { timeout: 5000 });
+            // Gọi sang Python explain endpoint để lấy chi tiết nguồn thuật toán gợi ý của từng sản phẩm
+            const pythonResponse = await axios.get('http://127.0.0.1:8000/api/recommend/admin/explain', {
+                params: {
+                    userId: userId ? String(userId) : 'null',
+                    cartItems: cartItems ? cartItems.join(',') : ''
+                },
+                timeout: 5000
+            });
             
             if (pythonResponse.data && pythonResponse.data.recommendations) {
-                recommendedProductIds = pythonResponse.data.recommendations;
+                recommendedProductIds = pythonResponse.data.recommendations.map(r => r.ma_sp);
+                pythonResponse.data.recommendations.forEach(r => {
+                    explanationMap[r.ma_sp] = r.explanation;
+                });
             }
         } catch (aiError) {
             console.warn("⚠️ AI Service Recommendation Failed. Using Fallback System.", aiError.message);
@@ -154,6 +161,10 @@ router.post('/', async (req, res) => {
                     const idxA = numericIds.indexOf(a.id);
                     const idxB = numericIds.indexOf(b.id);
                     return idxA - idxB;
+                });
+                // Đính kèm giải thích thuật toán AI
+                products.forEach(p => {
+                    p.explanation = explanationMap[p.id] || "AI Đề xuất";
                 });
                 baseProducts = products;
             }
@@ -183,6 +194,7 @@ router.post('/', async (req, res) => {
                         [userId]
                     );
                     fallbackProducts = byInterest;
+                    fallbackProducts.forEach(p => { p.explanation = "Đúng sở thích"; });
                 } catch (e) { console.warn('Fallback by interest failed:', e.message); }
             }
             if (fallbackProducts.length === 0) {
@@ -190,22 +202,53 @@ router.post('/', async (req, res) => {
                     `SELECT ma_sp as id, ten_sp as name, gia as price, gia_giam, anh_dai_dien as image, mau_sac as color, bo_nho as storage FROM san_pham ORDER BY ngay_cap_nhat DESC LIMIT 8`
                 );
                 fallbackProducts = latest;
+                fallbackProducts.forEach(p => { p.explanation = "Sản phẩm mới"; });
             }
             baseProducts = fallbackProducts;
         }
 
-        // Bước 3: Kết hợp và lọc trùng để ưu tiên các sản phẩm đã xem > 3 lần và sản phẩm tương tự lên đầu
-        const seenIds = new Set([...viewedProducts.map(p => p.id), ...uniqueSimilarProducts.map(p => p.id)]);
-        const filteredBaseProducts = baseProducts.filter(p => !seenIds.has(p.id));
-        
-        const finalProducts = [...viewedProducts, ...uniqueSimilarProducts, ...filteredBaseProducts].slice(0, 8);
+        // Đính kèm lý do cho sản phẩm đã xem và sản phẩm tương tự
+        viewedProducts.forEach(p => {
+            p.explanation = "Xem gần đây";
+        });
+        uniqueSimilarProducts.forEach(p => {
+            p.explanation = `Cùng hãng ${p.brand || 'Apple'}`;
+        });
+
+        // Bước 3: Kết hợp và lọc trùng để ưu tiên các sản phẩm đã xem và sản phẩm tương thích
+        let finalProducts = [];
+        const cleanCurrentId = currentProductId ? parseInt(currentProductId) : null;
+
+        if (cleanCurrentId) {
+            // Khi người dùng đang ở trang chi tiết sản phẩm:
+            // 1. Ưu tiên cao nhất cho gợi ý AI/Apriori (baseProducts)
+            // 2. Sau đó đến sản phẩm tương tự cùng thương hiệu (uniqueSimilarProducts)
+            // 3. Cuối cùng mới đến sản phẩm đã xem (viewedProducts)
+            // Lọc bỏ chính sản phẩm đang xem để tránh gợi ý trùng lặp
+            const cleanBase = baseProducts.filter(p => p.id != cleanCurrentId);
+            const baseIds = new Set(cleanBase.map(p => p.id));
+            
+            const cleanSimilar = uniqueSimilarProducts.filter(p => p.id != cleanCurrentId && !baseIds.has(p.id));
+            const similarIds = new Set(cleanSimilar.map(p => p.id));
+            
+            const cleanViewed = viewedProducts.filter(p => p.id != cleanCurrentId && !baseIds.has(p.id) && !similarIds.has(p.id));
+            
+            finalProducts = [...cleanBase, ...cleanSimilar, ...cleanViewed].slice(0, 8);
+        } else {
+            // Đối với các trang khác (ví dụ: Trang chủ), giữ nguyên logic cũ
+            const seenIds = new Set([...viewedProducts.map(p => p.id), ...uniqueSimilarProducts.map(p => p.id)]);
+            const filteredBaseProducts = baseProducts.filter(p => !seenIds.has(p.id));
+            finalProducts = [...viewedProducts, ...uniqueSimilarProducts, ...filteredBaseProducts].slice(0, 8);
+        }
         
         res.json({
             success: true,
             data: finalProducts.map(mapRecommendationProduct),
-            source: viewedProducts.length > 0 
-                ? (uniqueSimilarProducts.length > 0 ? 'behavioral_and_similar' : 'behavioral_and_ai') 
-                : (recommendedProductIds.length > 0 ? 'ai' : 'fallback')
+            source: cleanCurrentId
+                ? 'ai_detail_page'
+                : (viewedProducts.length > 0 
+                    ? (uniqueSimilarProducts.length > 0 ? 'behavioral_and_similar' : 'behavioral_and_ai') 
+                    : (recommendedProductIds.length > 0 ? 'ai' : 'fallback'))
         });
 
     } catch (error) {

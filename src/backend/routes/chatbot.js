@@ -375,17 +375,27 @@ function detectBrandFromText(text) {
 function isAccessory(name) {
   if (!name) return false;
   const n = removeVnDiacritics(name).toLowerCase();
+  
+  // Exclusion logic: if it has phone indicators, avoid false positive accessories (e.g. "điện thoại sạc nhanh")
+  const phoneIndicators = ['dien thoai', 'may', 'smartphone', 'dt', 'iphone', 'samsung', 'xiaomi', 'oppo', 'vivo', 'realme', 'rog', 'tecno', 'nokia'];
+  const hasPhoneIndicator = phoneIndicators.some(pInd => n.includes(pInd));
+
   const keywords = [
     'op lung', 'op luong', 'op magsafe', 'cap sac', 'cu sac', 'sac nhanh', 
     'tai nghe', 'cuong luc', 'bao da', 'dan man hinh', 'the nho', 
     'pin du phong', 'sac du phong', 'case', 'kinh cuong luc',
-    'day sac', 'day cap', 'coc sac', 'adapter', 'sac', 'cap'
+    'day sac', 'day cap', 'coc sac', 'adapter', 'sac', 'cap', 'daysac', 'daycap',
+    'capsac', 'cusac', 'oplung', 'opluong'
   ];
-  if (keywords.some(kw => n.includes(kw))) {
-    return true;
-  }
-  // Standalone 'op' check (not followed by 'po' or 'o')
-  if (/\bop\b(?!po)/i.test(n)) {
+  
+  const isAccKw = keywords.some(kw => n.includes(kw)) || /\bop\b(?!po)/i.test(n);
+  
+  if (isAccKw) {
+    if (hasPhoneIndicator) {
+      if (!n.includes('op') && !n.includes('tai nghe') && !n.includes('cuong luc') && !n.includes('bao da')) {
+        return false;
+      }
+    }
     return true;
   }
   return false;
@@ -605,15 +615,8 @@ function parsePriceConstraint(question) {
   let isMax = false;
   let isMin = false;
 
-  const maxKeywords = ['duoi', '<=', 'troxuong', 'dolai', 'tam', 'khoang', 'max', 'ngansach'];
+  const maxKeywords = ['duoi', '<=', 'troxuong', 'dolai', 'max', 'ngansach'];
   const minKeywords = ['tren', '>=', 'trolen', 'hon', 'min'];
-
-  for (const kw of maxKeywords) {
-    if (qNoSpace.includes(kw)) {
-      isMax = true;
-      break;
-    }
-  }
 
   for (const kw of minKeywords) {
     if (qNoSpace.includes(kw)) {
@@ -622,12 +625,29 @@ function parsePriceConstraint(question) {
     }
   }
 
+  for (const kw of maxKeywords) {
+    if (qNoSpace.includes(kw)) {
+      isMax = true;
+      break;
+    }
+  }
+
+  // Check for "tam", "khoang" but only if not min (to handle "khoảng trên" / "tầm hơn" correctly)
+  if (!isMin) {
+    for (const kw of ['tam', 'khoang']) {
+      if (qNoSpace.includes(kw)) {
+        isMax = true;
+        break;
+      }
+    }
+  }
+
   if (!isMax && !isMin) {
     isMax = true;
   }
 
-  // Pattern A: (\d+)(?:trieu|tr|t)(\d+)
-  const matchA = qNoSpace.match(/(\d+)(?:trieu|tr|t)(\d+)/);
+  // Pattern A: (\d+)\s*(?:trieu|tr|t)\s*(\d+)
+  const matchA = q.match(/\b(\d+)\s*(?:trieu|tr|t)\s*(\d+)\b/);
   if (matchA) {
     const mil = parseInt(matchA[1], 10);
     const fracStr = matchA[2];
@@ -635,29 +655,29 @@ function parsePriceConstraint(question) {
     return { op: isMax ? 'max' : 'min', val };
   }
 
-  // Pattern B: (\d+[\.,]\d+)(?:trieu|tr|t)
-  const matchB = qNoSpace.match(/(\d+[\.,]\d+)(?:trieu|tr|t)/);
+  // Pattern B: (\d+[\.,]\d+)\s*(?:trieu|tr|t)
+  const matchB = q.match(/\b(\d+[\.,]\d+)\s*(?:trieu|tr|t)\b/);
   if (matchB) {
     const val = parseFloat(matchB[1].replace(',', '.')) * 1000000;
     return { op: isMax ? 'max' : 'min', val };
   }
 
-  // Pattern C: (\d+)(?:trieu|tr|t)\b
-  const matchC = qNoSpace.match(/(\d+)(?:trieu|tr|t)\b/);
+  // Pattern C: (\d+)\s*(?:trieu|tr|t)\b
+  const matchC = q.match(/\b(\d+)\s*(?:trieu|tr|t)\b/);
   if (matchC) {
     const val = parseInt(matchC[1], 10) * 1000000;
     return { op: isMax ? 'max' : 'min', val };
   }
 
-  // Pattern D: (\d+)k\b
-  const matchD = qNoSpace.match(/(\d+)k\b/);
+  // Pattern D: (\d+)\s*k\b
+  const matchD = q.match(/\b(\d+)\s*k\b/);
   if (matchD) {
     const val = parseInt(matchD[1], 10) * 1000;
     return { op: isMax ? 'max' : 'min', val };
   }
 
   // Pattern E: (\d{7,})
-  const matchE = qNoSpace.match(/(\d{7,})/);
+  const matchE = q.match(/\b(\d{7,})\b/);
   if (matchE) {
     const val = parseInt(matchE[1], 10);
     return { op: isMax ? 'max' : 'min', val };
@@ -1014,7 +1034,11 @@ function validateTextProducts(responseText, products) {
 
   const lines = temp.split('\n');
   const brands = new Set(['iphone', 'apple', 'samsung', 'galaxy', 'xiaomi', 'redmi', 'poco', 'oppo', 'vivo', 'realme', 'sony', 'xperia', 'google', 'pixel', 'vsmart', 'asus', 'rog', 'tecno', 'nokia', 'honor', 'infinix', 'motorola']);
-  const refusalKeywords = new Set(['khong co', 'khong ban', 'tam het', 'chua kinh doanh', 'chua co', 'khong tim thay', 'khong ho tro', 'het hang', 'chua ve hang', 'ngung ban']);
+  const refusalKeywords = new Set([
+    'khong co', 'khong ban', 'tam het', 'chua kinh doanh', 'chua co', 'khong tim thay', 
+    'khong ho tro', 'het hang', 'chua ve hang', 'ngung ban', 'chua tim thay', 'chua ban',
+    'khong co san', 'chua co san'
+  ]);
   
   const nonModelWords = new Set([
     'camera', 'mp', 'sony', 'sensor', 'lens', 'man', 'hinh', 'amoled', 'ips', 'lcd', 'pin', 'mah', 
@@ -1278,6 +1302,7 @@ router.post('/chat', checkChatbotAccess, async (req, res) => {
     let currentConversationId = conversationId;
     let isNewConversation = false;
     let userInterests = [];
+    let isFromRag = false;
 
     if (userId) {
       if (!currentConversationId) {
@@ -1871,6 +1896,7 @@ Trả lời (HTML thuần, KHÔNG dùng markdown **/*, có thể dùng <br>, <st
               ragRecordFailure();
             } else {
               aiResponse = pyData.response;
+              isFromRag = true;
               ragRecordSuccess();
               if (pyData.context_state) {
                 contextState = pyData.context_state;
@@ -2091,7 +2117,7 @@ Trả lời (HTML thuần, KHÔNG dùng markdown **/*, có thể dùng <br>, <st
     }
 
     // Chạy các bộ lọc kiểm duyệt đầu ra (Output Guardrails) cho phản hồi sinh bởi AI (RAG / Direct LLM)
-    if (aiResponse && !matchedKeyword) {
+    if (aiResponse && !matchedKeyword && !isFromRag) {
       if (!dbProducts) {
         dbProducts = await getProductsFromDB();
       }

@@ -1522,10 +1522,21 @@ function renderRelatedProducts(product) {
           const phoneNameLower = p.name.toLowerCase();
           const accNameLower = product.name.toLowerCase();
           
-          // Lấy từ khóa đại diện dòng máy (ví dụ: "16 pro max" từ "iPhone 16 Pro Max")
+          // Kiểm tra nếu phụ kiện hiện tại là loại chuyên biệt (ốp lưng, kính, dán)
+          const isModelSpecific = accNameLower.includes('ốp') || accNameLower.includes('kính') || accNameLower.includes('dán') || accNameLower.includes('bao da');
           const modelKeywords = p.name.replace(/iPhone|Samsung|Xiaomi|Oppo|Vivo|Asus|Sony|Realme/gi, '').trim().toLowerCase();
-          if (modelKeywords && modelKeywords.length > 2 && accNameLower.includes(modelKeywords)) {
-              score += 30;
+          
+          if (isModelSpecific) {
+              const hasKeyword = modelKeywords && (accNameLower.includes(modelKeywords) || accNameLower.includes(modelKeywords.replace(/\s+/g, '')));
+              if (!hasKeyword) {
+                  return { ...p, score: 0 }; // Không tương thích dòng máy
+              }
+              score += 40;
+          } else {
+              // Phụ kiện chung thì cộng điểm bình thường nếu khớp dòng máy
+              if (modelKeywords && modelKeywords.length > 2 && accNameLower.includes(modelKeywords)) {
+                  score += 30;
+              }
           }
           
           // Cùng thương hiệu -> +15đ
@@ -1533,7 +1544,7 @@ function renderRelatedProducts(product) {
               score += 15;
           }
           
-          return { ...p, score };
+          return { ...p, score, relationTag: '📱 Thiết bị tương thích' };
       })
       .filter(p => p.score > 0)
       .sort((a, b) => b.score - a.score)
@@ -1559,7 +1570,7 @@ function renderRelatedProducts(product) {
               else if (priceRatio <= 0.5) score += 5;
           }
           
-          return { ...p, score };
+          return { ...p, score, relationTag: '🔌 Phụ kiện liên quan' };
       })
       .filter(p => p.score > 0)
       .sort((a, b) => b.score - a.score)
@@ -1592,7 +1603,7 @@ function renderRelatedProducts(product) {
               score += 5;
           }
           
-          return { ...p, score };
+          return { ...p, score, relationTag: '📱 Cùng phân khúc' };
       })
       .filter(p => p.score >= 5)
       .sort((a, b) => b.score - a.score)
@@ -1603,10 +1614,31 @@ function renderRelatedProducts(product) {
           let score = 0;
           const accNameLower = p.name.toLowerCase();
           
-          // Lấy các từ khóa đại diện dòng máy (ví dụ: "16 pro max" từ "iPhone 16 Pro Max")
+          // Kiểm tra xem phụ kiện có chuyên biệt cho dòng máy cụ thể nào không (ốp lưng, kính cường lực, bao da)
+          const isModelSpecific = accNameLower.includes('ốp') || accNameLower.includes('kính') || accNameLower.includes('dán') || accNameLower.includes('bao da');
           const modelKeywords = product.name.replace(/iPhone|Samsung|Xiaomi|Oppo|Vivo|Asus|Sony|Realme/gi, '').trim().toLowerCase();
-          if (modelKeywords && modelKeywords.length > 2 && accNameLower.includes(modelKeywords)) {
-              score += 30;
+          
+          if (isModelSpecific) {
+              // Phụ kiện chuyên biệt: BẮT BUỘC phải khớp từ khóa dòng máy (ví dụ: "14 pro max" hoặc "14 promax")
+              const hasKeyword = modelKeywords && (accNameLower.includes(modelKeywords) || accNameLower.includes(modelKeywords.replace(/\s+/g, '')));
+              if (!hasKeyword) {
+                  return { ...p, score: 0 }; // Nếu lệch dòng máy (ví dụ: ốp 16 cho máy 14), loại bỏ thẳng
+              }
+              score += 40; // Đạt điểm cao vì tương thích hoàn toàn
+          } else {
+              // Phụ kiện chung (như sạc, cáp) -> nếu tên ghi rõ dòng máy khác thì loại trừ
+              const otherModels = ['11', '12', '13', '14', '15', '16', '17', '18', 's23', 's24', 's22'];
+              const currentModelNum = modelKeywords.replace(/[^0-9]/g, ''); // "14"
+              let hasConflict = false;
+              for (const m of otherModels) {
+                  if (m !== currentModelNum && accNameLower.includes('iphone ' + m)) {
+                      hasConflict = true;
+                      break;
+                  }
+              }
+              if (hasConflict) {
+                  return { ...p, score: 0 };
+              }
           }
           
           // Cùng thương hiệu -> +15đ
@@ -1614,7 +1646,7 @@ function renderRelatedProducts(product) {
               score += 15;
           }
           
-          return { ...p, score };
+          return { ...p, score, relationTag: '🔌 Phụ kiện đi kèm' };
       })
       .filter(p => p.score > 0)
       .sort((a, b) => b.score - a.score)
@@ -1635,7 +1667,8 @@ function renderRelatedProducts(product) {
               if (a.brand !== product.brand && b.brand === product.brand) return 1;
               return 0;
           })
-          .slice(0, 5 - related.length);
+          .slice(0, 5 - related.length)
+          .map(p => ({ ...p, relationTag: p.category === 'phukien' ? '🔌 Gợi ý mua kèm' : '📱 Xem thêm' }));
       related = [...related, ...fallbacks];
   }
   const container = document.getElementById('relatedProducts');
@@ -1653,9 +1686,27 @@ function renderRelatedProducts(product) {
     if (pImage && !pImage.startsWith('http') && !pImage.startsWith('images/')) {
       pImage = `images/${pImage}`;
     }
+
+    // Thiết lập màu sắc và icon phù hợp cho nhãn Tag quan hệ sản phẩm đi kèm
+    let tagHtml = '';
+    if (p.relationTag) {
+        let badgeBg = 'bg-blue-500';
+        if (p.relationTag.includes('đi kèm') || p.relationTag.includes('mua kèm')) {
+            badgeBg = 'bg-gradient-to-r from-emerald-500 to-teal-600';
+        } else if (p.relationTag.includes('tương thích') || p.relationTag.includes('Tương thích')) {
+            badgeBg = 'bg-gradient-to-r from-purple-500 to-indigo-600';
+        } else if (p.relationTag.includes('Cùng phân khúc') || p.relationTag.includes('Cùng dòng')) {
+            badgeBg = 'bg-gradient-to-r from-blue-500 to-indigo-600';
+        } else if (p.relationTag.includes('liên quan')) {
+            badgeBg = 'bg-gradient-to-r from-orange-500 to-amber-600';
+        }
+        tagHtml = `<span class="absolute top-2 left-2 ${badgeBg} text-white text-[9px] font-bold px-2 py-0.5 rounded-full z-10 shadow-sm">${p.relationTag}</span>`;
+    }
+
     return `
-    <a href="product-detail.html?id=${p.id}" class="related-product-card group">
-      <div class="aspect-square p-4 bg-gray-50 flex items-center justify-center overflow-hidden">
+    <a href="product-detail.html?id=${p.id}" class="related-product-card group relative">
+      <div class="aspect-square p-4 bg-gray-50 flex items-center justify-center overflow-hidden relative">
+        ${tagHtml}
         <img src="${pImage}" alt="${p.name}" class="max-w-full max-h-full object-contain" loading="lazy" onerror="this.onerror=null; this.src='images/iphone.jpg';" />
       </div>
       <div class="p-3">
@@ -1722,7 +1773,7 @@ async function loadRecommendations(productId) {
         let recContainer = document.getElementById('ml-recommendations');
         if (!recContainer) {
             // Tìm nơi chèn (dưới phần đánh giá hoặc dưới thông tin sản phẩm)
-            const mainContent = document.querySelector('.container.mx-auto');
+            const mainContent = document.querySelector('main') || document.body;
             if(!mainContent) return;
             
             recContainer = document.createElement('div');
@@ -1749,10 +1800,15 @@ async function loadRecommendations(productId) {
         const cartStr = localStorage.getItem(cartKey);
         const cartItems = cartStr ? JSON.parse(cartStr).map(i => 'PROD' + i.id) : [];
 
+        // Bổ sung sản phẩm hiện tại vào danh sách gửi đi để kích hoạt luật Apriori cho sản phẩm này
+        if (productId && !cartItems.includes('PROD' + productId)) {
+            cartItems.push('PROD' + productId);
+        }
+
         const response = await fetch(`${API_URL}/recommendations`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: userId, cartItems: cartItems })
+            body: JSON.stringify({ userId: userId, cartItems: cartItems, currentProductId: productId })
         });
         
         const result = await response.json();
@@ -1760,19 +1816,58 @@ async function loadRecommendations(productId) {
         if (result.success && result.data && result.data.length > 0) {
             listEl.innerHTML = '';
             result.data.forEach(product => {
-                const price = product.gia ? product.gia.toLocaleString('vi-VN') + 'đ' : 'Liên hệ';
-                const oldPrice = product.gia_cu ? `<del class="text-xs text-gray-400 block">${product.gia_cu.toLocaleString('vi-VN')}đ</del>` : '';
+                // Ánh xạ an toàn giữa các thuộc tính cũ và mới từ database và Express
+                const productName = product.ten_san_pham || product.name || 'Sản phẩm';
+                const productPrice = product.gia !== undefined ? product.gia : product.price;
+                const productOldPrice = product.gia_cu !== undefined ? product.gia_cu : product.oldPrice;
+                const productImage = product.hinh_anh || product.image || '';
+
+                const price = productPrice ? productPrice.toLocaleString('vi-VN') + 'đ' : 'Liên hệ';
+                const oldPrice = productOldPrice ? `<del class="text-xs text-gray-400 block">${productOldPrice.toLocaleString('vi-VN')}đ</del>` : '';
                 
                 // Mặc định ảnh nếu lỗi
-                const imgUrl = product.hinh_anh ? (product.hinh_anh.startsWith('http') ? product.hinh_anh : `../backend/${product.hinh_anh}`) : 'images/default-product.png';
+                let imgUrl = productImage || 'images/default-product.png';
+                if (imgUrl && !imgUrl.startsWith('http') && !imgUrl.startsWith('images/')) {
+                    imgUrl = `images/${imgUrl}`;
+                }
+
+                // Xác định nhãn tag thuật toán AI/Apriori/KNN tương ứng
+                let tagHtml = '';
+                if (product.explanation) {
+                    let badgeBg = 'bg-blue-500';
+                    let tagText = product.explanation;
+                    
+                    if (tagText.includes('Apriori')) {
+                        badgeBg = 'bg-gradient-to-r from-purple-500 to-indigo-600';
+                        tagText = '<i class="fas fa-shopping-basket mr-1"></i> Mua kèm (Apriori)';
+                    } else if (tagText.includes('KNN') || tagText.includes('cộng tác')) {
+                        badgeBg = 'bg-gradient-to-r from-blue-500 to-cyan-600';
+                        tagText = '<i class="fas fa-users mr-1"></i> Cùng gu (KNN)';
+                    } else if (tagText.includes('cá nhân hóa') || tagText.includes('Sở thích') || tagText.includes('sở thích')) {
+                        badgeBg = 'bg-gradient-to-r from-pink-500 to-rose-600';
+                        tagText = '<i class="fas fa-heart mr-1"></i> Sở thích';
+                    } else if (tagText.includes('Xem gần đây')) {
+                        badgeBg = 'bg-slate-500';
+                        tagText = '<i class="fas fa-history mr-1"></i> Đã xem';
+                    } else if (tagText.includes('Cùng hãng')) {
+                        badgeBg = 'bg-gradient-to-r from-emerald-500 to-teal-600';
+                        tagText = `<i class="fas fa-tag mr-1"></i> ${tagText}`;
+                    } else {
+                        badgeBg = 'bg-gradient-to-r from-yellow-400 to-orange-500';
+                        tagText = `<i class="fas fa-sparkles mr-1"></i> ${tagText}`;
+                    }
+                    tagHtml = `<span class="absolute top-2 left-2 ${badgeBg} text-white text-[9px] font-bold px-2 py-0.5 rounded-full z-10 shadow-sm">${tagText}</span>`;
+                } else if (result.source === 'ai' || result.source === 'ai_detail_page') {
+                    tagHtml = '<span class="absolute top-2 left-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full z-10 shadow-sm"><i class="fas fa-magic mr-1"></i>AI Đề xuất</span>';
+                }
 
                 listEl.innerHTML += `
                     <a href="product-detail.html?id=${product.id}" class="group block border rounded-lg p-3 hover:shadow-lg transition-all duration-300 relative overflow-hidden bg-white">
-                        ${result.source === 'ai' ? '<span class="absolute top-2 left-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded-full z-10 shadow-sm"><i class="fas fa-magic mr-1"></i>AI Đề xuất</span>' : ''}
+                        ${tagHtml}
                         <div class="h-40 w-full mb-3 overflow-hidden rounded-md flex items-center justify-center bg-gray-50">
-                            <img src="${imgUrl}" alt="${product.ten_san_pham}" class="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-500">
+                            <img src="${imgUrl}" alt="${productName}" class="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-500">
                         </div>
-                        <h3 class="text-sm font-semibold text-gray-800 line-clamp-2 min-h-[40px] group-hover:text-blue-600 transition-colors">${product.ten_san_pham}</h3>
+                        <h3 class="text-sm font-semibold text-gray-800 line-clamp-2 min-h-[40px] group-hover:text-blue-600 transition-colors" title="${productName}">${productName}</h3>
                         <div class="mt-2">
                             ${oldPrice}
                             <span class="text-red-500 font-bold text-sm">${price}</span>

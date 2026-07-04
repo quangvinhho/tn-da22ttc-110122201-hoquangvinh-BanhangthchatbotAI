@@ -2868,7 +2868,7 @@
   <script>
     async function loadAdminInterests() {
       try {
-        const res = await fetch(`${API_URL}/interests/admin/user-interests`);
+        const res = await fetch(`${API_URL}/interests/admin/user-interests`, { credentials: 'include' });
         const data = await res.json();
         const tbody = document.getElementById('interests-table-body');
         const totalEl = document.getElementById('interests-total');
@@ -2939,7 +2939,7 @@
     async function deleteAdminInterest(id) {
       if (!confirm('Bạn có chắc muốn xóa sở thích này khỏi dữ liệu form của khách hàng?')) return;
       try {
-        const res = await fetch(`${API_URL}/interests/admin/user-interests/${id}`, { method: 'DELETE' });
+        const res = await fetch(`${API_URL}/interests/admin/user-interests/${id}`, { method: 'DELETE', credentials: 'include' });
         const data = await res.json();
         if (data.success) {
           showToast('Đã xóa sở thích', 'success');
@@ -2955,7 +2955,7 @@
     async function deleteAllUserInterests(userId) {
       if (!confirm('Bạn có chắc muốn xóa toàn bộ sở thích của khách hàng này không?')) return;
       try {
-        const res = await fetch(`${API_URL}/interests/admin/user-interests/all/${userId}`, { method: 'DELETE' });
+        const res = await fetch(`${API_URL}/interests/admin/user-interests/all/${userId}`, { method: 'DELETE', credentials: 'include' });
         const data = await res.json();
         if (data.success) {
           showToast('Đã xóa toàn bộ sở thích của khách hàng', 'success');
@@ -3016,7 +3016,7 @@
       tbody.innerHTML = '<tr><td colspan="5" class="text-center py-12 text-slate-400"><i class="fas fa-spinner fa-spin mr-2 text-lg text-blue-500"></i>Đang tải dữ liệu...</td></tr>';
       
       try {
-        const res = await fetch(`${API_URL}/recommendations/admin/overview-apriori`);
+        const res = await fetch(`${API_URL}/recommendations/admin/overview-apriori`, { credentials: 'include' });
         const result = await res.json();
         
         if (!result.success || !result.data || result.data.length === 0) {
@@ -3115,7 +3115,7 @@
       tbody.innerHTML = '<tr><td colspan="4" class="text-center py-12 text-slate-400"><i class="fas fa-spinner fa-spin mr-2 text-lg text-blue-500"></i>Đang tải dữ liệu...</td></tr>';
       
       try {
-        const res = await fetch(`${API_URL}/recommendations/admin/overview-knn`);
+        const res = await fetch(`${API_URL}/recommendations/admin/overview-knn`, { credentials: 'include' });
         const result = await res.json();
         
         if (!result.success || !result.data || result.data.length === 0) {
@@ -3271,7 +3271,7 @@
       }
       
       try {
-        const res = await fetch(`${API_URL}/recommendations/admin/retrain`, { method: 'POST' });
+        const res = await fetch(`${API_URL}/recommendations/admin/retrain`, { method: 'POST', credentials: 'include' });
         const result = await res.json();
         if (result.success) {
           showToast('Đã tính toán và cập nhật lại dữ liệu gợi ý thành công', 'success');
@@ -3297,7 +3297,7 @@
 
     async function loadAdminViewHistory() {
       try {
-        const res = await fetch(`${API_URL}/interests/admin/view-history`);
+        const res = await fetch(`${API_URL}/interests/admin/view-history`, { credentials: 'include' });
         const data = await res.json();
         const tbody = document.getElementById('viewhistory-table-body');
         const totalEl = document.getElementById('viewhistory-total');
@@ -3360,7 +3360,7 @@
     async function deleteAdminViewHistory(userId, productId) {
       if (!confirm('Bạn có chắc muốn xóa lịch sử xem này?')) return;
       try {
-        const res = await fetch(`${API_URL}/interests/admin/view-history/${userId}/${productId}`, { method: 'DELETE' });
+        const res = await fetch(`${API_URL}/interests/admin/view-history/${userId}/${productId}`, { method: 'DELETE', credentials: 'include' });
         const data = await res.json();
         if (data.success) {
           showToast('Đã xóa lịch sử xem', 'success');
@@ -3376,7 +3376,7 @@
     async function clearAllViewHistory() {
       if (!confirm('CẢNH BÁO: Bạn có chắc chắn muốn xóa TOÀN BỘ lịch sử xem sản phẩm của tất cả khách hàng? Hành động này không thể hoàn tác!')) return;
       try {
-        const res = await fetch(`${API_URL}/interests/admin/view-history/clear`, { method: 'DELETE' });
+        const res = await fetch(`${API_URL}/interests/admin/view-history/clear`, { method: 'DELETE', credentials: 'include' });
         const data = await res.json();
         if (data.success) {
           showToast('Đã xóa toàn bộ lịch sử xem', 'success');

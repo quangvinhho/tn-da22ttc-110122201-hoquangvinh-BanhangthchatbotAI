@@ -128,18 +128,32 @@ def is_accessory(name: str) -> bool:
     if not name:
         return False
     n = remove_diacritics(name.lower())
+    
+    # Check if a phone keyword or brand is explicitly present to avoid false positive accessories (e.g. "điện thoại sạc nhanh")
+    phone_indicators = ['dien thoai', 'may', 'smartphone', 'dt', 'iphone', 'samsung', 'xiaomi', 'oppo', 'vivo', 'realme', 'rog', 'tecno', 'nokia']
+    has_phone_indicator = any(p_ind in n for p_ind in phone_indicators)
+    
     keywords = [
         'op lung', 'op luong', 'op magsafe', 'cap sac', 'cu sac', 'sac nhanh', 
         'tai nghe', 'cuong luc', 'bao da', 'dan man hinh', 'the nho', 
         'pin du phong', 'sac du phong', 'case', 'kinh cuong luc',
-        'day sac', 'day cap', 'coc sac', 'adapter'
+        'day sac', 'day cap', 'coc sac', 'adapter', 'daysac', 'daycap',
+        'capsac', 'cusac', 'oplung', 'opluong'
     ]
-    if any(kw in n for kw in keywords):
-        return True
-    import re
-    if re.search(r'\b(sac|cap)\b', n):
-        return True
-    if re.search(r'\bop\b(?!po)', n):
+    
+    is_acc_kw = any(kw in n for kw in keywords)
+    if not is_acc_kw:
+        import re
+        if re.search(r'\b(sac|cap)\b', n):
+            is_acc_kw = True
+        if re.search(r'\bop\b(?!po)', n):
+            is_acc_kw = True
+            
+    if is_acc_kw:
+        # Exempt charging/cable keywords if a phone indicator is present
+        if has_phone_indicator:
+            if 'op' not in n and 'tai nghe' not in n and 'cuong luc' not in n and 'bao da' not in n:
+                return False
         return True
     return False
 
@@ -159,34 +173,37 @@ def parse_price_constraint(question: str):
         return None
         
     q = remove_diacritics(question.lower())
-    # Normalize spaces: remove all spaces to make matching easier and contiguous
-    q_no_space = re.sub(r'\s+', '', q)
-    
-    # 1. Check comparison direction: max (dưới, <=, trở xuống, đổ lại, tầm, khoảng) vs min (trên, >=, trở lên, hơn)
+    # 1. Check comparison direction: max vs min
     is_max = False
     is_min = False
     
-    max_keywords = ['duoi', '<=', 'troxuong', 'dolai', 'tam', 'khoang', 'max', 'ngansach']
-    min_keywords = ['tren', '>=', 'trolen', 'hon', 'min']
+    min_keywords_exact = ['tren', 'trolen', 'hon', 'min']
+    max_keywords_exact = ['duoi', 'troxuong', 'dolai', 'max', 'ngansach']
     
-    # Check if max or min keywords are in the question (unspaced)
-    for kw in max_keywords:
-        if kw in q_no_space:
-            is_max = True
-            break
-            
-    for kw in min_keywords:
-        if kw in q_no_space:
+    for kw in min_keywords_exact:
+        if re.search(r'\b' + re.escape(kw) + r'\b', q) or '>=' in q:
             is_min = True
             break
             
-    # Default to max if no direction is specified (e.g. "iPhone 5tr" -> max budget 5tr)
+    for kw in max_keywords_exact:
+        if re.search(r'\b' + re.escape(kw) + r'\b', q) or '<=' in q:
+            is_max = True
+            break
+            
+    # Check for "tam", "khoang" but only if not min (to handle "khoảng trên" / "tầm hơn" correctly)
+    if not is_min:
+        for kw in ['tam', 'khoang']:
+            if re.search(r'\b' + re.escape(kw) + r'\b', q):
+                is_max = True
+                break
+                
+    # Default to max if no direction is specified
     if not is_max and not is_min:
         is_max = True
         
-    # 2. Extract values using precise regexes on q_no_space
-    # Pattern A: (\d+)(?:trieu|tr|t)(\d+) -> e.g. 5tr5, 15t800
-    match_a = re.search(r'(\d+)(?:trieu|tr|t)(\d+)', q_no_space)
+    # 2. Extract values using precise regexes on space-preserved q
+    # Pattern A: (\d+)\s*(?:trieu|tr|t)\s*(\d+) -> e.g. 5tr5, 15t800
+    match_a = re.search(r'\b(\d+)\s*(?:trieu|tr|t)\s*(\d+)\b', q)
     if match_a:
         try:
             mil = int(match_a.group(1))
@@ -196,8 +213,8 @@ def parse_price_constraint(question: str):
         except ValueError:
             pass
             
-    # Pattern B: (\d+[\.,]\d+)(?:trieu|tr|t) -> e.g. 5.5tr, 5,5tr
-    match_b = re.search(r'(\d+[\.,]\d+)(?:trieu|tr|t)', q_no_space)
+    # Pattern B: (\d+[\.,]\d+)\s*(?:trieu|tr|t) -> e.g. 5.5tr, 5,5tr
+    match_b = re.search(r'\b(\d+[\.,]\d+)\s*(?:trieu|tr|t)\b', q)
     if match_b:
         try:
             val = float(match_b.group(1).replace(',', '.')) * 1000000
@@ -205,8 +222,8 @@ def parse_price_constraint(question: str):
         except ValueError:
             pass
             
-    # Pattern C: (\d+)(?:trieu|tr|t)\b -> e.g. 5tr, 15trieu
-    match_c = re.search(r'(\d+)(?:trieu|tr|t)\b', q_no_space)
+    # Pattern C: (\d+)\s*(?:trieu|tr|t)\b -> e.g. 5tr, 15trieu
+    match_c = re.search(r'\b(\d+)\s*(?:trieu|tr|t)\b', q)
     if match_c:
         try:
             val = int(match_c.group(1)) * 1000000
@@ -214,19 +231,17 @@ def parse_price_constraint(question: str):
         except ValueError:
             pass
             
-    # Pattern D: (\d+)k\b -> e.g. 500k
-    match_d = re.search(r'(\d+)k\b', q_no_space)
+    # Pattern D: (\d+)\s*k\b -> e.g. 500k
+    match_d = re.search(r'\b(\d+)\s*k\b', q)
     if match_d:
         try:
-            val = int(match_d.group(1)) * 100
-            # Wait! Let's check: 500k is 500 * 1000 = 500000. Wait, in my replacement code here I typed `int(match_d.group(1)) * 100` instead of `* 1000`. Good catch! Let's correct it to `* 1000`.
             val = int(match_d.group(1)) * 1000
             return ("max" if is_max else "min", val)
         except ValueError:
             pass
             
     # Pattern E: (\d{7,}) -> e.g. 5000000
-    match_e = re.search(r'(\d{7,})', q_no_space)
+    match_e = re.search(r'\b(\d{7,})\b', q)
     if match_e:
         try:
             val = int(match_e.group(1))
@@ -372,6 +387,11 @@ class RAGEngine:
         
         # 6. Caching system (Redis with In-memory fallback)
         self.cache = ChatbotCache()
+        try:
+            self.cache.clear()
+            print("[RAG Init] Cache cleared successfully.")
+        except Exception as e:
+            print(f"[RAG Init] Failed to clear cache: {e}")
         
         # Try to load existing vector store or create a new one
         if os.path.exists(self.vector_dir):
@@ -386,6 +406,9 @@ class RAGEngine:
         t = text.lower()
         
         # 1. Brands
+        t = re.sub(r'\bip\s*(\d+)', r'iphone \1', t)
+        t = re.sub(r'\bss\s*(\d+)', r'samsung \1', t)
+        t = re.sub(r'\bmi\s*(\d+)', r'xiaomi \1', t)
         t = re.sub(r'\bss\b', 'samsung', t)
         t = re.sub(r'\bip\b', 'iphone', t)
         
@@ -715,6 +738,10 @@ class RAGEngine:
         4. XỬ LÝ KHI THÔNG TIN KHÔNG CÓ TRONG CONTEXT (TUYỆT ĐỐI KHÔNG BỊA ĐẶT):
            - BẮT BUỘC KHẲNG ĐỊNH KHÔNG CÓ TRƯỚC: Nếu khách hàng hỏi về một dòng máy/hãng cụ thể trong tầm giá mà Context không có sản phẩm nào thỏa mãn (Ví dụ: khách hỏi "iPhone dưới 4 triệu" nhưng Context không có chiếc iPhone nào dưới 4 triệu), bạn BẮT BUỘC phải bắt đầu câu trả lời bằng cách khẳng định rõ ràng, lịch sự và trực tiếp là cửa hàng không có hoặc đang tạm hết dòng sản phẩm đó trong tầm giá yêu cầu (Ví dụ: "Dạ, hiện tại dòng iPhone có giá dưới 4 triệu đồng bên em đang tạm hết hàng ạ" hoặc "Dạ, hiện tại cửa hàng bên em không có mẫu iPhone nào ở phân khúc dưới 4 triệu đồng ạ").
            - GỢI Ý THAY THẾ LỊCH SỰ: Sau khi khẳng định rõ ràng là không có, bạn mới được chủ động gợi ý giới thiệu các dòng sản phẩm của hãng KHÁC đang có sẵn trong Context thỏa mãn tầm giá đó để khách tham khảo (Ví dụ: "Tuy nhiên, trong tầm giá dưới 4 triệu, anh/chị có thể tham khảo một số mẫu điện thoại Android đang có sẵn hàng tại cửa hàng như...").
+           - ĐỐI VỚI YÊU CẦU SO SÁNH (NẾU THIẾU SẢN PHẨM): Nếu khách hàng muốn so sánh 2 sản phẩm A và B, nhưng cửa hàng chỉ có sản phẩm B mà không có sản phẩm A (hoặc ngược lại):
+             + Bạn BẮT BUỘC phải thông báo lịch sự ngay từ đầu là sản phẩm A hiện đang tạm hết hàng tại cửa hàng.
+             + Sau đó, bạn chủ động đề xuất một sản phẩm tương tự A đang có sẵn tại cửa hàng (gọi là A') để so sánh với B cho khách tiện theo dõi (Ví dụ: "Dạ, hiện tại dòng iPhone 15 bên em đang tạm hết hàng rồi ạ. Để anh/chị tiện tham khảo, em xin phép đề xuất dòng máy tương tự đang có sẵn là iPhone 14 Pro Max để so sánh với Samsung A07 cho mình nhé!").
+             + Tiến hành so sánh khách quan giữa A' và B. Chỉ được xuất thẻ card sản phẩm (ai-product-card) cho các sản phẩm thực sự đang có sẵn trong Context (tức là A' và B). TUYỆT ĐỐI không vẽ thẻ card cho sản phẩm A không có trong CSDL.
            - TUYỆT ĐỐI NGHIÊM CẤM TỰ BỊA (HALLUCINATE) sản phẩm không có trong Context RAG dưới đây (như tự chế ra iPhone 8, iPhone 11, iPhone 13 có giá dưới 4 triệu).
            - LƯU Ý THUẬT NGỮ: Từ viết tắt "ip" hoặc "IP" trong câu hỏi của khách hàng luôn có nghĩa là "iPhone" (điện thoại của hãng Apple). Tuyệt đối KHÔNG được hiểu nhầm "ip" thành "IP rating" hay tiêu chuẩn kháng nước bụi (như IP53, IP52) để tự bịa ra các dòng điện thoại Android giá rẻ có chuẩn kháng nước đó.
            - Nếu khách hàng hỏi về thông tin chính sách (bảo hành, đổi trả, ship hàng, trả góp...), thông tin liên hệ hoặc các thắc mắc chung về cửa hàng KHÔNG có trong Context RAG bên dưới, tuyệt đối KHÔNG phản hồi "sản phẩm tạm hết hàng". Thay vào đó, hãy lịch sự giải đáp dựa trên các kiến thức chung hiện có và hướng dẫn khách hàng liên hệ trực tiếp với Hotline hoặc Zalo CSKH của QuangHưng Mobile để được nhân viên hỗ trợ chi tiết nhanh nhất.
@@ -735,7 +762,7 @@ class RAGEngine:
                   </div>
                 </div>
               </div>
-             (Thay thế [[Anh]], [[Ten_san_pham]], [[Gia]], [[ID]] bằng thông tin thật. Trong đó, [[Anh]] BẮT BUỘC phải SAO CHÉP NGUYÊN VĂN 100% đường dẫn ảnh từ trường "Ảnh đại diện (anh_dai_dien)" được cung cấp trong thông tin sản phẩm (Ví dụ: "images/products/product-1766371394101-525441573.jpg" - BẮT BUỘC copy nguyên cả đường dẫn bao gồm "images/products/...", KHÔNG tự chế tên file, KHÔNG bỏ đuôi .webp/.jpg/.png/.avif, KHÔNG bỏ phần "images/products/" ở đầu). Riêng phần [[Cau_hinh]] bạn tự tổng hợp ngắn gọn các thông số như RAM, Chip, Pin, Màn hình, Camera thành 1 câu giống trong ảnh).
+             (Thay thế [[Anh]], [[Ten_san_pham]], [[Gia]], [[ID]] bằng thông tin thật. Trong đó, [[Anh]] BẮT BUỘC phải SAO CHÉP NGUYÊN VĂN 100% đường dẫn ảnh từ trường "Ảnh đại diện (anh_dai_dien)" được cung cấp trong thông tin sản phẩm (Ví dụ: "images/products/product-1766371394101-525441573.jpg" - BẮT BUỘC copy nguyên cả đường dẫn bao gồm "images/products/...", KHÔNG tự chế tên file, KHÔNG bỏ đuôi .webp/.jpg/.png/.avif, KHÔNG bỏ phần "images/products/" ở đầu). Riêng phần [[ID]], bạn BẮT BUỘC phải sử dụng đúng ID được cung cấp cho sản phẩm đó trong ngữ cảnh dữ liệu chuẩn, TUYỆT ĐỐI không tự suy diễn hoặc tự chế ID khác dựa theo tên hay số hiệu của sản phẩm (Ví dụ: Không được tự chế ID là 14 cho iPhone 14 nếu sản phẩm tương ứng trong danh sách là iPhone 14 promax có ID là 2. Hãy dùng đúng ID 2 và ghi rõ tên sản phẩm là iPhone 14 promax). Riêng phần [[Cau_hinh]] bạn tự tổng hợp ngắn gọn các thông số như RAM, Chip, Pin, Màn hình, Camera thành 1 câu giống trong ảnh).
 
         6. KHỚP ẢNH CHÍNH XÁC & PHÂN LOẠI DANH MỤC SẢN PHẨM (BẮT BUỘC):
            - Hãy xem kỹ "Loại sản phẩm (Danh mục)" của từng mặt hàng được cung cấp trong Context.
@@ -1104,9 +1131,8 @@ class RAGEngine:
         return {r[0] for r in sig}
 
     def _validate_response_product_ids(self, response_text: str) -> str:
-        """Quét product-detail.html?id=<ID> trong response. Nếu ID không có trong DB,
-        đã hết hàng, bị LLM đổi tên sai lệch, hoặc bị LLM bịa giá khác DB,
-        thay khối <div> bao quanh SP đó bằng câu xin lỗi để tránh 'bịa SP'."""
+        """Quét product-detail.html?id=<ID> trong response. Thực hiện kiểm chứng, tự động
+        sửa lỗi sai ID, sai giá, lệch ảnh, hoặc loại bỏ thẻ sản phẩm nếu không có trong DB."""
         if not response_text:
             return response_text
         import re
@@ -1117,9 +1143,11 @@ class RAGEngine:
             conn = mysql.connector.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, database=DB_NAME)
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT sp.ma_sp, sp.ten_sp, sp.gia, hsx.ten_hang, sp.anh_dai_dien 
+                SELECT sp.ma_sp, sp.ten_sp, sp.gia, hsx.ten_hang, sp.anh_dai_dien,
+                       ch.ram, ch.chip, ch.pin, ch.man_hinh, ch.camera
                 FROM san_pham sp 
                 LEFT JOIN hang_san_xuat hsx ON sp.ma_hang = hsx.ma_hang 
+                LEFT JOIN cau_hinh ch ON sp.ma_sp = ch.ma_sp
                 WHERE sp.so_luong_ton > 0
             """)
             for r in cursor.fetchall():
@@ -1127,7 +1155,12 @@ class RAGEngine:
                     'ten_sp': str(r[1]), 
                     'gia': float(r[2]) if r[2] else 0,
                     'ten_hang': str(r[3]) if r[3] else '',
-                    'anh_dai_dien': str(r[4]) if r[4] else ''
+                    'anh_dai_dien': str(r[4]) if r[4] else '',
+                    'ram': str(r[5]) if r[5] else '',
+                    'chip': str(r[6]) if r[6] else '',
+                    'pin': str(r[7]) if r[7] else '',
+                    'man_hinh': str(r[8]) if r[8] else '',
+                    'camera': str(r[9]) if r[9] else ''
                 }
             cursor.close()
             conn.close()
@@ -1145,7 +1178,7 @@ class RAGEngine:
             s = ''.join(c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn')
             s = s.replace('đ', 'd').replace('Đ', 'd')
             words = set(re.findall(r'\b\w+\b', s))
-            common = {'gb', 'ram', 'tb', '5g', '4g', 'lte', 'pro', 'max', 'plus', 'cu', 'moi', 'chinh', 'hang', 'viet', 'nam', 'mau', 'sac'}
+            common = {'gb', 'ram', 'tb', '5g', '4g', 'lte', 'pro', 'max', 'plus', 'cu', 'moi', 'chinh', 'hang', 'viet', 'nam', 'mau', 'sac', 'promax', 'ultra', 'fe', 'lite', 'neo', 'se'}
             filtered_words = set()
             for w in words:
                 if w in common:
@@ -1238,109 +1271,97 @@ class RAGEngine:
                     pass
             return list(set(prices))
 
-        invalid_ranges = []
-        for mid in mentioned_ids:
-            mid_str = str(mid)
-            if mid_str not in db_products:
-                print(f"[Validate] Phát hiện ID {mid_str} không tồn tại trong DB (BỊA SẢN PHẨM)")
-                block_info = find_html_block_for_id(response_text, mid_str)
-                if block_info:
-                    _, start, end = block_info
-                    invalid_ranges.append((start, end))
-                continue
-            
-            db_info = db_products[mid_str]
-            db_name = db_info['ten_sp']
-            db_price = db_info['gia']
-            
-            block_info = find_html_block_for_id(response_text, mid_str)
-            if block_info:
-                block_content, start, end = block_info
-                
-                # --- Kiểm tra TÊN sản phẩm ---
-                rendered_name = None
-                name_match = re.search(r'class="ai-product-name"[^>]*>([^<]+)</strong>', block_content, re.IGNORECASE)
-                if not name_match:
-                    name_match = re.search(r'<strong[^>]*>([^<]+)</strong>', block_content, re.IGNORECASE)
-                if name_match:
-                    rendered_name = name_match.group(1).strip()
-                else:
-                    md_match = re.search(r'\[([^\]]+)\]\(product-detail\.html\?id=' + re.escape(mid_str) + r'\)', block_content, re.IGNORECASE)
-                    if md_match:
-                        rendered_name = md_match.group(1).strip()
-                        
-                is_invalid = False
-                if rendered_name:
-                    if not check_name_match(db_name, rendered_name):
-                        print(f"[Validate] Phát hiện lệch tên sản phẩm cho ID {mid_str}: DB là '{db_name}' nhưng LLM in ra '{rendered_name}' -> Đánh dấu không hợp lệ")
-                        is_invalid = True
-                else:
-                    db_core = get_core_words(db_name)
-                    brands = {'iphone', 'apple', 'samsung', 'galaxy', 'xiaomi', 'redmi', 'poco', 'oppo', 'vivo', 'realme', 'sony', 'xperia', 'google', 'pixel', 'vsmart', 'asus', 'rog', 'tecno', 'nokia'}
-                    db_strict = db_core - brands
-                    words_to_check = db_strict if db_strict else db_core
-                    block_words = get_core_words(block_content)
-                    if not words_to_check.intersection(block_words):
-                        print(f"[Validate] Không tìm thấy từ khóa tên sản phẩm cho ID {mid_str} trong block: DB '{db_name}' -> Đánh dấu không hợp lệ")
-                        is_invalid = True
-                
-                # --- Kiểm tra GIÁ sản phẩm (CHỐNG BỊA GIÁ) ---
-                if not is_invalid and db_price > 0:
-                    prices = extract_prices_from_block(block_content)
-                    if prices:
-                        price_matched = False
-                        for p in prices:
-                            deviation = abs(p - db_price) / db_price
-                            if deviation <= 0.01:
-                                price_matched = True
-                                break
-                        if not price_matched:
-                            print(f"[Validate] Phát hiện BỊA GIÁ cho ID {mid_str} ('{db_name}'): DB giá={int(db_price)}, LLM in ra={prices} -> Đánh dấu không hợp lệ")
-                            is_invalid = True
-                    else:
-                        if "ai-product-card" in block_content or "display:flex" in block_content:
-                            print(f"[Validate] Thiếu giá cho ID {mid_str} trong product card -> Đánh dấu không hợp lệ")
-                            is_invalid = True
+        # Bộ nhớ đệm lưu các khối thẻ sản phẩm đã qua xử lý để tránh thay thế trùng lặp
+        processed_blocks = {}
+        repaired_text = response_text
 
-                # --- Kiểm tra ẢNH sản phẩm ---
+        for mid in list(mentioned_ids):
+            mid_str = str(mid)
+            block_info = find_html_block_for_id(repaired_text, mid_str)
+            if not block_info:
+                continue
+
+            block_content, start, end = block_info
+            if block_content in processed_blocks:
+                continue
+
+            # --- Trích xuất TÊN hiển thị từ thẻ ---
+            rendered_name = None
+            name_match = re.search(r'class="ai-product-name"[^>]*>([^<]+)</strong>', block_content, re.IGNORECASE)
+            if not name_match:
+                name_match = re.search(r'<strong[^>]*>([^<]+)</strong>', block_content, re.IGNORECASE)
+            if name_match:
+                rendered_name = name_match.group(1).strip()
+            else:
+                md_match = re.search(r'\[([^\]]+)\]\(product-detail\.html\?id=' + re.escape(mid_str) + r'\)', block_content, re.IGNORECASE)
+                if md_match:
+                    rendered_name = md_match.group(1).strip()
+
+            # --- Tìm sản phẩm trùng khớp trong DB dựa trên Tên ---
+            matched_product = None
+            if rendered_name:
+                for db_id, db_p in db_products.items():
+                    if check_name_match(db_p['ten_sp'], rendered_name):
+                        matched_product = (db_id, db_p)
+                        break
+
+            # Nếu tìm thấy sản phẩm trong DB → Tiến hành TỰ ĐỘNG SỬA (Repaired Card)
+            if matched_product:
+                db_id, db_p = matched_product
+                db_name = db_p['ten_sp']
+                db_price = db_p['gia']
+                db_image = db_p['anh_dai_dien']
+
+                # Xây dựng chuỗi cấu hình từ thông tin DB
+                ram = db_p.get('ram')
+                chip = db_p.get('chip')
+                pin = db_p.get('pin')
+                man_hinh = db_p.get('man_hinh')
+                camera = db_p.get('camera')
+
+                parts = []
+                if ram: parts.append(f"RAM {ram}")
+                if chip: parts.append(f"Chip {chip.strip()}")
+                if pin: parts.append(f"Pin {pin.strip()}")
+                if man_hinh: parts.append(f"Màn hình {man_hinh.strip()}")
+                if camera: parts.append(f"Camera {camera.strip()}")
+                config_str = ", ".join(parts) if parts else db_name
+
+                # Định dạng giá tiền chuẩn
+                price_formatted = f"{int(db_price):,}".replace(",", ".") + "đ" if db_price > 0 else "N/A"
+                price_raw = int(db_price)
+
+                # Ảnh sản phẩm: ưu tiên DB, fallback sang ảnh LLM viết nếu DB null
                 rendered_img = None
                 img_match = re.search(r'<img[^>]*src="([^"]+)"', block_content, re.IGNORECASE)
-                if not img_match:
-                    img_match = re.search(r"<img[^>]*src='([^']+)'", block_content, re.IGNORECASE)
                 if img_match:
                     rendered_img = img_match.group(1).strip()
-                
-                if not is_invalid and rendered_img and db_info.get('anh_dai_dien'):
-                    def normalize_path(p):
-                        return p.lower().replace('\\', '/').strip('/')
-                    norm_rendered = normalize_path(rendered_img)
-                    norm_db = normalize_path(db_info['anh_dai_dien'])
-                    if norm_rendered != norm_db and not norm_rendered.endswith(norm_db) and not norm_db.endswith(norm_rendered):
-                        print(f"[Validate] Phát hiện lệch ảnh sản phẩm cho ID {mid_str}: DB là '{db_info['anh_dai_dien']}' nhưng LLM in ra '{rendered_img}' -> Đánh dấu không hợp lệ")
-                        is_invalid = True
-                
-                if is_invalid:
-                    invalid_ranges.append((start, end))
+                final_image = db_image if db_image else (rendered_img or "images/default-product.webp")
 
-        cleaned = response_text
-        if invalid_ranges:
-            # Gộp các khoảng trùng lặp và sắp xếp giảm dần theo chỉ số bắt đầu
-            invalid_ranges.sort(key=lambda x: x[0])
-            merged_ranges = []
-            for r in invalid_ranges:
-                if not merged_ranges:
-                    merged_ranges.append(r)
-                else:
-                    prev_start, prev_end = merged_ranges[-1]
-                    curr_start, curr_end = r
-                    if curr_start < prev_end:
-                        merged_ranges[-1] = (prev_start, max(prev_end, curr_end))
-                    else:
-                        merged_ranges.append(r)
+                # Dựng lại thẻ HTML chuẩn 100%
+                rebuilt_block = f"""<div class="ai-product-card">
+  <img src="{final_image}" alt="{db_name}" class="ai-product-image">
+  <div class="ai-product-info">
+    <strong class="ai-product-name">{db_name}</strong>
+    <div class="ai-product-price-row">Giá: <span class="ai-product-price">{price_formatted}</span></div>
+    <div class="ai-product-config">{config_str}</div>
+    <div class="ai-product-actions">
+      <a href="product-detail.html?id={db_id}" class="ai-product-btn-detail">Xem chi tiết</a>
+      <button class="chatbot-add-cart-btn ai-product-btn-cart" data-pid="{db_id}" data-pname="{db_name}" data-pprice="{price_raw}" data-pimage="{final_image}"><i class="fas fa-cart-plus"></i> Thêm</button>
+    </div>
+  </div>
+</div>"""
+                processed_blocks[block_content] = rebuilt_block
+            else:
+                # Nếu không khớp với bất kỳ sản phẩm nào trong DB → Xóa thẻ này để tránh bịa SP
+                print(f"[Validate] Không khớp tên sản phẩm '{rendered_name}' cho ID {mid_str} -> Tiến hành loại bỏ thẻ khỏi phản hồi")
+                processed_blocks[block_content] = ""
 
-            print(f"[Validate] Có {len(merged_ranges)} khối sản phẩm không hợp lệ cần loại bỏ khỏi response")
-            for start, end in reversed(merged_ranges):
-                cleaned = cleaned[:start] + cleaned[end:]
+        # Thay thế đồng loạt các khối thẻ cũ bằng khối thẻ đã sửa lỗi
+        for old_block, new_block in processed_blocks.items():
+            repaired_text = repaired_text.replace(old_block, new_block)
+
+        cleaned = repaired_text
 
         # --- Kiểm tra Text-based Product Hallucination (Quét các dòng text tự bịa sản phẩm) ---
         def validate_text_products(text: str) -> str:
@@ -1394,7 +1415,8 @@ class RAGEngine:
                 'khong ho tro', 'het hang', 'chua ve hang', 'ngung ban', 'cao hon', 'vuot qua', 
                 'ngan sach', 'tam gia', 'tieu chi', 'khong co hang', 'chua co hang', 'chua ho tro',
                 'so voi', 'gia thuong', 'kho tim', 'khong tim thay mau', 'khong co chiec', 
-                'dong dien thoai cua hang', 'khong co san pham'
+                'dong dien thoai cua hang', 'khong co san pham', 'chua tim thay', 'chua ban',
+                'khong co san', 'chua co san'
             }
             
             non_model_words = {
@@ -1884,7 +1906,7 @@ class RAGEngine:
             s = ''.join(c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn')
             s = s.replace('đ', 'd').replace('Đ', 'd')
             words = set(re.findall(r'\b\w+\b', s))
-            common = {'gb', 'ram', 'tb', '5g', '4g', 'lte', 'pro', 'max', 'plus', 'cu', 'moi', 'chinh', 'hang', 'viet', 'nam', 'mau', 'sac', 'samsung', 'galaxy', 'iphone', 'apple', 'xiaomi', 'redmi', 'poco', 'oppo', 'vivo', 'realme', 'sony', 'xperia', 'google', 'pixel', 'vsmart', 'asus', 'rog', 'tecno', 'nokia'}
+            common = {'gb', 'ram', 'tb', '5g', '4g', 'lte', 'pro', 'max', 'plus', 'cu', 'moi', 'chinh', 'hang', 'viet', 'nam', 'mau', 'sac', 'samsung', 'galaxy', 'iphone', 'apple', 'xiaomi', 'redmi', 'poco', 'oppo', 'vivo', 'realme', 'sony', 'xperia', 'google', 'pixel', 'vsmart', 'asus', 'rog', 'tecno', 'nokia', 'promax', 'ultra', 'fe', 'lite', 'neo', 'se'}
             filtered_words = set()
             for w in words:
                 if w in common:
@@ -1894,7 +1916,7 @@ class RAGEngine:
                 filtered_words.add(w)
             return filtered_words
 
-        q_norm = remove_diacritics((context_state.get("last_query") or "") + " " + (context_state.get("current_query") or ""))
+        q_norm = remove_diacritics((context_state.get("last_query") or "") + " " + (context_state.get("current_query") or "")).lower()
             
         matched_by_name = []
         for p in all_products:
@@ -1934,17 +1956,60 @@ class RAGEngine:
                     
             filtered.append(p)
             
-        # 5. If accessory search with brand returns empty, relax brand constraint
+        # 5. Nếu không tìm thấy sản phẩm nào của hãng đó thỏa mãn tầm giá:
+        # Lấy các sản phẩm hãng khác trong cùng tầm giá đó làm phương án thay thế
+        if not filtered and brands and price_const:
+            print(f"[DB Search] No products found for brands {brands} with price constraint. Finding alternatives from other brands...")
+            for p in all_products:
+                is_acc = is_accessory(p['ten_sp'])
+                if user_asked_for_accessory != is_acc:
+                    continue
+                # Kiểm tra xem có thỏa mãn price constraint không
+                op = price_const.get("op")
+                val = price_const.get("val")
+                p_price = p['gia'] or 0
+                if op == "max" and p_price > val:
+                    continue
+                elif op == "min" and p_price < val:
+                    continue
+                # Tránh lấy cùng hãng đã lọc trước đó
+                p_brand = p['ten_hang'] or ''
+                if any(b.lower() == p_brand.lower() for b in brands):
+                    continue
+                filtered.append(p)
+                if len(filtered) >= 3:
+                    break
+
+        # 6. If accessory search with brand returns empty, relax brand constraint
         if not filtered and brands and user_asked_for_accessory:
             print(f"[DB Search] No accessories found for brands {brands}. Relaxing brand constraint...")
             for p in all_products:
                 if is_accessory(p['ten_sp']):
                     filtered.append(p)
+
+        # 7. Nếu vẫn trống (ví dụ: không có điện thoại nào dưới tầm giá quá thấp), lấy 3 điện thoại rẻ nhất
+        if not filtered:
+            print(f"[DB Search] Still empty. Getting cheapest fallback products...")
+            for p in all_products:
+                is_acc = is_accessory(p['ten_sp'])
+                if user_asked_for_accessory != is_acc:
+                    continue
+                filtered.append(p)
+                if len(filtered) >= 3:
+                    break
                     
         return filtered
 
     def handle_product_link_intent(self, context_state: dict) -> str:
         last_ids = context_state.get("last_recommended_ids", [])
+        if not last_ids:
+            # Try to search products based on current query keywords
+            user_asked_for_accessory = is_accessory(context_state.get("current_query", ""))
+            db_products = self.db_product_search(context_state, user_asked_for_accessory)
+            if db_products:
+                last_ids = [int(p['ma_sp']) for p in db_products[:3]]
+                context_state["last_recommended_ids"] = last_ids
+                
         if not last_ids:
             return "Dạ, hiện tại em chưa có thông tin sản phẩm nào vừa thảo luận để gửi link ạ. Anh/chị cần em tư vấn mẫu máy nào để em tìm và gửi link cho mình nhé!"
             
@@ -1997,7 +2062,7 @@ class RAGEngine:
         s = ''.join(c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn')
         s = s.replace('đ', 'd').replace('Đ', 'd')
         words = set(re.findall(r'\b\w+\b', s))
-        common = {'gb', 'ram', 'tb', '5g', '4g', 'lte', 'pro', 'max', 'plus', 'cu', 'moi', 'chinh', 'hang', 'viet', 'nam', 'mau', 'sac'}
+        common = {'gb', 'ram', 'tb', '5g', '4g', 'lte', 'pro', 'max', 'plus', 'cu', 'moi', 'chinh', 'hang', 'viet', 'nam', 'mau', 'sac', 'samsung', 'galaxy', 'iphone', 'apple', 'xiaomi', 'redmi', 'poco', 'oppo', 'vivo', 'realme', 'sony', 'xperia', 'google', 'pixel', 'vsmart', 'asus', 'rog', 'tecno', 'nokia', 'promax', 'ultra', 'fe', 'lite', 'neo', 'se'}
         filtered_words = set()
         for w in words:
             if w in common:
@@ -2152,7 +2217,8 @@ class RAGEngine:
             'khong ho tro', 'het hang', 'chua ve hang', 'ngung ban', 'cao hon', 'vuot qua', 
             'ngan sach', 'tam gia', 'tieu chi', 'khong co hang', 'chua co hang', 'chua ho tro',
             'so voi', 'gia thuong', 'kho tim', 'khong tim thay mau', 'khong co chiec', 
-            'dong dien thoai cua hang', 'khong co san pham'
+            'dong dien thoai cua hang', 'khong co san pham', 'chua tim thay', 'chua ban',
+            'khong co san', 'chua co san'
         }
         
         db_model_words = set()
@@ -2246,13 +2312,50 @@ class RAGEngine:
             kb_docs = self.vectorstore.similarity_search("trả góp", k=2, filter={"type": "knowledge"})
             kb_context = "\n\n".join(doc.page_content for doc in kb_docs) if kb_docs else ""
             
+            # STILL search products to offer context about the specific product they are asking about
+            db_products = self.db_product_search(context_state, user_asked_for_accessory)
+            prod_context = ""
+            if db_products:
+                context_state["last_recommended_ids"] = [int(p['ma_sp']) for p in db_products[:5]]
+                for p in db_products[:3]:
+                    price_formatted = f"{int(p['gia']):,}".replace(",", ".") + "đ" if p['gia'] else "N/A"
+                    price_raw = int(p['gia']) if p['gia'] else 0
+                    prod_context += f"""\nSản phẩm: {p['ten_sp']}
+  Hãng: {p['ten_hang'] or 'N/A'}
+  Giá: {price_formatted}
+  Giá số: {price_raw}
+  ID: {p['ma_sp']}
+  Ảnh: {p['anh_dai_dien'] or ''}"""
+                    if p.get('ram'):
+                        prod_context += f"\n  Cấu hình: RAM {p['ram']}, Chip {p['chip']}, Pin {p['pin']}, Màn hình {p['man_hinh']}, Camera {p['camera']}"
+
             system_prompt = f"""Bạn là trợ lý AI của QuangHưng Mobile. Hãy tư vấn chi tiết về chính sách TRẢ GÓP của cửa hàng.
 Cửa hàng hỗ trợ trả góp 0% lãi suất qua thẻ tín dụng hoặc các công ty tài chính (Home Credit, FE Credit). Khách cần CCCD + 1 giấy tờ phụ.
 
-Tri thức chính thức:
+Thông tin sản phẩm khách đang quan tâm (nếu có):
+{prod_context}
+
+Tri thức chính thức về trả góp:
 {kb_context}
 
-Trả lời lịch sự, thân thiện bằng tiếng Việt (HTML thuần, KHÔNG dùng markdown):"""
+QUY TẮC BẮT BUỘC:
+1. Nếu khách hàng hỏi về một dòng máy cụ thể có trong danh sách trên, hãy kết hợp thông tin sản phẩm và tư vấn cụ thể cho dòng máy đó (ví dụ: nêu giá máy, hướng dẫn trả góp cho máy đó).
+2. Khi giới thiệu sản phẩm cụ thể, bạn BẮT BUỘC dùng mẫu HTML sau để hiển thị card sản phẩm:
+<div class="ai-product-card">
+  <img src="[[Anh]]" alt="[[Ten_san_pham]]" class="ai-product-image">
+  <div class="ai-product-info">
+    <strong class="ai-product-name">[[Ten_san_pham]]</strong>
+    <div class="ai-product-price-row">Giá: <span class="ai-product-price">[[Gia]]</span></div>
+    <div class="ai-product-config">[[Cau_hinh]]</div>
+    <div class="ai-product-actions">
+      <a href="product-detail.html?id=[[ID]]" class="ai-product-btn-detail">Xem chi tiết</a>
+      <button class="chatbot-add-cart-btn ai-product-btn-cart" data-pid="[[ID]]" data-pname="[[Ten_san_pham]]" data-pprice="[[Gia_so]]" data-pimage="[[Anh]]"><i class="fas fa-cart-plus"></i> Thêm</button>
+    </div>
+  </div>
+</div>
+(BẮT BUỘC thay [[Anh]] bằng chính xác trường "Ảnh" của sản phẩm đó, bao gồm cả "images/products/..." ở đầu. BẮT BUỘC thay thế các biến khác bằng dữ liệu chuẩn).
+3. TUYỆT ĐỐI KHÔNG dùng bất kỳ ký hiệu Markdown nào (như `**`, `*`, `-`, `#`, ` ``` `). Chỉ dùng HTML cơ bản như `<br>`, `<strong>`, `<b>`.
+4. Trả lời lịch sự, thân thiện bằng tiếng Việt (HTML thuần, KHÔNG dùng markdown):"""
             res = self.llm.invoke(system_prompt)
             return sanitize_ai_response(res.content), context_state
             
@@ -2280,11 +2383,98 @@ Trả lời lịch sự, thân thiện bằng tiếng Việt (HTML thuần, KHÔ
                     context_text += f"\n  Cấu hình: RAM {p['ram']}, Chip {p['chip']}, Pin {p['pin']}, Màn hình {p['man_hinh']}, Camera {p['camera']}"
                     
         price_note = ""
+        missing_note = ""
         brand = context_state.get("brand")
         
         if not db_products and brand:
             product_type_label = "phụ kiện" if user_asked_for_accessory else "điện thoại"
             price_note = f"\n\n⚠️ THÔNG BÁO QUAN TRỌNG: Cửa hàng HIỆN KHÔNG CÓ bất kỳ sản phẩm {product_type_label} nào của hãng {brand} trong tầm giá/ngân sách phù hợp yêu cầu. Bạn BẮT BUỘC phải bắt đầu câu trả lời bằng cách khẳng định rõ ràng và lịch sự là cửa hàng không có sản phẩm {brand} trong phân khúc này (Ví dụ: 'Dạ, hiện tại dòng {product_type_label} của hãng {brand} ở tầm giá này bên em đang tạm hết hàng ạ'). Sau đó, giới thiệu sản phẩm thay thế của chính hãng {brand} (nếu có) hoặc hãng khác có sẵn như bên dưới để khách tham khảo. TUYỆT ĐỐI KHÔNG TỰ BỊA SẢN PHẨM."
+        elif db_products and brand:
+            has_requested_brand = any((p.get('ten_hang') or '').lower() == brand.lower() for p in db_products)
+            if not has_requested_brand:
+                other_brands_in_db = list({p.get('ten_hang') for p in db_products if p.get('ten_hang')})
+                product_type_label = "phụ kiện" if user_asked_for_accessory else "điện thoại"
+                price_note = f"\n\n⚠️ THÔNG BÁO QUAN TRỌNG: Cửa hàng HIỆN KHÔNG CÓ bất kỳ sản phẩm {product_type_label} nào của hãng {brand} trong tầm giá/ngân sách phù hợp yêu cầu. Bạn BẮT BUỘC phải bắt đầu câu trả lời bằng cách khẳng định rõ ràng và lịch sự là cửa hàng không có sản phẩm {brand} trong phân khúc này (Ví dụ: 'Dạ, hiện tại dòng {product_type_label} của hãng {brand} ở tầm giá này bên em đang tạm hết hàng ạ'). Sau đó, giới thiệu các sản phẩm thay thế của hãng khác đang có sẵn dưới đây là {', '.join(other_brands_in_db)} để khách tham khảo. TUYỆT ĐỐI KHÔNG TỰ BỊA sản phẩm của hãng {brand}."
+
+        # Phát hiện sản phẩm/hãng bị thiếu trong yêu cầu so sánh
+        import re
+        q_clean = question.lower()
+        if "so sanh" in remove_diacritics(q_clean):
+            q_stripped = q_clean.replace("so sanh", "").replace("giua", "").strip()
+            parts = re.split(r'\b(?:va|voi|vs)\b', q_stripped)
+            items = [p.strip() for p in parts if p.strip()]
+            
+            if len(items) >= 2 and db_products:
+                brands_list = {'iphone', 'apple', 'samsung', 'galaxy', 'xiaomi', 'redmi', 'poco', 'oppo', 'vivo', 'realme', 'sony', 'xperia', 'google', 'pixel', 'vsmart', 'asus', 'rog', 'tecno', 'nokia'}
+                missing_items = []
+                for item in items:
+                    item_words = get_core_words(item)
+                    item_brands = {b for b in brands_list if b in item}
+                    
+                    matched_in_db = False
+                    for p in db_products:
+                        p_name = p['ten_sp']
+                        p_brand = p.get('ten_hang') or ''
+                        p_brand = p_brand.lower()
+                        p_name_lower = p_name.lower()
+                        
+                        if item_brands:
+                            brand_ok = any(ib in p_brand or ib in p_name_lower for ib in item_brands)
+                            if not brand_ok:
+                                continue
+                                
+                        p_words = get_core_words(p_name)
+                        p_strict = p_words - brands_list
+                        item_strict = item_words - brands_list
+                        
+                        if p_strict and item_strict:
+                            if p_strict.intersection(item_strict):
+                                matched_in_db = True
+                                break
+                        else:
+                            if p_words.intersection(item_words):
+                                matched_in_db = True
+                                break
+                                
+                    if not matched_in_db:
+                        clean_name = " ".join(w.capitalize() for w in item.split())
+                        missing_items.append(clean_name)
+                        
+                if missing_items:
+                    missing_str = " và ".join(missing_items)
+                    alt_product = None
+                    for mi in missing_items:
+                        mi_brands = {b for b in brands_list if b in mi.lower()}
+                        if mi_brands:
+                            for p in db_products:
+                                p_brand = (p.get('ten_hang') or '').lower()
+                                p_name_lower = p['ten_sp'].lower()
+                                if any(ib in p_brand or ib in p_name_lower for ib in mi_brands):
+                                    alt_product = p['ten_sp']
+                                    break
+                        if alt_product:
+                            break
+                    if not alt_product:
+                        alt_product = db_products[0]['ten_sp']
+                        
+                    missing_note = f"\n\n⚠️ THÔNG BÁO QUAN TRỌNG: Cửa hàng HIỆN KHÔNG CÓ sản phẩm: {missing_str}. Bạn BẮT BUỘC phải thông báo lịch sự cho khách hàng ngay từ đầu là sản phẩm {missing_str} hiện đang tạm hết hàng tại cửa hàng. Sau đó, bạn chủ động đề xuất dòng sản phẩm có sẵn tương tự là {alt_product} để so sánh thay thế cho khách hàng. TUYỆT ĐỐI không tự bịa thông tin/ID cho sản phẩm {missing_str}."
+
+        # Phát hiện lệch phiên bản (ví dụ khách hỏi iPhone 14 nhưng chỉ có iPhone 14 promax)
+        modifiers = {'pro', 'max', 'promax', 'plus', 'ultra', 'lite', 'fe', 'se'}
+        query_words = set(re.findall(r'\b\w+\b', q_clean))
+        has_query_modifier = bool(query_words.intersection(modifiers))
+        
+        variant_hints = []
+        if not has_query_modifier and db_products:
+            for p in db_products:
+                p_name_lower = p['ten_sp'].lower()
+                p_words = set(re.findall(r'\b\w+\b', p_name_lower))
+                p_modifiers = p_words.intersection(modifiers)
+                if p_modifiers:
+                    variant_hints.append(f"- Khách hàng đang hỏi về phiên bản tiêu chuẩn (không chứa các từ {list(p_modifiers)}), nhưng cửa hàng chỉ có phiên bản đặc biệt: {p['ten_sp']}. Bạn BẮT BUỘC phải giải thích rõ ràng, lịch sự cho khách là cửa hàng không có sẵn mẫu tiêu chuẩn đó, thay vào đó giới thiệu dòng {p['ten_sp']} đang có sẵn để thay thế.")
+        
+        if variant_hints:
+            missing_note += "\n\n⚠️ THÔNG BÁO QUAN TRỌNG VỀ PHÂN LOẠI PHIÊN BẢN SẢN PHẨM:\n" + "\n".join(variant_hints)
             
             # Fetch same brand alts
             same_brand_alts = []
@@ -2383,7 +2573,11 @@ Mục tiêu của bạn là tư vấn nhiệt tình, chuyên nghiệp và thuy�
 QUY TẮC BẮT BUỘC:
 1. CHỈ ĐƯỢC tư vấn sản phẩm có trong danh sách CSDL dưới đây. Tuyệt đối không tự tạo tên sản phẩm (ví dụ: POCO C71 là sản phẩm không tồn tại nếu không có trong danh sách), không tự đặt giá khác với dữ liệu cung cấp.
 2. Nếu không tìm thấy sản phẩm nào trong dữ liệu, hãy phản hồi: "Dạ, hiện em chưa tìm thấy sản phẩm phù hợp trong hệ thống cửa hàng ạ. Anh/chị có thể cho em xin thêm thông tin để em tìm mẫu khác nhé!" hoặc nếu khách hỏi dòng máy cụ thể mà hết hàng thì khẳng định rõ ràng là cửa hàng không có dòng máy/hãng đó trong tầm giá này.
-3. Khi giới thiệu sản phẩm cụ thể, bắt buộc dùng mẫu HTML sau để hiển thị card sản phẩm:
+3. ĐỐI VỚI YÊU CẦU SO SÁNH (NẾU THIẾU SẢN PHẨM): Nếu khách hàng muốn so sánh 2 sản phẩm A và B, nhưng cửa hàng chỉ có sản phẩm B mà không có sản phẩm A (hoặc ngược lại):
+   - Bạn BẮT BUỘC phải thông báo lịch sự ngay từ đầu là sản phẩm A hiện đang tạm hết hàng tại cửa hàng.
+   - Sau đó, bạn chủ động đề xuất một sản phẩm tương tự A đang có sẵn tại cửa hàng (gọi là A') để so sánh với B cho khách tiện theo dõi (Ví dụ: "Dạ, hiện tại dòng iPhone 15 bên em đang tạm hết hàng rồi ạ. Để anh/chị tiện tham khảo, em xin phép đề xuất dòng máy tương tự đang có sẵn là iPhone 14 Pro Max để so sánh với Samsung A07 cho mình nhé!").
+   - Tiến hành so sánh khách quan giữa A' và B. Chỉ được xuất thẻ card sản phẩm (ai-product-card) cho các sản phẩm thực sự đang có sẵn trong Context (tức là A' và B). TUYỆT ĐỐI không vẽ thẻ card cho sản phẩm A không có trong CSDL.
+4. Khi giới thiệu sản phẩm cụ thể, bắt buộc dùng mẫu HTML sau để hiển thị card sản phẩm:
 <div class="ai-product-card">
   <img src="[[Anh]]" alt="[[Ten_san_pham]]" class="ai-product-image">
   <div class="ai-product-info">
@@ -2396,13 +2590,14 @@ QUY TẮC BẮT BUỘC:
     </div>
   </div>
 </div>
-(BẮT BUỘC thay [[Anh]] bằng chính xác trường "Ảnh" của sản phẩm đó, bao gồm cả "images/products/..." ở đầu. BẮT BUỘC thay thế các biến khác bằng dữ liệu chuẩn).
-4. TUYỆT ĐỐI KHÔNG dùng bất kỳ ký hiệu Markdown nào (như `**`, `*`, `-`, `#`, ` ``` `). Chỉ dùng HTML cơ bản như `<br>`, `<strong>`, `<b>`.
-5. LIÊN KẾT NGỮ CẢNH: Luôn luôn đọc kỹ <Lịch sử trò chuyện> để hiểu ngữ cảnh hiện tại. Nếu khách hàng hỏi những câu rút gọn hoặc dùng đại từ thay thế (ví dụ: "chiếc thứ hai", "máy đó", "màu khác có không", "bao nhiêu tiền"), bạn phải đối chiếu lịch sử trò chuyện để xác định chính xác sản phẩm khách đang nói đến trước khi trả lời.
-6. PHONG CÁCH TỰ NHIÊN: Hãy trả lời bằng giọng điệu vô cùng thân thiện, tự nhiên, đậm chất giao tiếp đời thường của người Việt. Hãy sử dụng linh hoạt các đại từ xưng hô thân mật (như "dạ", "em", "anh/chị") và các trợ từ ở cuối câu để tăng tính gần gũi (như "nhá", "nhé", "ạ", "nhen", "nha", "đồ á", "nè"). Tránh giọng điệu máy móc, cứng nhắc hoặc quá trang nghiêm.
+(BẮT BUỘC thay [[Anh]] bằng chính xác trường "Ảnh" của sản phẩm đó, bao gồm cả "images/products/..." ở đầu. BẮT BUỘC thay thế các biến khác bằng dữ liệu chuẩn. Riêng phần [[ID]], bạn BẮT BUỘC phải sử dụng đúng ID được cung cấp cho sản phẩm đó trong ngữ cảnh dữ liệu chuẩn, TUYỆT ĐỐI không tự suy diễn hoặc tự chế ID khác dựa theo tên hay số hiệu của sản phẩm (Ví dụ: Không được tự chế ID là 14 cho iPhone 14 nếu sản phẩm tương ứng trong danh sách là iPhone 14 promax có ID là 2. Hãy dùng đúng ID 2 và ghi rõ tên sản phẩm là iPhone 14 promax)).
+5. TUYỆT ĐỐI KHÔNG dùng bất kỳ ký hiệu Markdown nào (như `**`, `*`, `-`, `#`, ` ``` `). Chỉ dùng HTML cơ bản như `<br>`, `<strong>`, `<b>`.
+6. LIÊN KẾT NGỮ CẢNH: Luôn luôn đọc kỹ <Lịch sử trò chuyện> để hiểu ngữ cảnh hiện tại. Nếu khách hàng hỏi những câu rút gọn hoặc dùng đại từ thay thế (ví dụ: "chiếc thứ hai", "máy đó", "màu khác có không", "bao nhiêu tiền"), bạn phải đối chiếu lịch sử trò chuyện để xác định chính xác sản phẩm khách đang nói đến trước khi trả lời.
+7. PHONG CÁCH TỰ NHIÊN: Hãy trả lời bằng giọng điệu vô cùng thân thiện, tự nhiên, đậm chất giao tiếp đời thường của người Việt. Hãy sử dụng linh hoạt các đại từ xưng hô thân mật (như "dạ", "em", "anh/chị") và các trợ từ ở cuối câu để tăng tính gần gũi (như "nhá", "nhé", "ạ", "nhen", "nha", "đồ á", "nè"). Tránh giọng điệu máy móc, cứng nhắc hoặc quá trang nghiêm.
 
 {interests_instruction}
 {price_note}
+{missing_note}
 
 <Lịch sử trò chuyện>
 {history_str}
@@ -2538,6 +2733,22 @@ Câu hỏi viết lại đầy đủ nghĩa:"""
             if len(kw) >= 8 and kw in message_clean:
                 print(f"[Fast-Path Substring Hit] Trực tiếp cho: '{kw}' từ câu hỏi: '{message_clean}'")
                 return content, context_state
+
+        # Kiểm tra câu hỏi quá vắn tắt / mơ hồ không thể nhận diện
+        import re
+        clean_no_punct = re.sub(r'[^\w\s]', '', message_clean).strip()
+        stop_words = {'co', 'ko', 'khong', 'co ko', 'a', 'da', 'oi', 'helo', 'hello', 'hi', 'ok', 'nhe', 'nha', 'di', 'dum', 'giup', 'em', 'anh', 'chi', 'ban', 'shop', 'cua hang', 'cho', 'voi', 'lam', 'sao', 'nao', 'nay', 'do', 'kia', 'dau', 'gi'}
+        words_list = clean_no_punct.split()
+        meaningful_words = [w for w in words_list if w not in stop_words]
+        
+        is_meaningless = len(meaningful_words) == 0 or (len(meaningful_words) == 1 and len(meaningful_words[0]) <= 2 and not any(c.isdigit() for c in meaningful_words[0]))
+        if is_meaningless:
+            print(f"[Vague Query Hit] Yêu cầu khách hàng đặt lại câu hỏi rõ hơn: '{message_clean}'")
+            return (
+                "Dạ, câu hỏi của anh/chị hơi vắn tắt hoặc chưa rõ ý quá ạ. "
+                "Anh/chị có thể cung cấp thêm thông tin chi tiết một chút (ví dụ: tên dòng máy cụ thể, tầm giá hoặc nhu cầu sử dụng) "
+                "để em hỗ trợ tư vấn chính xác nhất cho mình nhé!"
+            ), context_state
                 
         # 2. KIỂM TRA CHAT CACHE (Bộ nhớ đệm câu trả lời động từ LLM)
         # Khóa cache bao gồm nội dung câu hỏi + lịch sử 2 câu cuối (để giữ ngữ cảnh)

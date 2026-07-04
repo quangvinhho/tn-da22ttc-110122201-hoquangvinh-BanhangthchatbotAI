@@ -1901,6 +1901,8 @@
                 if (o.orderId === `#${dbOrder.ma_don}`) return true;
                 // So sánh theo orderId dạng số
                 if (o.orderId === dbOrder.ma_don.toString()) return true;
+                // So sánh theo order_code
+                if (dbOrder.order_code && o.orderId === dbOrder.order_code) return true;
                 return false;
               });
               
@@ -1909,11 +1911,15 @@
                 allOrders[existIndex].status = dbOrder.trang_thai;
                 allOrders[existIndex].dbOrderId = dbOrder.ma_don; // Đảm bảo set dbOrderId
                 allOrders[existIndex].items = dbOrder.items || allOrders[existIndex].items;
+                // Đảm bảo cập nhật orderId hiển thị thành order_code từ DB nếu có
+                if (dbOrder.order_code) {
+                  allOrders[existIndex].orderId = dbOrder.order_code;
+                }
                 console.log(`Updated order ${allOrders[existIndex].orderId} with dbOrderId=${dbOrder.ma_don}, status=${dbOrder.trang_thai}`);
               } else {
                 // CHƯA TỒN TẠI: Thêm mới từ DB
                 const newOrder = {
-                  orderId: `#${dbOrder.ma_don}`,
+                  orderId: dbOrder.order_code || `#${dbOrder.ma_don}`,
                   dbOrderId: dbOrder.ma_don,
                   orderDate: dbOrder.thoi_gian,
                   status: dbOrder.trang_thai,

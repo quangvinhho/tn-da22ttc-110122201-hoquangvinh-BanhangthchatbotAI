@@ -137,15 +137,17 @@ def get_apriori_recommendations(rules, current_cart_items):
         return []
         
     recommended_items = set()
-    cart_set = frozenset(current_cart_items)
+    # Chuẩn hóa các ID sản phẩm trong giỏ hàng về dạng int để so khớp chính xác với antecedents
+    normalized_cart = [_normalize_pid(item) for item in current_cart_items]
+    cart_set = frozenset(normalized_cart)
     
-    # Tìm luật mà 'antecedents' (sản phẩm trong giỏ) là một tập con
+    # Tìm luật mà 'antecedents' (sản phẩm trong giỏ) giao với sản phẩm đang tương tác
     for idx, row in rules.iterrows():
         antecedents = row['antecedents']
         consequents = row['consequents']
         
-        # Nếu giỏ hàng chứa hoặc một phần của antecedents
-        if antecedents.issubset(cart_set):
+        # Nới lỏng điều kiện: Chỉ cần giỏ hàng/sản phẩm đang xem chứa một phần của antecedents là kích hoạt
+        if not antecedents.isdisjoint(cart_set):
             for item in consequents:
                 if item not in cart_set:
                     recommended_items.add(item)
@@ -348,6 +350,9 @@ def get_interest_recommendations(user_id):
 def _normalize_pid(item):
     """Chuẩn hóa product_id sang int nếu có thể, fallback giữ nguyên."""
     try:
+        # Nếu ID ở dạng chuỗi có tiền tố như 'PROD123', loại bỏ phần chữ
+        if isinstance(item, str) and 'PROD' in item:
+            item = item.replace('PROD', '')
         return int(item)
     except (ValueError, TypeError):
         return item
