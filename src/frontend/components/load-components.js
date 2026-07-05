@@ -153,8 +153,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// Inject hệ thống chi nhánh + giờ mở cửa real-time vào footer
-// (gọi sau khi footer.html đã được nạp; fail-soft)
 function injectFooterShopInfo() {
     function tryInject(retries) {
         if (!window.SHOP_INFO) {
@@ -167,61 +165,16 @@ function injectFooterShopInfo() {
         footer.dataset.shopInfoInjected = '1';
 
         const SI = window.SHOP_INFO;
-        const status = SI.getChainStatus();
 
-        // Banner hệ thống chi nhánh
-        const branchHtml = SI.BRANCHES.map(b => {
-            const st = SI.getStoreStatus(b);
-            const dot = st.open ? 'bg-green-500' : 'bg-gray-400';
-            const label = st.open ? 'Đang mở' : 'Đã đóng';
-            const safeAddr = b.address.replace(/</g, '&lt;');
-            return `
-              <div class="flex items-start gap-2 text-sm">
-                <span class="inline-block w-2.5 h-2.5 rounded-full ${dot} mt-1.5 flex-shrink-0" title="${label}"></span>
-                <div>
-                  <div class="font-semibold text-gray-800">${b.name}</div>
-                  <div class="text-gray-600 text-xs">${safeAddr}</div>
-                  <div class="text-gray-500 text-xs"><i class="fas fa-phone-alt mr-1"></i>${b.phone}</div>
-                </div>
-              </div>`;
-        }).join('');
-
-        const banner = document.createElement('div');
-        banner.className = 'border-t border-gray-200 pt-6 mt-8';
-        banner.innerHTML = `
-          <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-              <h3 class="text-base font-bold text-gray-800 flex items-center gap-2">
-                <i class="fas fa-store text-red-600"></i>
-                Hệ thống cửa hàng
-                <span class="ml-1 inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full
-                       ${status.open ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}">
-                  <span class="inline-block w-1.5 h-1.5 rounded-full ${status.open ? 'bg-green-500' : 'bg-gray-400'}"></span>
-                  ${status.label}
-                </span>
-              </h3>
-              <a href="he-thong-cua-hang.html" class="text-sm text-red-600 hover:underline">
-                Xem tất cả chi nhánh <i class="fas fa-arrow-right ml-1"></i>
-              </a>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">${branchHtml}</div>
-            <div class="text-xs text-gray-500 mt-3"><i class="far fa-clock mr-1"></i>${status.hoursLabel}</div>
-          </div>
-        `;
-
-        // Insert trước phần copyright
+        // Cập nhật MST + GPKD ở copyright
         const copyright = footer.querySelector('.border-t.border-gray-200.pt-6.mt-10');
-        if (copyright && copyright.parentNode) {
-            copyright.parentNode.insertBefore(banner, copyright);
-            // Cập nhật MST + GPKD ở copyright
+        if (copyright) {
             const co = SI.COMPANY;
             const addrLine = copyright.querySelector('p.mt-1');
             if (addrLine && !addrLine.dataset.enhanced) {
                 addrLine.dataset.enhanced = '1';
                 addrLine.innerHTML = `MST: <strong>${co.taxCode}</strong> &middot; GPKD: ${co.businessLicense}`;
             }
-        } else {
-            footer.querySelector('.max-w-7xl')?.appendChild(banner);
         }
     }
     tryInject(10);

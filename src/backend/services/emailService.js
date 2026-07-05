@@ -1231,6 +1231,84 @@ async function sendPostPurchaseFollowUp15Days(orderId) {
     }
 }
 
+async function sendNewReturnRequestToAdmin(claimId, details) {
+    try {
+        const { orderId, customerName, productName, type, reason } = details;
+        
+        let typeLabel = 'Đổi trả hàng';
+        if (type === 'doi') typeLabel = 'Đổi sản phẩm mới';
+        else if (type === 'tra') typeLabel = 'Trả hàng';
+        else if (type === 'hoan_tien') typeLabel = 'Hoàn tiền';
+
+        const subject = `⚠️ [Yêu cầu mới] Đổi trả #${claimId} cho đơn hàng #${orderId}`;
+        const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_USER || 'admin@quanghungmobile.com';
+
+        const mailOptions = {
+            from: `"QuangHưng Mobile System" <${process.env.EMAIL_USER || 'noreply@quanghungmobile.com'}>`,
+            to: adminEmail,
+            subject,
+            html: `
+                <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 8px; overflow: hidden;">
+                    <div style="background: #e41e26; padding: 25px; text-align: center; color: white;">
+                        <h1 style="margin: 0; font-size: 22px;">⚠️ Yêu Cầu Đổi Trả / Hoàn Tiền Mới</h1>
+                        <p style="margin: 5px 0 0 0; opacity: 0.9;">Hệ thống quản lý bảo hành & đổi trả</p>
+                    </div>
+                    <div style="padding: 25px; background: #ffffff;">
+                        <p>Kính gửi <strong>Ban quản trị QuangHưng Mobile</strong>,</p>
+                        <p>Hệ thống vừa nhận được một yêu cầu đổi trả trực tuyến mới từ khách hàng cần phê duyệt:</p>
+                        
+                        <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin: 20px 0; background: #f9f9f9; padding: 15px; border-radius: 6px; border-left: 4px solid #e41e26;">
+                            <tr>
+                                <td style="padding: 8px; color: #666; font-weight: bold; width: 140px;">Mã yêu cầu:</td>
+                                <td style="padding: 8px; color: #333; font-weight: bold;">#${claimId}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px; color: #666; font-weight: bold;">Mã đơn hàng:</td>
+                                <td style="padding: 8px; color: #333; font-weight: bold;">#${orderId}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px; color: #666; font-weight: bold;">Khách hàng:</td>
+                                <td style="padding: 8px; color: #333;">${customerName}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px; color: #666; font-weight: bold;">Sản phẩm:</td>
+                                <td style="padding: 8px; color: #333;">${productName}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px; color: #666; font-weight: bold;">Loại yêu cầu:</td>
+                                <td style="padding: 8px; color: #d70018; font-weight: bold;">${typeLabel}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px; color: #666; font-weight: bold;">Lý do khách báo:</td>
+                                <td style="padding: 8px; color: #333; font-style: italic;">"${reason}"</td>
+                            </tr>
+                        </table>
+
+                        <div style="text-align: center; margin: 30px 0 10px 0;">
+                            <a href="http://localhost:3000/admin.html#returns" style="background-color: #e41e26; color: white; padding: 12px 24px; text-decoration: none; border-radius: 20px; font-weight: bold; font-size: 14px; box-shadow: 0 4px 6px rgba(228,30,38,0.2); display: inline-block;">
+                                ⚙️ Đi tới Trang quản trị duyệt yêu cầu
+                            </a>
+                        </div>
+
+                        <hr style="border: none; border-top: 1px solid #eee; margin: 25px 0 15px 0;">
+                        <div style="font-size: 11px; color: #aaa; text-align: center;">
+                            <p>Đây là email thông báo tự động từ hệ thống quản trị website. Vui lòng không trả lời trực tiếp email này.</p>
+                            <p>© 2026 QuangHưng Mobile System</p>
+                        </div>
+                    </div>
+                </div>
+            `
+        };
+
+        const info = await transporter.sendMail(mailOptions);
+        console.log(`[EmailService] Email thông báo Yêu cầu đổi trả #${claimId} cho Admin đã gửi thành công: ${info.messageId}`);
+        return true;
+    } catch (error) {
+        console.error(`[EmailService] Lỗi khi gửi email thông báo Yêu cầu đổi trả cho Admin:`, error);
+        return false;
+    }
+}
+
 module.exports = {
     sendOrderConfirmation,
     sendOrderStatusUpdate,
@@ -1245,5 +1323,6 @@ module.exports = {
     sendPendingPaymentReminder,
     sendReturnStatusUpdate,
     sendPostPurchaseFollowUp3Days,
-    sendPostPurchaseFollowUp15Days
+    sendPostPurchaseFollowUp15Days,
+    sendNewReturnRequestToAdmin
 };

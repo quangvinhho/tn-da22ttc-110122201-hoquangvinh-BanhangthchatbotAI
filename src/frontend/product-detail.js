@@ -107,6 +107,25 @@ async function loadProductDetail(productId) {
       if (product && product.id) {
         currentProduct = product;
         PRODUCTS = [product]; // Lưu vào mảng để các hàm khác sử dụng
+        
+        // Fetch tất cả ánh xạ ảnh-màu của sản phẩm này
+        try {
+          const mapRes = await fetch(`${API_URL}/products/${productId}/color-images`);
+          if (mapRes.ok) {
+            const mapJson = await mapRes.json();
+            window.IMAGE_COLOR_MAP = {};
+            if (mapJson.success && Array.isArray(mapJson.data)) {
+              mapJson.data.forEach(item => {
+                if (item.duong_dan && item.mau_sac) {
+                  window.IMAGE_COLOR_MAP[item.duong_dan] = item.mau_sac;
+                }
+              });
+            }
+          }
+        } catch (e) {
+          console.warn('Error loading color image map:', e);
+        }
+
         renderProductDetail(productId);
 
         // Load biến thể (variant: màu × dung lượng × tồn kho). Fail-soft, không block render.
@@ -557,6 +576,80 @@ function selectThumbnail(index, imageSrc) {
     mainImage.src = imageSrc;
     mainImage.style.opacity = '1';
   }, 150);
+
+  // Đồng bộ màu sắc nếu ảnh này thuộc về một màu cụ thể
+  if (window.IMAGE_COLOR_MAP && imageSrc) {
+    const cleanSrc = imageSrc.replace(/^images\//, '');
+    const matchedColor = window.IMAGE_COLOR_MAP[imageSrc] || window.IMAGE_COLOR_MAP[cleanSrc];
+    if (matchedColor) {
+      syncColorSelectionFromImage(matchedColor);
+    }
+  }
+}
+
+// Đồng bộ hóa việc chọn màu sắc khi click vào ảnh thumbnail
+function syncColorSelectionFromImage(matchedColor) {
+  if (!matchedColor) return;
+  
+  // 1. Cập nhật nhãn tên màu đã chọn
+  const selectedColorDisplay = document.getElementById('selectedColorName');
+  if (selectedColorDisplay) {
+    selectedColorDisplay.textContent = matchedColor;
+  }
+  
+  // 2. Tìm nút màu (variant-color-card hoặc color-option-card) tương ứng để active
+  let foundBtn = null;
+  document.querySelectorAll('.color-option-card, .variant-color-card').forEach(btn => {
+    const nameAttr = btn.getAttribute('data-name') || btn.getAttribute('data-color') || '';
+    if (nameAttr.toLowerCase() === matchedColor.toLowerCase()) {
+      btn.classList.add('active');
+      btn.classList.add('border-red-500');
+      foundBtn = btn;
+    } else {
+      btn.classList.remove('active');
+      btn.classList.remove('border-red-500');
+    }
+  });
+
+  // 3. Nếu là sản phẩm có biến thể, cập nhật dữ liệu selectedVariant tương ứng trong PRODUCT_VARIANTS
+  const data = window.PRODUCT_VARIANTS;
+  if (data && data.hasVariants && data.items) {
+    const cur = data.selectedVariant || {};
+    const targetStorage = cur.storage || data.storages[0];
+    const newVariant = data.items.find(v => v.color.toLowerCase() === matchedColor.toLowerCase() && v.storage === targetStorage)
+                    || data.items.find(v => v.color.toLowerCase() === matchedColor.toLowerCase())
+                    || data.items[0];
+    if (newVariant) {
+      data.selectedVariant = newVariant;
+      // Cập nhật hiển thị tồn kho và giá tiền (không tải lại ảnh để tránh giật hình)
+      updateStockDisplayFromVariant(newVariant);
+      
+      const priceDiff = parseFloat(newVariant.priceDiff) || 0;
+      if (currentProduct) {
+        const newPrice = currentProduct.price + priceDiff;
+        const curEl = document.getElementById('currentPrice');
+        const sticky = document.getElementById('stickyPrice');
+        if (curEl) curEl.textContent = formatPrice(newPrice);
+        if (sticky) sticky.textContent = formatPrice(newPrice);
+        
+        if (currentProduct.oldPrice) {
+          const newOldPrice = currentProduct.oldPrice + priceDiff;
+          const oldPriceEl = document.getElementById('oldPrice');
+          if (oldPriceEl) oldPriceEl.textContent = formatPrice(newOldPrice);
+          const savingAmount = document.getElementById('savingAmount');
+          if (savingAmount) savingAmount.textContent = formatPrice(newOldPrice - newPrice);
+        }
+      }
+      
+      // Cập nhật trạng thái các nút dung lượng theo màu mới
+      updateStorageButtonsForColor(newVariant.color);
+      document.querySelectorAll('.variant-storage-card').forEach(b => {
+          const isActive = b.dataset.storage === newVariant.storage;
+          b.classList.toggle('active', isActive);
+          b.classList.toggle('border-red-500', isActive && !b.classList.contains('variant-oos'));
+      });
+    }
+  }
 }
 
 // Render color options - hiển thị nhiều màu với tên từ API

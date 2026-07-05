@@ -1917,9 +1917,15 @@ class RAGEngine:
             return filtered_words
 
         q_norm = remove_diacritics((context_state.get("last_query") or "") + " " + (context_state.get("current_query") or "")).lower()
+        
+        # Lấy danh sách các hãng bị ghét/loại trừ từ context_state
+        disliked_brands = context_state.get("disliked_brands", [])
             
         matched_by_name = []
         for p in all_products:
+            p_brand = (p.get('ten_hang') or '').lower()
+            if p_brand in disliked_brands:
+                continue
             core_words = get_core_words(p['ten_sp'])
             is_acc = is_accessory(p['ten_sp'])
             if user_asked_for_accessory != is_acc:
@@ -1934,6 +1940,9 @@ class RAGEngine:
         # 4. Fallback to Brand + Price filter
         filtered = []
         for p in all_products:
+            p_brand = (p.get('ten_hang') or '').lower()
+            if p_brand in disliked_brands:
+                continue
             is_acc = is_accessory(p['ten_sp'])
             if user_asked_for_accessory != is_acc:
                 continue
@@ -2268,8 +2277,44 @@ class RAGEngine:
                 unclaimed_words = words - brands
                 has_spec_or_model = any(w in db_model_words or any(c.isdigit() for c in w) for w in unclaimed_words)
                 if has_spec_or_model:
-                    return False, f"Dòng văn bản sau đây đề xuất sản phẩm không có thực hoặc sai cấu hình/giá trong DB: \"{line.strip()}\""
+                    return False, f"Dong van ban sau day de xuat san pham khong co thuc hoac sai cau hinh/gia trong DB: \"{line.strip()}\""
                     
+        # Kiểm tra chi tiết để loại trừ bịa đặt mẫu iPhone/Samsung không có trong CSDL
+        for line in lines:
+            line_lower = remove_diacritics(line.lower())
+            is_refusal = any(kw in line_lower for kw in refusal_keywords)
+            if is_refusal:
+                continue
+                
+            # Kiểm tra các mẫu iPhone giả định
+            if 'iphone' in line_lower or 'apple' in line_lower:
+                numbers = re.findall(r'\b\d+\b', line_lower)
+                for num in numbers:
+                    if num in ['7', '8', '11', '12', '13', '14', '15', '16', '17', '18']:
+                        db_has_apple_num = False
+                        for pid, p in db_products.items():
+                            p_brand = (p.get('ten_hang') or '').lower()
+                            p_name = remove_diacritics((p.get('ten_sp') or '').lower())
+                            if ('apple' in p_brand or 'iphone' in p_name) and num in p_name:
+                                db_has_apple_num = True
+                                break
+                        if not db_has_apple_num:
+                            return False, f"Bia dat mau iPhone khong co trong DB: iPhone {num}"
+                            
+            # Kiểm tra các mẫu Samsung giả định
+            if 'samsung' in line_lower or 'galaxy' in line_lower:
+                samsung_models = re.findall(r'\b([samz]\d+)\b', line_lower)
+                for sm in samsung_models:
+                    db_has_samsung_model = False
+                    for pid, p in db_products.items():
+                        p_brand = (p.get('ten_hang') or '').lower()
+                        p_name = remove_diacritics((p.get('ten_sp') or '').lower()).replace(" ", "")
+                        if ('samsung' in p_brand or 'galaxy' in p_brand) and sm in p_name:
+                            db_has_samsung_model = True
+                            break
+                    if not db_has_samsung_model:
+                        return False, f"Bia dat mau Samsung khong co trong DB: {sm.upper()}"
+                            
         return True, ""
 
     def query_semantic_state(self, question: str, history: List[Dict] = None, interests: List[str] = None, context_state: Dict[str, Any] = None) -> tuple:
@@ -2278,6 +2323,21 @@ class RAGEngine:
             
         context_state["last_query"] = context_state.get("current_query") or ""
         context_state["current_query"] = question
+        
+        # Phát hiện hãng bị ghét/phủ định để loại trừ khỏi tìm kiếm CSDL
+        disliked_brands = []
+        q_lower = remove_diacritics(question).lower()
+        neg_patterns = ['khong thich', 'ghet', 'khong dung', 'tranh', 'khong muon mua', 'tay chay', 'loai tru']
+        if any(pat in q_lower for pat in neg_patterns):
+            if any(term in q_lower for term in ['samsung', 'samssung', 'samsum', 'sam sung', 'galaxy', 'ss']):
+                disliked_brands.append('samsung')
+            if any(term in q_lower for term in ['apple', 'aple', 'iphone', 'iphong', 'ip']):
+                disliked_brands.append('apple')
+            if any(term in q_lower for term in ['xiaomi', 'xiao mi', 'redmi', 'poco']):
+                disliked_brands.append('xiaomi')
+            if any(term in q_lower for term in ['oppo', 'vivo']):
+                disliked_brands.append('oppo')
+        context_state["disliked_brands"] = disliked_brands
             
         # Format history string
         history_str = ""
@@ -2505,7 +2565,10 @@ QUY TẮC BẮT BUỘC:
             price_const = context_state.get("price_constraint")
             cheapest_price = same_brand_alts[0]['gia'] if same_brand_alts else float('inf')
             limit_val = price_const.get('val', 0) if price_const else 5000000
-            need_other_brands = not same_brand_alts or (price_const and cheapest_price > limit_val * 2)
+            
+            # Nếu hãng này bị ghét, bắt buộc lấy hãng khác
+            is_brand_disliked = brand.lower() in disliked_brands
+            need_other_brands = not same_brand_alts or (price_const and cheapest_price > limit_val * 2) or is_brand_disliked
             
             other_brand_alts = []
             if need_other_brands:
@@ -2540,7 +2603,7 @@ QUY TẮC BẮT BUỘC:
                 except Exception as e:
                     print(f"[RAG Memory Alt Other Brands] DB error: {e}")
             
-            db_products = same_brand_alts
+            db_products = other_brand_alts if is_brand_disliked else same_brand_alts
             
             # Since we have loaded some products for context, last_recommended_ids should still be updated
             if db_products:

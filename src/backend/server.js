@@ -92,6 +92,7 @@ testConnection();
     ['create_phone_variants',             './migrations/create_phone_variants'],
     ['seed_product_discounts',            './migrations/seed_product_discounts'],
     ['add_order_code_column',             './migrations/add_order_code_column'],
+    ['create_danh_sach_so_thich',         './migrations/create_danh_sach_so_thich'],
   ];
   for (const [name, mod] of steps) {
     try {

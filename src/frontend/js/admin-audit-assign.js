@@ -165,9 +165,10 @@
     const currentNv = currentOrder?.ma_nv_xu_ly || '';
     const currentNote = currentOrder?.ghi_chu_noi_bo || '';
 
-    const employeeOptions = employees.map(e => 
-      `<option value="${e.ma_nv}" ${e.ma_nv == currentNv ? 'selected' : ''}>${e.ho_ten} (${e.tai_khoan})</option>`
-    ).join('');
+    const employeeOptions = employees.map(e => {
+      const empId = e.ma_nv || e.ma_tai_khoan;
+      return `<option value="${empId}" ${empId == currentNv ? 'selected' : ''}>${e.ho_ten} (${e.tai_khoan})</option>`;
+    }).join('');
 
     // Tạo modal động
     const modalHTML = `

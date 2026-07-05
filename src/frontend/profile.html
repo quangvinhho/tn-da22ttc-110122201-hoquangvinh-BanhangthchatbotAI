@@ -670,20 +670,9 @@
               </div>
             </div>
 
-            <!-- Hãng yêu thích -->
-            <div class="mb-6">
-              <h3 class="font-semibold text-gray-700 mb-3 text-sm uppercase tracking-wide">🏷️ Hãng yêu thích</h3>
-              <div id="brandChips" class="flex flex-wrap gap-2">
-                <!-- Populated by JS -->
-              </div>
-            </div>
-
-            <!-- Danh mục yêu thích -->
-            <div class="mb-6">
-              <h3 class="font-semibold text-gray-700 mb-3 text-sm uppercase tracking-wide">📱 Danh mục yêu thích</h3>
-              <div id="categoryChips" class="flex flex-wrap gap-2">
-                <!-- Populated by JS -->
-              </div>
+            <!-- Các nhóm sở thích cấu hình động -->
+            <div id="dynamicPreferencesContainer">
+              <!-- Nạp động từ database -->
             </div>
 
             <!-- Custom keyword -->
@@ -1606,17 +1595,23 @@
       }
 
       // ===== INTERESTS TAB =====
-      const PRESET_BRANDS = ['Apple', 'Samsung', 'Xiaomi', 'Oppo', 'Vivo', 'Realme', 'Honor', 'Google'];
-      const PRESET_CATEGORIES = ['Điện thoại', 'Laptop', 'Tablet', 'Phụ kiện', 'Smartwatch'];
       let myInterests = []; // cache list KH đang có
+      let dbPreferences = []; // danh sách sở thích mặc định tải từ CSDL
 
       async function loadInterests() {
         const user = JSON.parse(localStorage.getItem('user') || 'null');
         if (!user?.ma_kh) return;
         try {
-          const res = await fetch(`${API_URL}/interests/check-user/${user.ma_kh}`);
-          const data = await res.json();
-          myInterests = (data.data || []).map(d => d.tu_khoa);
+          // 1. Tải sở thích hiện tại của khách hàng
+          const resUser = await fetch(`${API_URL}/interests/check-user/${user.ma_kh}`);
+          const dataUser = await resUser.json();
+          myInterests = (dataUser.data || []).map(d => d.tu_khoa);
+
+          // 2. Tải danh mục sở thích mặc định cấu hình từ CSDL
+          const resDef = await fetch(`${API_URL}/interests/default`);
+          const dataDef = await resDef.json();
+          dbPreferences = dataDef.data || [];
+
           renderInterestsUI();
         } catch (e) {
           document.getElementById('interestsChips').innerHTML = `<div class="text-red-500 text-sm">Lỗi: ${e.message}</div>`;
@@ -1624,7 +1619,7 @@
       }
 
       function renderInterestsUI() {
-        // Current chips
+        // Render danh sách sở thích đã chọn
         const cur = document.getElementById('interestsChips');
         if (myInterests.length === 0) {
           cur.innerHTML = '<div class="text-sm text-gray-400 italic">Chưa có sở thích nào — chọn từ danh sách bên dưới hoặc bấm "Để AI gợi ý"</div>';
@@ -1638,19 +1633,48 @@
             </span>
           `).join('');
         }
-        // Brand chips (toggle)
-        renderPresetChips('brandChips', PRESET_BRANDS);
-        renderPresetChips('categoryChips', PRESET_CATEGORIES);
-      }
 
-      function renderPresetChips(containerId, presets) {
-        const cont = document.getElementById(containerId);
-        if (!cont) return;
-        cont.innerHTML = presets.map(p => {
-          const active = myInterests.some(k => k.toLowerCase() === p.toLowerCase());
-          return `<button onclick="togglePresetInterest('${p.replace(/'/g, "\\'")}')" class="${active ? 'bg-red-600 text-white border-red-600' : 'bg-white text-gray-700 border-gray-300 hover:border-red-400'} px-3 py-1.5 rounded-full text-sm border transition font-medium">
-            ${active ? '<i class="fas fa-check mr-1"></i>' : ''}${p}
-          </button>`;
+        // Render các nhóm sở thích động từ database
+        const container = document.getElementById('dynamicPreferencesContainer');
+        if (!container) return;
+
+        if (dbPreferences.length === 0) {
+          container.innerHTML = '<div class="text-sm text-gray-400 italic mb-6">Chưa có danh sách sở thích cấu hình từ hệ thống</div>';
+          return;
+        }
+
+        // Nhóm các sở thích theo loại (Hãng, Danh mục, Nhu cầu, Ngân sách...)
+        const grouped = {};
+        dbPreferences.forEach(p => {
+          const type = p.type || 'Khác';
+          if (!grouped[type]) grouped[type] = [];
+          grouped[type].push(p);
+        });
+
+        const typeEmojis = {
+          'Hãng': '🏷️',
+          'Danh mục': '📱',
+          'Nhu cầu': '⚡',
+          'Ngân sách': '💰'
+        };
+
+        container.innerHTML = Object.entries(grouped).map(([type, list]) => {
+          const emoji = typeEmojis[type] || '🌟';
+          const chipsHtml = list.map(p => {
+            const active = myInterests.some(k => k.toLowerCase() === p.label.toLowerCase());
+            return `<button onclick="togglePresetInterest('${p.label.replace(/'/g, "\\'")}')" class="${active ? 'bg-red-600 text-white border-red-600 font-semibold shadow-sm' : 'bg-white text-gray-700 border-gray-300 hover:border-red-400'} px-3 py-1.5 rounded-full text-sm border transition flex items-center gap-1 font-medium">
+              ${active ? '<i class="fas fa-check text-xs"></i>' : ''}${p.emoji ? p.emoji : ''} ${p.label}
+            </button>`;
+          }).join('');
+
+          return `
+            <div class="mb-6">
+              <h3 class="font-bold text-gray-700 mb-3 text-sm uppercase tracking-wide flex items-center gap-1">${emoji} ${type} yêu thích</h3>
+              <div class="flex flex-wrap gap-2">
+                ${chipsHtml}
+              </div>
+            </div>
+          `;
         }).join('');
       }
 
@@ -1683,6 +1707,9 @@
       async function addInterestToList(keyword) {
         const user = JSON.parse(localStorage.getItem('user') || 'null');
         if (!user?.ma_kh) return;
+        if (myInterests.some(k => k.toLowerCase() === keyword.toLowerCase())) {
+          return;
+        }
         const newList = [...myInterests, keyword];
         try {
           const res = await fetch(`${API_URL}/interests/user`, {

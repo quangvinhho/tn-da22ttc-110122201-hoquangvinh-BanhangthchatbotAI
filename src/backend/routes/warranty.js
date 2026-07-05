@@ -316,6 +316,14 @@ router.put('/claim/:id/status', checkAdmin, async (req, res) => {
     }
 
     const claim = claims[0];
+
+    if (['completed', 'rejected'].includes(claim.trang_thai)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Yêu cầu bảo hành này đã hoàn thành hoặc bị từ chối, không thể thay đổi trạng thái.' 
+      });
+    }
+
     const completedDate = ['completed', 'rejected'].includes(status) ? new Date() : null;
 
     // 2. Cập nhật

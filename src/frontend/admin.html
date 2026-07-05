@@ -637,6 +637,14 @@
             <div class="sidebar-icon"><i class="fas fa-shield-alt text-sm"></i></div>
             <span class="text-sm font-medium">Bảo hành</span>
           </a>
+          <a href="#" onclick="showSection('returns')" class="sidebar-item flex items-center px-3 py-2.5 text-slate-100 group" id="nav-returns">
+            <div class="sidebar-icon"><i class="fas fa-undo-alt text-sm"></i></div>
+            <span class="text-sm font-medium">Quản lý Đổi trả</span>
+          </a>
+          <a href="admin-kho-loi.html" class="sidebar-item flex items-center px-3 py-2.5 text-slate-100 group" id="nav-defective-warehouse">
+            <div class="sidebar-icon"><i class="fas fa-warehouse text-sm"></i></div>
+            <span class="text-sm font-medium">Quản lý Kho lỗi</span>
+          </a>
           <a href="#" onclick="showSection('contacts')" class="sidebar-item flex items-center px-3 py-2.5 text-slate-100 group" id="nav-contacts">
             <div class="sidebar-icon"><i class="fas fa-envelope text-sm"></i></div>
             <span class="text-sm font-medium">Liên hệ</span>
@@ -2715,6 +2723,9 @@
       <button onclick="switchInterestsTab('apriori-rules')" id="tab-btn-apriori-rules" class="pb-3 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition duration-200">
         <i class="fas fa-shopping-basket mr-2"></i>Gợi ý mua kèm (Apriori)
       </button>
+      <button onclick="switchInterestsTab('config-interests')" id="tab-btn-config-interests" class="pb-3 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition duration-200">
+        <i class="fas fa-sliders-h mr-2"></i>Cấu hình danh mục sở thích
+      </button>
     </div>
 
     <!-- Tab 1: Preferences Container -->
@@ -2743,6 +2754,95 @@
             </tbody>
           </table>
         </div>
+      </div>
+    </div>
+
+    <!-- Tab 5: Config Default Interests Container -->
+    <div id="interests-config-container" class="space-y-4 hidden">
+      <div class="flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+        <span class="text-sm text-slate-500 font-medium">Quản lý danh sách các sở thích hiển thị cho khách hàng chọn khi khảo sát sở thích hoặc chỉnh sửa trang cá nhân.</span>
+        <button onclick="openPrefModal()" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold flex items-center gap-2 transition duration-200 shadow-md shadow-blue-500/20">
+          <i class="fas fa-plus"></i>Thêm sở thích mới
+        </button>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50 text-slate-600 text-xs uppercase tracking-wider border-b border-slate-100">
+                <th class="px-5 py-3.5 font-semibold">STT</th>
+                <th class="px-5 py-3.5 font-semibold">Tên sở thích</th>
+                <th class="px-5 py-3.5 font-semibold">Loại sở thích</th>
+                <th class="px-5 py-3.5 font-semibold text-center">Emoji</th>
+                <th class="px-5 py-3.5 font-semibold text-center">Trạng thái</th>
+                <th class="px-5 py-3.5 font-semibold text-center">Sắp xếp</th>
+                <th class="px-5 py-3.5 font-semibold text-center">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="pref-table-body" class="divide-y divide-slate-100">
+              <tr><td colspan="7" class="text-center py-8 text-slate-400"><i class="fas fa-spinner fa-spin mr-2"></i>Đang tải...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Preference Add/Edit Modal -->
+    <div id="pref-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+      <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md mx-4 overflow-hidden border border-slate-100 transform transition-all duration-300">
+        <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+          <h3 id="pref-modal-title" class="font-bold text-slate-800 text-lg">Thêm sở thích mới</h3>
+          <button onclick="closePrefModal()" class="w-8 h-8 rounded-full bg-white hover:bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center transition-all border border-slate-100">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <form id="pref-form" onsubmit="savePreference(event)" class="p-6 space-y-4">
+          <input type="hidden" id="pref-id" value="" />
+          
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Tên sở thích <span class="text-red-500">*</span></label>
+            <input type="text" id="pref-name" required placeholder="VD: iPhone, Pin trâu, Chơi game..." class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Loại sở thích <span class="text-red-500">*</span></label>
+            <select id="pref-type" required class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white">
+              <option value="Hãng">Hãng sản xuất (Apple, Samsung...)</option>
+              <option value="Danh mục">Danh mục (Điện thoại, Laptop...)</option>
+              <option value="Nhu cầu">Nhu cầu sử dụng (Chơi game, Pin trâu...)</option>
+              <option value="Ngân sách">Mức ngân sách (Dưới 10 triệu...)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Biểu tượng (Emoji)</label>
+            <input type="text" id="pref-emoji" placeholder="VD: 🍎, 📱, 🎮" class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white" maxlength="10" />
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Sắp xếp (Thứ tự)</label>
+              <input type="number" id="pref-sort" value="0" min="0" class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Trạng thái</label>
+              <select id="pref-status" class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white">
+                <option value="1">Hiển thị (Bật)</option>
+                <option value="0">Ẩn (Tắt)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="pt-4 border-t border-slate-100 flex justify-end gap-3">
+            <button type="button" onclick="closePrefModal()" class="px-4 py-2 border border-slate-200 rounded-xl text-sm font-semibold text-slate-500 hover:bg-slate-50 transition-colors">
+              Hủy
+            </button>
+            <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-colors shadow-md shadow-blue-500/20">
+              Lưu lại
+            </button>
+          </div>
+        </form>
       </div>
     </div>
 
@@ -2975,22 +3075,26 @@
       const viewContainer = document.getElementById('interests-viewhistory-container');
       const cfContainer = document.getElementById('interests-recommend-engine-container');
       const aprioriContainer = document.getElementById('interests-apriori-rules-container');
+      const configContainer = document.getElementById('interests-config-container');
       
       const prefTabBtn = document.getElementById('tab-btn-preferences');
       const viewTabBtn = document.getElementById('tab-btn-viewhistory');
       const cfTabBtn = document.getElementById('tab-btn-recommend-engine');
       const aprioriTabBtn = document.getElementById('tab-btn-apriori-rules');
+      const configTabBtn = document.getElementById('tab-btn-config-interests');
 
       // Hide all
       prefContainer.classList.add('hidden');
       viewContainer.classList.add('hidden');
       cfContainer.classList.add('hidden');
       aprioriContainer.classList.add('hidden');
+      configContainer.classList.add('hidden');
       
       prefTabBtn.className = "pb-3 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition duration-200";
       viewTabBtn.className = "pb-3 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition duration-200";
       cfTabBtn.className = "pb-3 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition duration-200";
       aprioriTabBtn.className = "pb-3 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition duration-200";
+      configTabBtn.className = "pb-3 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition duration-200";
 
       if (tabId === 'preferences') {
         prefContainer.classList.remove('hidden');
@@ -3008,6 +3112,151 @@
         aprioriContainer.classList.remove('hidden');
         aprioriTabBtn.className = "pb-3 text-sm font-semibold border-b-2 border-blue-500 text-blue-600 transition duration-200";
         loadOverviewApriori();
+      } else if (tabId === 'config-interests') {
+        configContainer.classList.remove('hidden');
+        configTabBtn.className = "pb-3 text-sm font-semibold border-b-2 border-blue-500 text-blue-600 transition duration-200";
+        loadAdminDefaultPreferences();
+      }
+    }
+
+    async function loadAdminDefaultPreferences() {
+      const tbody = document.getElementById('pref-table-body');
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-slate-400"><i class="fas fa-spinner fa-spin mr-2"></i>Đang tải dữ liệu...</td></tr>';
+      try {
+        const res = await fetch(`${API_URL}/interests/admin/default-preferences`, { credentials: 'include' });
+        const result = await res.json();
+        if (!result.success || !result.data || result.data.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-slate-400"><i class="fas fa-info-circle mr-2"></i>Chưa có sở thích cấu hình nào</td></tr>';
+          return;
+        }
+        
+        tbody.innerHTML = result.data.map((pref, index) => {
+          const statusBadge = pref.trang_thai === 1 
+            ? '<span class="px-2.5 py-1 bg-green-50 text-green-700 text-xs rounded-full font-semibold border border-green-200">Hiển thị</span>'
+            : '<span class="px-2.5 py-1 bg-slate-50 text-slate-500 text-xs rounded-full font-semibold border border-slate-200">Ẩn</span>';
+            
+          return `<tr class="hover:bg-slate-50 transition-colors">
+            <td class="px-5 py-4 text-sm text-slate-500 font-medium">${index + 1}</td>
+            <td class="px-5 py-4 text-sm font-bold text-slate-800">${escapeHtml(pref.ten_so_thich)}</td>
+            <td class="px-5 py-4 text-sm text-slate-600">${escapeHtml(pref.loai_so_thich)}</td>
+            <td class="px-5 py-4 text-center text-lg">${pref.icon_emoji ? escapeHtml(pref.icon_emoji) : '📦'}</td>
+            <td class="px-5 py-4 text-center">${statusBadge}</td>
+            <td class="px-5 py-4 text-center text-sm text-slate-600 font-medium">${pref.sap_xep}</td>
+            <td class="px-5 py-4 text-center">
+              <div class="flex items-center justify-center gap-2">
+                <button onclick='editPreference(${JSON.stringify(pref)})' class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Chỉnh sửa">
+                  <i class="fas fa-edit text-xs"></i>
+                </button>
+                <button onclick="deletePreference(${pref.ma_so_thich})" class="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors" title="Xóa">
+                  <i class="fas fa-trash-alt text-xs"></i>
+                </button>
+              </div>
+            </td>
+          </tr>`;
+        }).join('');
+      } catch (e) {
+        console.error(e);
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-red-500"><i class="fas fa-exclamation-triangle mr-2"></i>Không thể tải danh sách sở thích</td></tr>';
+      }
+    }
+
+    function openPrefModal(pref = null) {
+      const modal = document.getElementById('pref-modal');
+      const title = document.getElementById('pref-modal-title');
+      const idInput = document.getElementById('pref-id');
+      const nameInput = document.getElementById('pref-name');
+      const typeSelect = document.getElementById('pref-type');
+      const emojiInput = document.getElementById('pref-emoji');
+      const sortInput = document.getElementById('pref-sort');
+      const statusSelect = document.getElementById('pref-status');
+
+      if (pref) {
+        title.textContent = 'Chỉnh sửa sở thích';
+        idInput.value = pref.ma_so_thich;
+        nameInput.value = pref.ten_so_thich;
+        typeSelect.value = pref.loai_so_thich;
+        emojiInput.value = pref.icon_emoji || '';
+        sortInput.value = pref.sap_xep;
+        statusSelect.value = pref.trang_thai;
+      } else {
+        title.textContent = 'Thêm sở thích mới';
+        idInput.value = '';
+        nameInput.value = '';
+        typeSelect.value = 'Hãng';
+        emojiInput.value = '';
+        sortInput.value = '0';
+        statusSelect.value = '1';
+      }
+
+      modal.classList.remove('hidden');
+    }
+
+    function closePrefModal() {
+      document.getElementById('pref-modal').classList.add('hidden');
+    }
+
+    function editPreference(pref) {
+      openPrefModal(pref);
+    }
+
+    async function savePreference(event) {
+      event.preventDefault();
+      const id = document.getElementById('pref-id').value;
+      const name = document.getElementById('pref-name').value;
+      const type = document.getElementById('pref-type').value;
+      const emoji = document.getElementById('pref-emoji').value;
+      const sort = document.getElementById('pref-sort').value;
+      const status = document.getElementById('pref-status').value;
+
+      const payload = {
+        ten_so_thich: name,
+        loai_so_thich: type,
+        icon_emoji: emoji,
+        sap_xep: sort,
+        trang_thai: status
+      };
+
+      const url = id 
+        ? `${API_URL}/interests/admin/default-preferences/${id}` 
+        : `${API_URL}/interests/admin/default-preferences`;
+      const method = id ? 'PUT' : 'POST';
+
+      try {
+        const res = await fetch(url, {
+          method: method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          credentials: 'include'
+        });
+        const result = await res.json();
+        if (result.success) {
+          showToast(id ? 'Đã cập nhật sở thích' : 'Đã thêm sở thích mới', 'success');
+          closePrefModal();
+          loadAdminDefaultPreferences();
+        } else {
+          showToast(result.message || 'Lỗi lưu dữ liệu', 'error');
+        }
+      } catch (e) {
+        showToast('Lỗi kết nối server', 'error');
+      }
+    }
+
+    async function deletePreference(id) {
+      if (!confirm('Bạn có chắc muốn xóa sở thích mặc định này không? Khách hàng sẽ không thể chọn sở thích này nữa.')) return;
+      try {
+        const res = await fetch(`${API_URL}/interests/admin/default-preferences/${id}`, {
+          method: 'DELETE',
+          credentials: 'include'
+        });
+        const result = await res.json();
+        if (result.success) {
+          showToast('Đã xóa sở thích thành công', 'success');
+          loadAdminDefaultPreferences();
+        } else {
+          showToast(result.message || 'Lỗi khi xóa', 'error');
+        }
+      } catch (e) {
+        showToast('Lỗi kết nối server', 'error');
       }
     }
 
@@ -3585,6 +3834,7 @@
             <h3 class="font-bold text-slate-700 flex items-center gap-2"><i class="fas fa-table text-emerald-500"></i>Lịch phân công</h3>
             <div class="flex gap-2">
               <input type="date" id="schedule-filter-date" class="px-3 py-1.5 border border-slate-200 rounded-lg text-sm" onchange="loadSchedule()">
+              <button onclick="document.getElementById('schedule-filter-date').value = ''; loadSchedule();" class="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 rounded-lg text-sm font-medium" title="Xem tất cả lịch phân công"><i class="fas fa-list"></i></button>
               <button onclick="loadSchedule()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium text-slate-700"><i class="fas fa-sync-alt"></i></button>
             </div>
           </div>
@@ -3634,6 +3884,9 @@
     <div id="att-tab-history" class="tab-pane">
       <div class="flex justify-end mb-4 gap-2">
         <input type="date" id="attendance-filter-date" class="px-4 py-2 border border-slate-200 rounded-xl text-sm" onchange="loadAttendanceRecords()">
+        <button onclick="document.getElementById('attendance-filter-date').value = ''; loadAttendanceRecords();" class="px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 rounded-xl text-sm font-medium">
+          <i class="fas fa-list mr-1"></i>Xem tất cả lịch sử
+        </button>
         <button onclick="loadAttendanceRecords()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-sm font-medium text-slate-700">
           <i class="fas fa-sync-alt mr-1"></i>Làm mới
         </button>
@@ -3674,6 +3927,7 @@
             <thead class="bg-slate-50">
               <tr class="text-left text-slate-500 text-xs">
                 <th class="px-4 py-3 font-semibold">Nhân viên</th>
+                <th class="px-4 py-3 font-semibold">Ngày</th>
                 <th class="px-4 py-3 font-semibold">Ca làm việc</th>
                 <th class="px-4 py-3 font-semibold">Giờ bắt đầu ca</th>
                 <th class="px-4 py-3 font-semibold">Vào ca (Check-in)</th>
@@ -3882,6 +4136,60 @@
           </thead>
           <tbody id="warranties-table-body" class="divide-y divide-slate-100">
             <tr><td colspan="8" class="text-center py-8 text-slate-400"><i class="fas fa-spinner fa-spin mr-2"></i>Đang tải...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== RETURNS SECTION ==================== -->
+  <div id="section-returns" class="section-content">
+    <div class="flex justify-between items-center mb-6">
+      <div>
+        <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+          <i class="fas fa-undo-alt text-red-500"></i>Quản lý Yêu cầu Đổi - Trả - Hoàn Tiền
+        </h2>
+        <p class="text-slate-500 text-sm mt-1">Tiếp nhận, duyệt đổi trả sản phẩm mới hoặc xử lý hoàn tiền khách mua hàng trực tuyến.</p>
+      </div>
+      <button onclick="loadAdminClaims()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-sm font-medium text-slate-700">
+        <i class="fas fa-sync-alt mr-2"></i>Làm mới
+      </button>
+    </div>
+
+    <!-- Filter bar -->
+    <div class="bg-white rounded-2xl border border-slate-150 p-4 mb-6 shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
+      <div class="flex flex-wrap items-center gap-2" id="returns-filter-buttons">
+        <button onclick="filterAdminClaims('all')" id="btn-return-filter-all" class="px-4 py-2 rounded-xl text-sm font-semibold bg-slate-100 text-slate-800 transition">Tất cả</button>
+        <button onclick="filterAdminClaims('pending')" id="btn-return-filter-pending" class="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition">Chờ duyệt</button>
+        <button onclick="filterAdminClaims('processing')" id="btn-return-filter-processing" class="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition">Đang xử lý</button>
+        <button onclick="filterAdminClaims('completed')" id="btn-return-filter-completed" class="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition">Đã hoàn tất</button>
+        <button onclick="filterAdminClaims('rejected')" id="btn-return-filter-rejected" class="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition">Bị từ chối</button>
+      </div>
+      
+      <div class="relative w-full md:w-80">
+        <i class="fas fa-search absolute left-3.5 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+        <input type="text" id="return-search-input" onkeyup="searchReturnTable()" placeholder="Tìm khách hàng, SP, mã đơn..." class="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-slate-400 transition text-sm">
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-sm">
+          <thead>
+            <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider">
+              <th class="py-4 px-6 font-semibold">Mã YC</th>
+              <th class="py-4 px-6 font-semibold">Đơn hàng</th>
+              <th class="py-4 px-6 font-semibold">Khách hàng</th>
+              <th class="py-4 px-6 font-semibold">Sản phẩm</th>
+              <th class="py-4 px-6 font-semibold">Loại</th>
+              <th class="py-4 px-6 font-semibold">Lý do lỗi</th>
+              <th class="py-4 px-6 font-semibold">Ảnh lỗi</th>
+              <th class="py-4 px-6 font-semibold">Trạng thái</th>
+              <th class="py-4 px-6 font-semibold text-center">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="returns-table-body" class="divide-y divide-slate-100">
+            <tr><td colspan="9" class="text-center py-8 text-slate-400"><i class="fas fa-spinner fa-spin mr-2"></i>Đang tải dữ liệu...</td></tr>
           </tbody>
         </table>
       </div>
@@ -5812,6 +6120,13 @@
             if (container) {
               container.classList.remove('hidden');
               container.classList.add('flex');
+              if (admin.quyen !== 'superadmin') {
+                const chk = document.getElementById('my-orders-only');
+                if (chk) {
+                  chk.checked = true;
+                  chk.disabled = true;
+                }
+              }
             }
           }
           if (admin.quyen) {
@@ -7319,7 +7634,7 @@
       if (elId) elId.value = '';
       
       // Mặc định ngày chi là ngày hôm nay
-      const today = new Date().toISOString().split('T')[0];
+      const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
       const elDate = document.getElementById('expense-date');
       if (elDate) elDate.value = today;
 
@@ -7961,6 +8276,9 @@
       }
 
       // Load specific data
+      if (sectionId === 'returns') {
+        loadAdminClaims();
+      }
       if (sectionId === 'employees') {
         loadEmployees();
       }
@@ -7991,6 +8309,7 @@
       // Update page title
       const titles = {
         dashboard: 'Tổng quan',
+        returns: 'Quản lý Đổi trả',
         orders: 'Quản lý đơn hàng',
         products: 'Quản lý Sản phẩm',
         inventory: 'Quản lý Tồn kho',
@@ -8243,12 +8562,20 @@
         filtered = filtered.filter(o => o.phuong_thuc && o.phuong_thuc.toUpperCase().includes(payment.toUpperCase()));
       }
 
-      // Filter by "Đơn hàng của tôi" if logged in as employee
-      const myOrdersOnly = document.getElementById('my-orders-only')?.checked;
-      if (myOrdersOnly && adminInfo) {
+      // Cưỡng chế lọc đơn hàng theo nhân viên nếu tài khoản không phải superadmin
+      const isSuperAdmin = adminInfo && adminInfo.quyen === 'superadmin';
+      if (!isSuperAdmin && adminInfo) {
         const myId = adminInfo.ma_nv || adminInfo.ma_admin;
         if (myId) {
           filtered = filtered.filter(o => Number(o.ma_nv_xu_ly) === Number(myId));
+        }
+      } else {
+        const myOrdersOnly = document.getElementById('my-orders-only')?.checked;
+        if (myOrdersOnly && adminInfo) {
+          const myId = adminInfo.ma_nv || adminInfo.ma_admin;
+          if (myId) {
+            filtered = filtered.filter(o => Number(o.ma_nv_xu_ly) === Number(myId));
+          }
         }
       }
       
@@ -12747,6 +13074,46 @@
     </div>
   </div>
 
+  <!-- Return Claim Update Modal -->
+  <div id="return-modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-red-500 to-red-600 shrink-0">
+        <h3 class="text-lg font-bold text-white"><i class="fas fa-undo-alt mr-2"></i>Xử lý yêu cầu Đổi - Trả</h3>
+        <button onclick="closeReturnModal()" class="text-white/80 hover:text-white"><i class="fas fa-times text-xl"></i></button>
+      </div>
+      <form id="return-update-form" onsubmit="saveReturnClaimStatus(event)" class="p-6 space-y-4">
+        <input type="hidden" id="return-claim-id">
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">Loại yêu cầu khách gửi</label>
+          <input type="text" id="return-claim-type" readonly class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-500 cursor-not-allowed font-medium">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">Cập nhật Trạng thái xử lý *</label>
+          <select id="return-claim-status" onchange="toggleAdminRefundField(this.value)" required class="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer">
+            <option value="pending">Chờ duyệt</option>
+            <option value="approved">Đã phê duyệt (Đợi gửi máy tới)</option>
+            <option value="processing">Đang xử lý (Đang kỹ thuật kiểm tra)</option>
+            <option value="completed">Đã hoàn tất (Hoàn tiền hoặc Đổi trả máy mới)</option>
+            <option value="rejected">Từ chối đổi trả</option>
+          </select>
+        </div>
+        <div id="admin-refund-field-container" class="hidden">
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">Số tiền hoàn lại cho khách (VND)</label>
+          <input type="number" id="return-claim-refund" placeholder="Nhập số tiền cần hoàn (VD: 15000000)" class="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500">
+          <p class="text-[10px] text-red-500 font-bold mt-1.5"><i class="fas fa-exclamation-circle mr-1"></i>Hoàn thành trạng thái này sẽ tự động khấu trừ điểm tích lũy & doanh thu tương ứng.</p>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">Ghi chú phản hồi khách hàng</label>
+          <textarea id="return-claim-note" placeholder="VD: Đã duyệt hoàn 100% tiền. Số tiền hoàn lại sẽ chuyển khoản..." class="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500" rows="2"></textarea>
+        </div>
+        <div class="flex justify-end gap-3 pt-4 border-t border-slate-100">
+          <button type="button" onclick="closeReturnModal()" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl transition">Hủy</button>
+          <button type="submit" class="px-6 py-2.5 bg-[#d70018] hover:bg-[#b50012] text-white font-semibold rounded-xl shadow-lg shadow-red-500/20 transition">Lưu cập nhật</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
     // ==================== WARRANTIES SECTION ====================
     let allWarranties = [];
@@ -12823,9 +13190,59 @@
       document.getElementById('warranty-claim-id').value = claimId;
       document.getElementById('warranty-claim-product').value = claim.ten_sp;
       document.getElementById('warranty-claim-desc').value = claim.mo_ta_loi;
-      document.getElementById('warranty-claim-status').value = claim.trang_thai;
       document.getElementById('warranty-claim-result').value = claim.ket_qua || '';
       document.getElementById('warranty-claim-note').value = '';
+
+      const isFinalized = ['completed', 'rejected'].includes(claim.trang_thai);
+      const statusSelect = document.getElementById('warranty-claim-status');
+      const resultInput = document.getElementById('warranty-claim-result');
+      const noteTextarea = document.getElementById('warranty-claim-note');
+      const submitBtn = document.querySelector('#warranty-update-form button[type="submit"]');
+
+      // Populate all options for editing active claims, allow correcting mistakes
+      const warrantyStatusNames = {
+        'pending': 'Chờ tiếp nhận',
+        'received': 'Đã tiếp nhận sản phẩm lỗi',
+        'diagnosing': 'Đang kiểm tra chẩn đoán lỗi',
+        'repairing': 'Đang tiến hành sửa chữa/thay thế',
+        'completed': 'Đã bảo hành hoàn thành trả máy',
+        'rejected': 'Từ chối bảo hành (lỗi người dùng...)'
+      };
+
+      statusSelect.innerHTML = '';
+      Object.keys(warrantyStatusNames).forEach(s => {
+        const option = document.createElement('option');
+        option.value = s;
+        option.textContent = warrantyStatusNames[s];
+        statusSelect.appendChild(option);
+      });
+      statusSelect.value = claim.trang_thai;
+
+      if (isFinalized) {
+        statusSelect.disabled = true;
+        resultInput.disabled = true;
+        noteTextarea.disabled = true;
+        submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        submitBtn.disabled = true;
+        
+        let warningEl = document.getElementById('warranty-finalized-warning');
+        if (!warningEl) {
+          warningEl = document.createElement('p');
+          warningEl.id = 'warranty-finalized-warning';
+          warningEl.className = 'text-xs text-red-500 font-bold bg-red-50 p-2.5 rounded-xl border border-red-200/50 flex items-center gap-1.5 mt-2';
+          warningEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Yêu cầu này đã hoàn tất hoặc bị từ chối, không thể chỉnh sửa.';
+          statusSelect.parentNode.appendChild(warningEl);
+        }
+      } else {
+        statusSelect.disabled = false;
+        resultInput.disabled = false;
+        noteTextarea.disabled = false;
+        submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        submitBtn.disabled = false;
+        
+        const warningEl = document.getElementById('warranty-finalized-warning');
+        if (warningEl) warningEl.remove();
+      }
 
       const modal = document.getElementById('warranty-modal');
       modal.classList.remove('hidden');
@@ -12866,6 +13283,266 @@
           showToast(data.message || 'Lỗi cập nhật tiến độ!', 'error');
         }
       } catch (err) {
+        showToast('Lỗi kết nối máy chủ', 'error');
+      } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      }
+    }
+
+    // ==================== RETURNS SECTION ====================
+    let allAdminClaims = [];
+    let currentReturnFilter = 'all';
+
+    async function loadAdminClaims() {
+      const tbody = document.getElementById('returns-table-body');
+      tbody.innerHTML = '<tr><td colspan="9" class="py-8 text-center text-slate-400"><i class="fas fa-spinner fa-spin mr-2"></i>Đang tải dữ liệu...</td></tr>';
+      try {
+        const response = await fetch(`${API_URL}/returns/claims`, {
+          method: 'GET',
+          credentials: 'include'
+        });
+        const resData = await response.json();
+        
+        if (resData.success) {
+          allAdminClaims = resData.data || [];
+          updateReturnStats();
+          renderAdminClaims();
+        } else {
+          tbody.innerHTML = `<tr><td colspan="9" class="py-8 text-center text-red-500 font-semibold">Lỗi tải dữ liệu: ${resData.message}</td></tr>`;
+        }
+      } catch (err) {
+        console.error('Error loading returns claims:', err);
+        tbody.innerHTML = '<tr><td colspan="9" class="py-8 text-center text-red-500 font-semibold">Lỗi kết nối máy chủ khi tải yêu cầu đổi trả.</td></tr>';
+      }
+    }
+
+    function updateReturnStats() {
+      const pendingEl = document.getElementById('stat-pending');
+      const completedEl = document.getElementById('stat-completed');
+      if (pendingEl) {
+        pendingEl.textContent = allAdminClaims.filter(c => c.trang_thai === 'pending').length;
+      }
+      if (completedEl) {
+        completedEl.textContent = allAdminClaims.filter(c => c.trang_thai === 'completed').length;
+      }
+    }
+
+    function renderAdminClaims() {
+      const tbody = document.getElementById('returns-table-body');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      const filtered = allAdminClaims.filter(c => {
+        if (currentReturnFilter === 'all') return true;
+        return c.trang_thai === currentReturnFilter;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="py-8 text-center text-slate-400 font-semibold">Không tìm thấy yêu cầu đổi trả nào.</td></tr>';
+        return;
+      }
+
+      filtered.forEach(c => {
+        let typeBadge = `<span class="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200/50 rounded-lg text-xs font-bold">Đổi máy mới</span>`;
+        if (c.loai === 'tra') {
+          typeBadge = `<span class="px-2 py-0.5 bg-rose-50 text-rose-700 border border-rose-200/50 rounded-lg text-xs font-bold">Trả máy</span>`;
+        } else if (c.loai === 'hoan_tien') {
+          typeBadge = `<span class="px-2 py-0.5 bg-purple-50 text-purple-700 border border-purple-200/50 rounded-lg text-xs font-bold">Hoàn tiền</span>`;
+        }
+
+        let statusBadge = `<span class="px-2.5 py-1 bg-yellow-50 text-yellow-600 border border-yellow-250/30 text-xs font-bold rounded-full">⏳ Chờ duyệt</span>`;
+        if (c.trang_thai === 'approved') {
+          statusBadge = `<span class="px-2.5 py-1 bg-blue-50 text-blue-600 border border-blue-200/50 text-xs font-bold rounded-full">✅ Đã duyệt</span>`;
+        } else if (c.trang_thai === 'processing') {
+          statusBadge = `<span class="px-2.5 py-1 bg-orange-50 text-orange-600 border border-orange-200/50 text-xs font-bold rounded-full">⚙️ Đang xử lý</span>`;
+        } else if (c.trang_thai === 'completed') {
+          statusBadge = `<span class="px-2.5 py-1 bg-green-50 text-green-700 border border-green-200/50 text-xs font-bold rounded-full">🎉 Hoàn tất</span>`;
+        } else if (c.trang_thai === 'rejected') {
+          statusBadge = `<span class="px-2.5 py-1 bg-red-50 text-red-600 border border-red-200/50 text-xs font-bold rounded-full">❌ Từ chối</span>`;
+        }
+
+        let imageHtml = '<span class="text-slate-400 italic">Không có ảnh</span>';
+        if (c.hinh_anh) {
+          imageHtml = `<a href="${c.hinh_anh}" target="_blank" class="text-red-600 hover:text-red-700 font-semibold inline-flex items-center gap-1"><i class="fas fa-image"></i> Xem ảnh</a>`;
+        }
+
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50 transition duration-150 border-b border-slate-100';
+        tr.innerHTML = `
+          <td class="py-4 px-6 font-bold text-slate-800">#${c.ma_ycdt}</td>
+          <td class="py-4 px-6">Đơn #${c.ma_don}</td>
+          <td class="py-4 px-6">
+            <span class="block font-bold text-slate-800">${c.ten_kh || 'Khách vãng lai'}</span>
+            <span class="block text-xs text-slate-400 font-semibold">${c.sdt_kh || ''}</span>
+          </td>
+          <td class="py-4 px-6 font-bold text-slate-700">${c.ten_sp}</td>
+          <td class="py-4 px-6">${typeBadge}</td>
+          <td class="py-4 px-6 max-w-xs truncate" title="${c.ly_do}">${c.ly_do}</td>
+          <td class="py-4 px-6">${imageHtml}</td>
+          <td class="py-4 px-6">${statusBadge}</td>
+          <td class="py-4 px-6 text-center">
+            <button onclick="openReturnModal(${c.ma_ycdt})" class="px-3.5 py-1.5 bg-[#d70018] hover:bg-[#b50012] text-white font-bold rounded-xl shadow-sm text-xs transition">
+              Xử lý
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function searchReturnTable() {
+      const query = document.getElementById('return-search-input').value.toLowerCase();
+      const rows = document.querySelectorAll('#returns-table-body tr');
+      rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        if (text.includes(query) || row.innerHTML.includes('colspan')) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    }
+
+    function filterAdminClaims(status) {
+      currentReturnFilter = status;
+      const statuses = ['all', 'pending', 'processing', 'completed', 'rejected'];
+      statuses.forEach(s => {
+        const btn = document.getElementById(`btn-return-filter-${s}`);
+        if (!btn) return;
+        if (s === status) {
+          btn.classList.add('bg-slate-100', 'text-slate-800');
+          btn.classList.remove('text-slate-600', 'hover:bg-slate-50');
+        } else {
+          btn.classList.remove('bg-slate-100', 'text-slate-800');
+          btn.classList.add('text-slate-600', 'hover:bg-slate-50');
+        }
+      });
+      renderAdminClaims();
+    }
+
+    function toggleAdminRefundField(status) {
+      const container = document.getElementById('admin-refund-field-container');
+      const type = document.getElementById('return-claim-type').value;
+      if (status === 'completed' && (type === 'Trả máy' || type === 'Hoàn tiền')) {
+        container.classList.remove('hidden');
+        document.getElementById('return-claim-refund').setAttribute('required', 'true');
+      } else {
+        container.classList.add('hidden');
+        document.getElementById('return-claim-refund').removeAttribute('required');
+      }
+    }
+
+    function openReturnModal(claimId) {
+      const claim = allAdminClaims.find(c => c.ma_ycdt === claimId);
+      if (!claim) return;
+
+      document.getElementById('return-claim-id').value = claimId;
+      let typeLabel = 'Đổi máy mới';
+      if (claim.loai === 'tra') typeLabel = 'Trả máy';
+      if (claim.loai === 'hoan_tien') typeLabel = 'Hoàn tiền';
+      document.getElementById('return-claim-type').value = typeLabel;
+
+      document.getElementById('return-claim-refund').value = claim.so_tien_hoan || '';
+      document.getElementById('return-claim-note').value = claim.ghi_chu_admin || '';
+
+      toggleAdminRefundField(claim.trang_thai);
+
+      const isFinalized = ['completed', 'rejected'].includes(claim.trang_thai);
+      const statusSelect = document.getElementById('return-claim-status');
+      const refundInput = document.getElementById('return-claim-refund');
+      const noteTextarea = document.getElementById('return-claim-note');
+      const submitBtn = document.querySelector('#return-update-form button[type="submit"]');
+
+      // Populate all options for editing active claims, allow correcting mistakes
+      const returnStatusNames = {
+        'pending': 'Chờ duyệt',
+        'approved': 'Đã phê duyệt (Đợi gửi máy tới)',
+        'processing': 'Đang xử lý (Đang kỹ thuật kiểm tra)',
+        'completed': 'Đã hoàn tất (Hoàn tiền hoặc Đổi trả máy mới)',
+        'rejected': 'Từ chối đổi trả'
+      };
+
+      statusSelect.innerHTML = '';
+      Object.keys(returnStatusNames).forEach(s => {
+        const option = document.createElement('option');
+        option.value = s;
+        option.textContent = returnStatusNames[s];
+        statusSelect.appendChild(option);
+      });
+      statusSelect.value = claim.trang_thai;
+
+      if (isFinalized) {
+        statusSelect.disabled = true;
+        if (refundInput) refundInput.disabled = true;
+        noteTextarea.disabled = true;
+        submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        submitBtn.disabled = true;
+
+        let warningEl = document.getElementById('return-finalized-warning');
+        if (!warningEl) {
+          warningEl = document.createElement('p');
+          warningEl.id = 'return-finalized-warning';
+          warningEl.className = 'text-xs text-red-500 font-bold bg-red-50 p-2.5 rounded-xl border border-red-200/50 flex items-center gap-1.5 mt-2';
+          warningEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Yêu cầu đổi trả này đã hoàn tất hoặc bị từ chối, không thể chỉnh sửa.';
+          statusSelect.parentNode.appendChild(warningEl);
+        }
+      } else {
+        statusSelect.disabled = false;
+        if (refundInput) refundInput.disabled = false;
+        noteTextarea.disabled = false;
+        submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        submitBtn.disabled = false;
+
+        const warningEl = document.getElementById('return-finalized-warning');
+        if (warningEl) warningEl.remove();
+      }
+
+      const modal = document.getElementById('return-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeReturnModal() {
+      const modal = document.getElementById('return-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    async function saveReturnClaimStatus(e) {
+      e.preventDefault();
+      const claimId = document.getElementById('return-claim-id').value;
+      const status = document.getElementById('return-claim-status').value;
+      const refundAmount = document.getElementById('return-claim-refund').value;
+      const note = document.getElementById('return-claim-note').value.trim();
+
+      const btn = e.target.querySelector('button[type="submit"]');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang lưu...';
+      btn.disabled = true;
+
+      try {
+        const response = await fetch(`${API_URL}/returns/claim/${claimId}/status`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            status,
+            refundAmount: refundAmount || 0,
+            note
+          })
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          showToast('Cập nhật trạng thái đổi trả thành công và đã gửi thông báo cho KH!', 'success');
+          closeReturnModal();
+          loadAdminClaims();
+        } else {
+          showToast(data.message || 'Lỗi cập nhật đổi trả!', 'error');
+        }
+      } catch (err) {
+        console.error(err);
         showToast('Lỗi kết nối máy chủ', 'error');
       } finally {
         btn.innerHTML = originalText;
@@ -12977,7 +13654,7 @@
         loadFinancialStat('profit', 'year', false);
 
         // Set today's date for schedule filter
-        const today = new Date().toISOString().split('T')[0];
+        const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
         const sf = document.getElementById('schedule-filter-date');
         if (sf) sf.value = today;
         const af = document.getElementById('attendance-filter-date');
@@ -13206,7 +13883,7 @@
           setEl('att-absent', data.absentCount || 0);
 
           if (records.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" class="py-8 text-center text-slate-400"><i class="fas fa-user-clock text-3xl block mb-2"></i>Chưa có dữ liệu chấm công ngày này</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" class="py-8 text-center text-slate-400"><i class="fas fa-user-clock text-3xl block mb-2"></i>Chưa có dữ liệu chấm công</td></tr>';
             return;
           }
 
@@ -13222,6 +13899,7 @@
 
             const checkOutTime = r.gio_checkout ? new Date(r.gio_checkout).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '—';
             const checkOutGps = (r.lat_checkout && r.lng_checkout) ? `<a href="https://maps.google.com/?q=${r.lat_checkout},${r.lng_checkout}" target="_blank" class="text-blue-600 hover:underline text-[10px] block mt-0.5"><i class="fas fa-map-marker-alt mr-1"></i>${parseFloat(r.lat_checkout).toFixed(4)}, ${parseFloat(r.lng_checkout).toFixed(4)}</a>` : '';
+            const dateStr = r.ngay ? new Date(r.ngay).toLocaleDateString('vi-VN', { timeZone: 'UTC' }) : '—';
 
             return `
               <tr class="hover:bg-slate-50 transition-colors">
@@ -13229,6 +13907,7 @@
                   <p class="font-medium text-slate-800">${r.ho_ten || r.tai_khoan || '—'}</p>
                   <p class="text-xs text-slate-400">${r.ma_nv || r.tai_khoan || ''}</p>
                 </td>
+                <td class="px-4 py-3 text-slate-600 text-sm">${dateStr}</td>
                 <td class="px-4 py-3"><span class="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">${r.ten_ca || '—'}</span></td>
                 <td class="px-4 py-3 text-slate-600 text-sm">${r.gio_bat_dau || '—'}</td>
                 <td class="px-4 py-3 text-slate-600 font-medium text-sm">
@@ -13247,7 +13926,7 @@
           }).join('');
         }
       } catch(e) {
-        document.getElementById('attendance-table-body').innerHTML = '<tr><td colspan="7" class="py-6 text-center text-red-400">Lỗi tải dữ liệu chấm công</td></tr>';
+        document.getElementById('attendance-table-body').innerHTML = '<tr><td colspan="8" class="py-6 text-center text-red-400">Lỗi tải dữ liệu chấm công</td></tr>';
       }
     }
 

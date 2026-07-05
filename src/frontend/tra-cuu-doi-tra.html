@@ -98,12 +98,18 @@
             <form id="return-claim-form" class="space-y-4">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">Mã đơn hàng <span class="text-red-500">*</span></label>
-                        <input type="text" id="claim-order-id" placeholder="Nhập mã đơn hàng (VD: DH1783... hoặc 12)" class="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-[#d70018] transition" required>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Đơn hàng đã mua <span class="text-red-500">*</span></label>
+                        <select id="claim-order-select" class="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-[#d70018] transition" required>
+                            <option value="">-- Chọn đơn hàng --</option>
+                        </select>
+                        <input type="hidden" id="claim-order-id">
                     </div>
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">Mã sản phẩm <span class="text-red-500">*</span></label>
-                        <input type="number" id="claim-product-id" placeholder="Nhập mã sản phẩm (VD: 5)" class="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-[#d70018] transition" required>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Sản phẩm cần đổi trả <span class="text-red-500">*</span></label>
+                        <select id="claim-product-select" class="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-[#d70018] transition" required disabled>
+                            <option value="">-- Chọn sản phẩm --</option>
+                        </select>
+                        <input type="hidden" id="claim-product-id">
                     </div>
                 </div>
 
@@ -122,8 +128,37 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1">Hình ảnh lỗi sản phẩm (URL)</label>
-                    <input type="url" id="claim-image" placeholder="Ví dụ: http://example.com/anh_loi.jpg" class="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-[#d70018] transition">
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Hình ảnh lỗi sản phẩm <span class="text-xs text-gray-500 font-normal">(Chấp nhận: JPG, PNG, WEBP, tối đa 5MB)</span></label>
+                    <div id="upload-container" class="relative border-2 border-dashed border-gray-200 hover:border-[#d70018] rounded-xl p-6 transition flex flex-col items-center justify-center cursor-pointer bg-gray-50/50">
+                        <input type="file" id="claim-image-file" class="hidden" accept="image/*">
+                        <input type="hidden" id="claim-image">
+                        
+                        <!-- Trạng thái chưa chọn file -->
+                        <div id="upload-prompt" class="flex flex-col items-center text-center">
+                            <div class="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mb-3">
+                                <i class="fas fa-cloud-upload-alt text-xl text-[#d70018]"></i>
+                            </div>
+                            <p class="text-sm font-semibold text-gray-800">Nhấp để tải ảnh lên hoặc kéo thả vào đây</p>
+                            <p class="text-xs text-gray-400 mt-1">Hỗ trợ các định dạng hình ảnh thông dụng</p>
+                        </div>
+
+                        <!-- Trạng thái đang tải lên -->
+                        <div id="upload-loading" class="hidden flex flex-col items-center justify-center py-2">
+                            <svg class="animate-spin h-8 w-8 text-[#d70018]" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span class="text-sm font-medium text-gray-600 mt-3">Đang tải ảnh lên...</span>
+                        </div>
+
+                        <!-- Trạng thái đã tải ảnh lên thành công (Preview) -->
+                        <div id="upload-preview-container" class="hidden w-full relative flex flex-col items-center">
+                            <img id="upload-preview" class="max-h-48 rounded-lg shadow-sm border border-gray-100 object-contain" src="">
+                            <button type="button" id="remove-image-btn" class="absolute -top-2 -right-2 bg-red-600 hover:bg-red-700 text-white w-8 h-8 rounded-full flex items-center justify-center transition shadow-md border-2 border-white">
+                                <i class="fas fa-times text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="flex justify-end pt-2">
@@ -204,6 +239,8 @@
             
             // Load history of return claims
             await loadReturnClaimsHistory(user.ma_kh);
+            // Load user orders for selects
+            await loadUserOrdersForSelect(user.ma_kh);
             return true;
         }
 
@@ -296,6 +333,180 @@
             historySection.classList.remove('hidden');
         }
 
+        let USER_ORDERS = [];
+
+        async function loadUserOrdersForSelect(userId) {
+            try {
+                const response = await fetch(`${API_URL}/orders/user/${userId}`, {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                const resData = await response.json();
+                
+                const orderSelect = document.getElementById('claim-order-select');
+                orderSelect.innerHTML = '<option value="">-- Chọn đơn hàng --</option>';
+                
+                const productSelect = document.getElementById('claim-product-select');
+                productSelect.innerHTML = '<option value="">-- Chọn sản phẩm --</option>';
+                productSelect.disabled = true;
+                
+                if (resData.success && resData.data.length > 0) {
+                    const eligibleStatuses = ['completed', 'delivered', 'da_giao', 'hoan_thanh'];
+                    USER_ORDERS = resData.data.filter(order => eligibleStatuses.includes(order.trang_thai));
+                    
+                    if (USER_ORDERS.length === 0) {
+                        orderSelect.innerHTML = '<option value="">Không có đơn hàng nào đã giao/hoàn thành</option>';
+                        return;
+                    }
+                    
+                    USER_ORDERS.forEach(order => {
+                        const dateStr = new Date(order.thoi_gian).toLocaleDateString('vi-VN');
+                        const priceStr = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.tong_tien);
+                        orderSelect.innerHTML += `<option value="${order.ma_don}">Đơn hàng #${order.ma_don} (${dateStr}) - ${priceStr}</option>`;
+                    });
+                } else {
+                    orderSelect.innerHTML = '<option value="">Không tìm thấy đơn hàng nào</option>';
+                }
+            } catch (err) {
+                console.error('Lỗi nạp đơn hàng:', err);
+            }
+        }
+
+        document.getElementById('claim-order-select').addEventListener('change', function() {
+            const orderId = this.value;
+            const productSelect = document.getElementById('claim-product-select');
+            const hiddenOrderId = document.getElementById('claim-order-id');
+            const hiddenProductId = document.getElementById('claim-product-id');
+            
+            hiddenOrderId.value = orderId;
+            hiddenProductId.value = '';
+            
+            productSelect.innerHTML = '<option value="">-- Chọn sản phẩm --</option>';
+            
+            if (!orderId) {
+                productSelect.disabled = true;
+                return;
+            }
+            
+            const selectedOrder = USER_ORDERS.find(o => Number(o.ma_don) === Number(orderId));
+            if (selectedOrder && selectedOrder.items && selectedOrder.items.length > 0) {
+                selectedOrder.items.forEach(item => {
+                    productSelect.innerHTML += `<option value="${item.id}">${item.name} (${item.color || ''} ${item.storage || ''}) - ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price)}</option>`;
+                });
+                productSelect.disabled = false;
+            } else {
+                productSelect.innerHTML = '<option value="">Không có sản phẩm trong đơn hàng này</option>';
+                productSelect.disabled = true;
+            }
+        });
+
+        document.getElementById('claim-product-select').addEventListener('change', function() {
+            document.getElementById('claim-product-id').value = this.value;
+        });
+
+        // Xử lý kéo thả và tải ảnh lên
+        const uploadContainer = document.getElementById('upload-container');
+        const fileInput = document.getElementById('claim-image-file');
+        const hiddenImageInput = document.getElementById('claim-image');
+        const uploadPrompt = document.getElementById('upload-prompt');
+        const uploadLoading = document.getElementById('upload-loading');
+        const uploadPreviewContainer = document.getElementById('upload-preview-container');
+        const uploadPreview = document.getElementById('upload-preview');
+        const removeImageBtn = document.getElementById('remove-image-btn');
+
+        // Click để chọn file
+        uploadContainer.addEventListener('click', function(e) {
+            if (e.target.closest('#remove-image-btn')) return;
+            fileInput.click();
+        });
+
+        // Kéo thả file
+        uploadContainer.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.classList.add('border-[#d70018]', 'bg-red-50/20');
+        });
+
+        ['dragleave', 'dragend'].forEach(evt => {
+            uploadContainer.addEventListener(evt, function(e) {
+                this.classList.remove('border-[#d70018]', 'bg-red-50/20');
+            });
+        });
+
+        uploadContainer.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.classList.remove('border-[#d70018]', 'bg-red-50/20');
+            
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                handleImageUpload(e.dataTransfer.files[0]);
+            }
+        });
+
+        // Thay đổi file input
+        fileInput.addEventListener('change', function(e) {
+            if (this.files && this.files.length > 0) {
+                handleImageUpload(this.files[0]);
+            }
+        });
+
+        // Hàm xử lý upload ảnh lên server
+        async function handleImageUpload(file) {
+            if (!file.type.startsWith('image/')) {
+                showToast('Chỉ chấp nhận tệp hình ảnh!', 'error');
+                return;
+            }
+            if (file.size > 5 * 1024 * 1024) {
+                showToast('Kích thước ảnh không được vượt quá 5MB!', 'error');
+                return;
+            }
+
+            // Giao diện loading
+            uploadPrompt.classList.add('hidden');
+            uploadPreviewContainer.classList.add('hidden');
+            uploadLoading.classList.remove('hidden');
+
+            const formData = new FormData();
+            formData.append('claimImage', file);
+
+            try {
+                const response = await fetch(`${API_URL}/returns/upload-image`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: formData
+                });
+
+                const data = await response.json();
+                uploadLoading.classList.add('hidden');
+
+                if (data.success) {
+                    hiddenImageInput.value = data.imageUrl;
+                    uploadPreview.src = data.imageUrl;
+                    uploadPreviewContainer.classList.remove('hidden');
+                    showToast('Tải ảnh lỗi lên thành công!', 'success');
+                } else {
+                    showToast(data.message || 'Lỗi tải ảnh lên máy chủ!', 'error');
+                    uploadPrompt.classList.remove('hidden');
+                    hiddenImageInput.value = '';
+                }
+            } catch (err) {
+                console.error('Lỗi upload ảnh:', err);
+                uploadLoading.classList.add('hidden');
+                uploadPrompt.classList.remove('hidden');
+                hiddenImageInput.value = '';
+                showToast('Không thể kết nối máy chủ để tải ảnh!', 'error');
+            }
+        }
+
+        // Xóa ảnh đã chọn
+        removeImageBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            hiddenImageInput.value = '';
+            fileInput.value = '';
+            uploadPreview.src = '';
+            uploadPreviewContainer.classList.add('hidden');
+            uploadPrompt.classList.remove('hidden');
+            showToast('Đã gỡ ảnh lỗi', 'info');
+        });
+
         // Tạo yêu cầu đổi trả mới
         document.getElementById('return-claim-form').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -348,13 +559,22 @@
 
                 if (data.success) {
                     showToast(data.message, 'success');
+                    
+                    document.getElementById('claim-order-select').value = '';
+                    document.getElementById('claim-product-select').value = '';
+                    document.getElementById('claim-product-select').disabled = true;
                     document.getElementById('claim-order-id').value = '';
                     document.getElementById('claim-product-id').value = '';
                     document.getElementById('claim-reason').value = '';
                     document.getElementById('claim-image').value = '';
+                    fileInput.value = '';
+                    uploadPreview.src = '';
+                    uploadPreviewContainer.classList.add('hidden');
+                    uploadPrompt.classList.remove('hidden');
                     
                     // Tải lại lịch sử
                     await loadReturnClaimsHistory(user.ma_kh);
+                    await loadUserOrdersForSelect(user.ma_kh);
                 } else {
                     showToast(data.message || 'Lỗi gửi yêu cầu đổi trả!', 'error');
                 }

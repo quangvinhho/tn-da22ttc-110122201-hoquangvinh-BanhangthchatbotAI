@@ -1336,6 +1336,51 @@ router.post('/chat', checkChatbotAccess, async (req, res) => {
       } catch (err) {
         console.error('Error fetching user interests for chatbot:', err);
       }
+
+      // [CÁ NHÂN HÓA ĐỘNG] Phát hiện sở thích tích cực qua tin nhắn chat để lưu vào CSDL
+      try {
+        if (message) {
+          const userMsgLower = message.toLowerCase().trim();
+          const isPositiveSentiment = userMsgLower.includes('tôi thích') || userMsgLower.includes('toi thich') ||
+                                      userMsgLower.includes('rất thích') || userMsgLower.includes('rat thich') ||
+                                      userMsgLower.includes('muốn mua') || userMsgLower.includes('muon mua') ||
+                                      userMsgLower.includes('yêu thích') || userMsgLower.includes('yeu thich') ||
+                                      userMsgLower.includes('tôi chuộng') || userMsgLower.includes('toi chuong') ||
+                                      userMsgLower.includes('thích mua') || userMsgLower.includes('thich mua') ||
+                                      userMsgLower.includes('chuộng hãng') || userMsgLower.includes('chuong hang');
+          
+          if (isPositiveSentiment) {
+            let likedBrand = null;
+            if (userMsgLower.includes('samsung') || userMsgLower.includes('samssung') || userMsgLower.includes('samsum') || userMsgLower.includes('sam sung') || userMsgLower.includes('galaxy') || userMsgLower.includes('ss')) likedBrand = 'samsung';
+            else if (userMsgLower.includes('apple') || userMsgLower.includes('aple') || userMsgLower.includes('iphone') || userMsgLower.includes('iphong') || userMsgLower.includes('ip')) likedBrand = 'apple';
+            else if (userMsgLower.includes('xiaomi') || userMsgLower.includes('xiao mi') || userMsgLower.includes('redmi') || userMsgLower.includes('poco')) likedBrand = 'xiaomi';
+            else if (userMsgLower.includes('oppo') || userMsgLower.includes('vivo')) likedBrand = 'oppo';
+
+            if (likedBrand) {
+              // Lưu vào bảng so_thich_khach_hang (nếu chưa có)
+              await pool.query(
+                'INSERT IGNORE INTO so_thich_khach_hang (ma_kh, tu_khoa, thoi_gian) VALUES (?, ?, NOW())',
+                [userId, likedBrand]
+              );
+              console.log(`[Cá nhân hóa động] Đã tự động thêm sở thích '${likedBrand}' cho khách hàng ID: ${userId}`);
+              
+              // Cập nhật lại mảng userInterests để gửi sang Python RAG ngay lập tức
+              const interestMap = {
+                'apple': 'Hãng Apple (iPhone/Mac)',
+                'samsung': 'Hãng Samsung (Galaxy)',
+                'xiaomi': 'Hãng Xiaomi',
+                'oppo': 'Hãng Oppo/Vivo'
+              };
+              const label = interestMap[likedBrand];
+              if (label && !userInterests.includes(label)) {
+                userInterests.push(label);
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Lỗi khi tự động lưu sở thích từ chat:', err);
+      }
     }
 
     let contextState = {};
@@ -1396,6 +1441,86 @@ router.post('/chat', checkChatbotAccess, async (req, res) => {
     if (!image && message) {
       try {
         const userMsgLower = message.toLowerCase().trim();
+
+        // Xử lý khi khách hàng nói không thích một sản phẩm/hãng nào đó
+        const isDislikedBrand = userMsgLower.includes('không thích') || userMsgLower.includes('khong thich') ||
+                                userMsgLower.includes('ghét') || userMsgLower.includes('ghet') ||
+                                userMsgLower.includes('không dùng') || userMsgLower.includes('khong dung') ||
+                                userMsgLower.includes('tránh') || userMsgLower.includes('tranh') ||
+                                userMsgLower.includes('không muốn mua') || userMsgLower.includes('khong muon mua') ||
+                                userMsgLower.includes('tẩy chay') || userMsgLower.includes('tay chay') ||
+                                userMsgLower.includes('loại trừ') || userMsgLower.includes('loai tru');
+
+        if (!matchedKeyword && isDislikedBrand) {
+          let dislikedBrand = null;
+          if (userMsgLower.includes('samsung') || userMsgLower.includes('samssung') || userMsgLower.includes('samsum') || userMsgLower.includes('sam sung') || userMsgLower.includes('galaxy') || userMsgLower.includes('ss')) {
+            dislikedBrand = 'Samsung';
+          } else if (userMsgLower.includes('apple') || userMsgLower.includes('aple') || userMsgLower.includes('iphone') || userMsgLower.includes('iphong') || userMsgLower.includes('ip')) {
+            dislikedBrand = 'Apple';
+          } else if (userMsgLower.includes('xiaomi') || userMsgLower.includes('xiao mi') || userMsgLower.includes('redmi') || userMsgLower.includes('poco')) {
+            dislikedBrand = 'Xiaomi';
+          } else if (userMsgLower.includes('oppo') || userMsgLower.includes('vivo')) {
+            dislikedBrand = 'Oppo';
+          }
+
+          let altProducts = [];
+          if (dislikedBrand) {
+            const [rows] = await pool.query(`
+              SELECT sp.ma_sp, sp.ten_sp, sp.gia, sp.anh_dai_dien, hsx.ten_hang,
+                     ch.ram, ch.chip, ch.pin, ch.man_hinh, ch.camera
+              FROM san_pham sp
+              LEFT JOIN hang_san_xuat hsx ON sp.ma_hang = hsx.ma_hang
+              INNER JOIN cau_hinh ch ON sp.ma_sp = ch.ma_sp
+              WHERE sp.so_luong_ton > 0 AND (hsx.ten_hang IS NULL OR LOWER(hsx.ten_hang) != ?)
+              ORDER BY sp.ngay_cap_nhat DESC, sp.gia ASC
+              LIMIT 4
+            `, [dislikedBrand.toLowerCase()]);
+            altProducts = rows;
+          } else {
+            const [rows] = await pool.query(`
+              SELECT sp.ma_sp, sp.ten_sp, sp.gia, sp.anh_dai_dien, hsx.ten_hang,
+                     ch.ram, ch.chip, ch.pin, ch.man_hinh, ch.camera
+              FROM san_pham sp
+              LEFT JOIN hang_san_xuat hsx ON sp.ma_hang = hsx.ma_hang
+              INNER JOIN cau_hinh ch ON sp.ma_sp = ch.ma_sp
+              WHERE sp.so_luong_ton > 0
+              ORDER BY sp.ngay_cap_nhat DESC, sp.gia ASC
+              LIMIT 4
+            `);
+            altProducts = rows;
+          }
+
+          if (altProducts.length > 0) {
+            let brandIntro = dislikedBrand 
+              ? `Dạ, nếu mình không thích hoặc không muốn sử dụng dòng sản phẩm của hãng <strong>${dislikedBrand}</strong> nữa, `
+              : `Dạ, nếu dòng máy đó không làm mình hài lòng, `;
+            
+            let responseMsg = `${brandIntro}em xin phép đề xuất các mẫu điện thoại cực kỳ chất lượng từ các hãng khác đang có sẵn tại cửa hàng để anh/chị xem qua nhé:<br><br>`;
+            
+            altProducts.forEach(p => {
+              const priceFormatted = `${parseInt(p.gia).toLocaleString('vi-VN')}đ`;
+              const config = p.ram ? `RAM ${p.ram}, Chip ${p.chip}, Pin ${p.pin}` : 'Cấu hình ổn định';
+              responseMsg += `
+                <div class="ai-product-card">
+                  <img src="${p.anh_dai_dien}" alt="${p.ten_sp}" class="ai-product-image">
+                  <div class="ai-product-info">
+                    <strong class="ai-product-name">${p.ten_sp}</strong>
+                    <div class="ai-product-price-row">Giá: <span class="ai-product-price">${priceFormatted}</span></div>
+                    <div class="ai-product-config">${config}</div>
+                    <div class="ai-product-actions">
+                      <a href="product-detail.html?id=${p.ma_sp}" class="ai-product-btn-detail">Xem chi tiết</a>
+                      <button class="chatbot-add-cart-btn ai-product-btn-cart" data-pid="${p.ma_sp}" data-pname="${p.ten_sp}" data-pprice="${p.gia}" data-pimage="${p.anh_dai_dien}"><i class="fas fa-cart-plus"></i> Thêm</button>
+                    </div>
+                  </div>
+                </div>
+              `;
+            });
+            
+            responseMsg += `<br>Anh/chị xem qua có ưng dòng nào không ạ, hoặc cho em biết tầm giá mong muốn để em lọc dòng máy phù hợp nhất nhé! 😊`;
+            aiResponse = responseMsg;
+            matchedKeyword = true;
+          }
+        }
 
         // B_Warranty: Tự động tra cứu tình trạng bảo hành/sửa chữa thiết bị của khách hàng
         const hasWarrantyCheckKeyword = userMsgLower.includes('bảo hành') || userMsgLower.includes('bao hanh') || 

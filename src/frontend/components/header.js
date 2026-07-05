@@ -1141,7 +1141,7 @@ async function showInterestsPopup(userId) {
     let cardsHtml = defaultInterests.map(interest => `
         <div class="interest-card bg-white border-2 border-gray-200 rounded-2xl p-4 flex flex-col items-center gap-2 min-w-[100px]" data-val="${interest.id}" data-label="${interest.label}">
             <div class="interest-check"><i class="fas fa-check text-white text-xs"></i></div>
-            <span class="interest-emoji">${iconMap[interest.id] || '📦'}</span>
+            <span class="interest-emoji">${interest.emoji || iconMap[interest.id] || '📦'}</span>
             <span class="text-xs font-semibold text-gray-700 text-center leading-tight">${interest.label}</span>
         </div>
     `).join('');

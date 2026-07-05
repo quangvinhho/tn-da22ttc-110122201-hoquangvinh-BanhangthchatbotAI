@@ -4114,7 +4114,7 @@ router.get('/settings/public', async (req, res) => {
 router.get('/employees', async (req, res) => {
     try {
         const [employees] = await pool.query(`
-            SELECT nv.ma_nv as ma_admin, nv.ma_nv as ma_tai_khoan, nv.tai_khoan, nv.ho_ten, nv.email, nv.so_dt, nv.luong_co_ban, nv.trang_thai, nv.quyen, nv.ngay_sinh, nv.dia_chi, nv.chuc_vu, nv.ngay_vao_lam, nv.cccd_truoc, nv.cccd_sau, nv.anh_dai_dien, nv.allowed_modules,
+            SELECT nv.ma_nv, nv.ma_nv as ma_admin, nv.ma_nv as ma_tai_khoan, nv.tai_khoan, nv.ho_ten, nv.email, nv.so_dt, nv.luong_co_ban, nv.trang_thai, nv.quyen, nv.ngay_sinh, nv.dia_chi, nv.chuc_vu, nv.ngay_vao_lam, nv.cccd_truoc, nv.cccd_sau, nv.anh_dai_dien, nv.allowed_modules,
                    CASE WHEN fe.ma_tai_khoan IS NOT NULL THEN 1 ELSE 0 END as has_face_data
             FROM nhan_vien nv
             LEFT JOIN face_embeddings fe ON nv.ma_nv = fe.ma_tai_khoan
@@ -4734,30 +4734,47 @@ router.get('/attendance', async (req, res) => {
         `);
 
         const { date } = req.query;
-        const filterDate = date || new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
+        // Nếu date là undefined (gọi lần đầu không có query param), mặc định là ngày hôm nay.
+        // Nếu date là chuỗi rỗng '' (do người dùng xóa bộ lọc) hoặc 'all', sẽ xem tất cả lịch sử.
+        const filterDate = date === undefined ? new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }) : date;
 
-        // Lấy danh sách phân công ngày đó
-        const [schedules] = await pool.query(`
+        let schedulesQuery = `
             SELECT pc.*, nv.ho_ten, nv.tai_khoan, clv.ten_ca, clv.gio_bat_dau, clv.gio_ket_thuc
             FROM phan_cong_ca pc
             JOIN nhan_vien nv ON pc.ma_tai_khoan = nv.ma_nv
             JOIN ca_lam_viec clv ON pc.ca_id = clv.id
-            WHERE pc.ngay_lam = ?
-        `, [filterDate]);
-
-        // Lấy records chấm công
-        const [records] = await pool.query(`
+        `;
+        let recordsQuery = `
             SELECT cc.*, nv.ho_ten, nv.tai_khoan, clv.ten_ca, clv.gio_bat_dau, clv.gio_ket_thuc
             FROM cham_cong cc
             JOIN nhan_vien nv ON cc.ma_tai_khoan = nv.ma_nv
             JOIN ca_lam_viec clv ON cc.ca_id = clv.id
-            WHERE cc.ngay = ?
-            ORDER BY cc.gio_checkin DESC
-        `, [filterDate]);
+        `;
+        const schedulesParams = [];
+        const recordsParams = [];
 
-        // Tính số vắng: nhân viên được phân công nhưng chưa chấm công
-        const checkedIds = new Set(records.map(r => `${r.ma_tai_khoan}-${r.ca_id}`));
-        const absentCount = schedules.filter(s => !checkedIds.has(`${s.ma_tai_khoan}-${s.ca_id}`)).length;
+        if (filterDate && filterDate !== 'all') {
+            schedulesQuery += ' WHERE pc.ngay_lam = ?';
+            schedulesParams.push(filterDate);
+
+            recordsQuery += ' WHERE cc.ngay = ?';
+            recordsParams.push(filterDate);
+        }
+
+        recordsQuery += ' ORDER BY cc.ngay DESC, cc.gio_checkin DESC';
+        schedulesQuery += ' ORDER BY pc.ngay_lam DESC, clv.gio_bat_dau ASC';
+
+        const [schedules] = await pool.query(schedulesQuery, schedulesParams);
+        const [records] = await pool.query(recordsQuery, recordsParams);
+
+        // Tính số vắng: nếu xem theo ngày cụ thể thì so khớp schedules vs records, nếu xem tất cả thì đếm số record có trang_thai='absent'
+        let absentCount = 0;
+        if (filterDate && filterDate !== 'all') {
+            const checkedIds = new Set(records.map(r => `${r.ma_tai_khoan}-${r.ca_id}`));
+            absentCount = schedules.filter(s => !checkedIds.has(`${s.ma_tai_khoan}-${s.ca_id}`)).length;
+        } else {
+            absentCount = records.filter(r => r.trang_thai === 'absent').length;
+        }
 
         res.json({ success: true, data: records, absentCount, schedules });
     } catch (error) {

@@ -2,22 +2,23 @@ const express = require('express');
 const router = express.Router();
 const { pool } = require('../config/database');
 
-// Các sở thích mặc định gợi ý cho người dùng
-const defaultInterests = [
-    { id: 'apple', label: 'Apple (iPhone/Mac)' },
-    { id: 'samsung', label: 'Samsung (Galaxy)' },
-    { id: 'xiaomi', label: 'Xiaomi' },
-    { id: 'oppo', label: 'Oppo / Vivo' },
-    { id: 'gaming', label: 'Chơi game mạnh' },
-    { id: 'camera', label: 'Chụp ảnh đẹp' },
-    { id: 'battery', label: 'Pin trâu' },
-    { id: 'luxury', label: 'Sang trọng' },
-    { id: 'budget', label: 'Giá rẻ / Sinh viên' }
-];
-
 // GET /api/interests/default - Lấy danh sách sở thích gợi ý
-router.get('/default', (req, res) => {
-    res.json({ success: true, data: defaultInterests });
+router.get('/default', async (req, res) => {
+    try {
+        const [rows] = await pool.query(
+            'SELECT ten_so_thich, loai_so_thich, icon_emoji FROM danh_sach_so_thich WHERE trang_thai = 1 ORDER BY sap_xep ASC'
+        );
+        const mapped = rows.map(r => ({
+            id: r.ten_so_thich.toLowerCase().replace(/\s+/g, '_'),
+            label: r.ten_so_thich,
+            type: r.loai_so_thich,
+            emoji: r.icon_emoji
+        }));
+        res.json({ success: true, data: mapped });
+    } catch (error) {
+        console.error('Get default interests error:', error);
+        res.status(500).json({ success: false, message: 'Lỗi server' });
+    }
 });
 
 // GET /api/interests/check-user/:userId - Kiểm tra xem user đã có sở thích chưa
@@ -53,6 +54,17 @@ router.post('/user', async (req, res) => {
             return res.status(400).json({ success: false, message: 'Dữ liệu không hợp lệ' });
         }
 
+        // Loại bỏ trùng lặp không phân biệt hoa thường và khoảng trắng thừa
+        const uniqueInterests = [];
+        const seen = new Set();
+        for (const item of interests) {
+            const trimmed = String(item).trim();
+            if (trimmed && !seen.has(trimmed.toLowerCase())) {
+                seen.add(trimmed.toLowerCase());
+                uniqueInterests.push(trimmed);
+            }
+        }
+
         const connection = await pool.getConnection();
         try {
             await connection.beginTransaction();
@@ -60,8 +72,8 @@ router.post('/user', async (req, res) => {
             // Xóa sở thích cũ để ghi đè hoàn toàn khi user chọn lại
             await connection.query('DELETE FROM so_thich_khach_hang WHERE ma_kh = ?', [userId]);
 
-            for (const keyword of interests) {
-                // Kiểm tra xem đã tồn tại chưa
+            for (const keyword of uniqueInterests) {
+                // Kiểm tra xem đã tồn tại chưa (phòng hờ)
                 const [existing] = await connection.query(
                     'SELECT 1 FROM so_thich_khach_hang WHERE ma_kh = ? AND tu_khoa = ?',
                     [userId, keyword]
@@ -294,6 +306,104 @@ router.delete('/admin/user-interests/all/:userId', async (req, res) => {
         res.json({ success: true, message: 'Đã xóa toàn bộ sở thích của khách hàng này' });
     } catch (error) {
         console.error('Admin clear user interests error:', error);
+        res.status(500).json({ success: false, message: 'Lỗi server' });
+    }
+});
+
+// ====== ADMIN CRUD ROUTES FOR DEFAULT PREFERENCES ======
+
+// GET /api/interests/admin/default-preferences - Admin lấy toàn bộ danh sách sở thích cấu hình
+router.get('/admin/default-preferences', async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM danh_sach_so_thich ORDER BY sap_xep ASC, ma_so_thich ASC');
+        res.json({ success: true, data: rows });
+    } catch (error) {
+        console.error('Admin get default preferences error:', error);
+        res.status(500).json({ success: false, message: 'Lỗi server' });
+    }
+});
+
+// POST /api/interests/admin/default-preferences - Admin thêm sở thích mới
+router.post('/admin/default-preferences', async (req, res) => {
+    try {
+        const { ten_so_thich, loai_so_thich, icon_emoji, trang_thai, sap_xep } = req.body;
+        if (!ten_so_thich || !loai_so_thich) {
+            return res.status(400).json({ success: false, message: 'Thiếu tên hoặc loại sở thích' });
+        }
+        
+        // Kiểm tra trùng tên sở thích
+        const [existing] = await pool.query(
+            'SELECT 1 FROM danh_sach_so_thich WHERE LOWER(ten_so_thich) = LOWER(?)',
+            [ten_so_thich.trim()]
+        );
+        if (existing.length > 0) {
+            return res.status(400).json({ success: false, message: 'Sở thích này đã tồn tại' });
+        }
+
+        await pool.query(
+            `INSERT INTO danh_sach_so_thich (ten_so_thich, loai_so_thich, icon_emoji, trang_thai, sap_xep)
+             VALUES (?, ?, ?, ?, ?)`,
+            [
+                ten_so_thich.trim(),
+                loai_so_thich.trim(),
+                icon_emoji ? icon_emoji.trim() : null,
+                trang_thai !== undefined ? parseInt(trang_thai) : 1,
+                sap_xep !== undefined ? parseInt(sap_xep) : 0
+            ]
+        );
+        res.json({ success: true, message: 'Đã thêm sở thích mặc định thành công' });
+    } catch (error) {
+        console.error('Admin create default preference error:', error);
+        res.status(500).json({ success: false, message: 'Lỗi server' });
+    }
+});
+
+// PUT /api/interests/admin/default-preferences/:id - Admin cập nhật sở thích
+router.put('/admin/default-preferences/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { ten_so_thich, loai_so_thich, icon_emoji, trang_thai, sap_xep } = req.body;
+        if (!ten_so_thich || !loai_so_thich) {
+            return res.status(400).json({ success: false, message: 'Thiếu tên hoặc loại sở thích' });
+        }
+
+        // Kiểm tra trùng tên sở thích loại trừ bản thân
+        const [existing] = await pool.query(
+            'SELECT 1 FROM danh_sach_so_thich WHERE LOWER(ten_so_thich) = LOWER(?) AND ma_so_thich != ?',
+            [ten_so_thich.trim(), id]
+        );
+        if (existing.length > 0) {
+            return res.status(400).json({ success: false, message: 'Tên sở thích này đã bị trùng với sở thích khác' });
+        }
+
+        await pool.query(
+            `UPDATE danh_sach_so_thich 
+             SET ten_so_thich = ?, loai_so_thich = ?, icon_emoji = ?, trang_thai = ?, sap_xep = ?
+             WHERE ma_so_thich = ?`,
+            [
+                ten_so_thich.trim(),
+                loai_so_thich.trim(),
+                icon_emoji ? icon_emoji.trim() : null,
+                trang_thai !== undefined ? parseInt(trang_thai) : 1,
+                sap_xep !== undefined ? parseInt(sap_xep) : 0,
+                id
+            ]
+        );
+        res.json({ success: true, message: 'Đã cập nhật sở thích mặc định thành công' });
+    } catch (error) {
+        console.error('Admin update default preference error:', error);
+        res.status(500).json({ success: false, message: 'Lỗi server' });
+    }
+});
+
+// DELETE /api/interests/admin/default-preferences/:id - Admin xóa sở thích
+router.delete('/admin/default-preferences/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        await pool.query('DELETE FROM danh_sach_so_thich WHERE ma_so_thich = ?', [id]);
+        res.json({ success: true, message: 'Đã xóa sở thích mặc định thành công' });
+    } catch (error) {
+        console.error('Admin delete default preference error:', error);
         res.status(500).json({ success: false, message: 'Lỗi server' });
     }
 });

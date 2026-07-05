@@ -2,15 +2,6 @@ const express = require('express');
 const router = express.Router();
 const { pool } = require('../config/database');
 
-// Tự động chạy migration tạo bảng kho_bao_hanh khi route được nạp
-try {
-  const { run: runWarehouseMigration } = require('../migrations/create_kho_bao_hanh');
-  runWarehouseMigration().catch(err => console.error('[Warehouse Migration Error]', err));
-} catch (e) {
-  console.error('[Warehouse Migration Load Error]', e);
-}
-
-
 // Middleware kiểm tra quyền admin cho các thao tác quản lý đổi trả
 const checkAdmin = (req, res, next) => {
   if (!req.session || !req.session.user || req.session.user.vai_tro !== 'admin') {
@@ -43,6 +34,62 @@ const requireLogin = (req, res, next) => {
   }
   next();
 };
+
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+// Đảm bảo thư mục lưu ảnh đổi trả tồn tại
+const claimsDir = path.join(__dirname, '../../frontend/images/claims');
+if (!fs.existsSync(claimsDir)) {
+    fs.mkdirSync(claimsDir, { recursive: true });
+}
+
+// Cấu hình multer lưu ảnh
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, claimsDir);
+    },
+    filename: function (req, file, cb) {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, 'claim-' + uniqueSuffix + path.extname(file.originalname));
+    }
+});
+
+const upload = multer({
+    storage: storage,
+    limits: { fileSize: 5 * 1024 * 1024 }, // Max 5MB
+    fileFilter: function (req, file, cb) {
+        const allowedExtensions = /\.(jpe?g|png|gif|webp|bmp|tiff?|heic|heif|avif|jfif)$/i;
+        const allowedMimeTypes = /^image\/(jpeg|png|gif|webp|bmp|tiff|heic|heif|avif)$/i;
+        if (allowedExtensions.test(path.extname(file.originalname)) && allowedMimeTypes.test(file.mimetype)) {
+            return cb(null, true);
+        }
+        cb(new Error('Chỉ hỗ trợ tải lên tệp ảnh hợp lệ!'));
+    }
+});
+
+// POST /api/returns/upload-image - Tải ảnh lỗi sản phẩm lên server
+router.post('/upload-image', requireLogin, (req, res) => {
+    upload.single('claimImage')(req, res, function (err) {
+        if (err instanceof multer.MulterError) {
+            return res.status(400).json({ success: false, message: 'Lỗi tải ảnh: ' + err.message });
+        } else if (err) {
+            return res.status(400).json({ success: false, message: err.message });
+        }
+        
+        if (!req.file) {
+            return res.status(400).json({ success: false, message: 'Không tìm thấy file ảnh.' });
+        }
+        
+        const imageUrl = 'images/claims/' + req.file.filename;
+        res.json({
+            success: true,
+            message: 'Tải ảnh thành công',
+            imageUrl: imageUrl
+        });
+    });
+});
 
 /**
  * POST /api/returns/claim
@@ -151,6 +198,24 @@ router.post('/claim', requireLogin, async (req, res) => {
       [actualMaDon, finalCustomerId, ma_sp, ly_do.trim(), loai, imgStr]
     );
 
+    // Lấy thông tin phụ cho email thông báo admin
+    let customerName = order.ten_nguoi_nhan;
+    let productName = 'Thiết bị';
+    try {
+        const [[prod]] = await pool.query('SELECT ten_sp FROM san_pham WHERE ma_sp = ?', [ma_sp]);
+        if (prod) productName = prod.ten_sp;
+    } catch (e) { console.error('[Return API] Query product name error:', e.message); }
+
+    // Gửi email thông báo cho Admin (chạy ngầm bất đồng bộ)
+    const { sendNewReturnRequestToAdmin } = require('../services/emailService');
+    sendNewReturnRequestToAdmin(result.insertId, {
+        orderId: actualMaDon,
+        customerName,
+        productName,
+        type: loai,
+        reason: ly_do
+    }).catch(err => console.error('[Notification Error] Cannot notify admin of new return:', err.message));
+
     res.json({
       success: true,
       message: 'Gửi yêu cầu đổi trả thành công! Chúng tôi sẽ kiểm tra và liên hệ với bạn sớm nhất.',
@@ -253,6 +318,14 @@ router.put('/claim/:id/status', checkAdmin, async (req, res) => {
     }
 
     const claim = claims[0];
+
+    if (['completed', 'rejected'].includes(claim.trang_thai)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Yêu cầu đổi trả này đã hoàn thành hoặc bị từ chối, không thể thay đổi trạng thái.' 
+      });
+    }
+
     const completedDate = ['completed', 'rejected'].includes(status) ? new Date() : null;
     const finalRefund = parseFloat(refundAmount) || 0.00;
 

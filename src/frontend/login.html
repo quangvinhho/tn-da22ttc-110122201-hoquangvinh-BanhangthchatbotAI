@@ -247,6 +247,9 @@
 
         <!-- Traditional Login Form -->
         <form class="space-y-4" onsubmit="handleLogin(event)" autocomplete="off">
+          <!-- Dummy inputs to trick browser autofill -->
+          <input type="text" name="username_dummy" style="position: absolute; top: -9999px; left: -9999px; width: 0; height: 0; opacity: 0;" tabindex="-1" />
+          <input type="password" name="password_dummy" style="position: absolute; top: -9999px; left: -9999px; width: 0; height: 0; opacity: 0;" tabindex="-1" />
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">Email hoặc số điện thoại</label>
             <div class="relative">
@@ -351,6 +354,14 @@
         // Clear form trước
         document.getElementById('username').value = '';
         document.getElementById('password').value = '';
+
+        // Xóa autofill trình duyệt sau 100ms
+        setTimeout(() => {
+          if (justRegistered !== 'true') {
+            document.getElementById('username').value = '';
+          }
+          document.getElementById('password').value = '';
+        }, 100);
         
         if (justRegistered === 'true') {
           // Hiển thị thông báo chào mừng
