@@ -3363,3 +3363,176 @@ document.addEventListener('DOMContentLoaded', () => {
   }, 200);
 });
 
+// ===================================================
+// INLINE ADD ADDRESS LOGIC FOR CHECKOUT PAGE
+// ===================================================
+
+let inlineProvincesData = [];
+let inlineDistrictsData = [];
+let inlineWardsData = [];
+
+// Hiển thị form thêm địa chỉ trực tiếp trong modal
+async function showInlineAddressForm() {
+  document.getElementById('address-list-modal').classList.add('hidden');
+  document.getElementById('address-modal-footer').classList.add('hidden');
+  document.getElementById('inlineAddressFormContainer').classList.remove('hidden');
+  
+  // Load provinces
+  await loadInlineAddressProvinces();
+}
+
+// Ẩn form thêm địa chỉ và quay lại danh sách
+function hideInlineAddressForm() {
+  document.getElementById('inlineAddressFormContainer').classList.add('hidden');
+  document.getElementById('address-list-modal').classList.remove('hidden');
+  document.getElementById('address-modal-footer').classList.remove('hidden');
+  
+  // Clear inputs
+  document.getElementById('inline-addr-fullname').value = '';
+  document.getElementById('inline-addr-phone').value = '';
+  document.getElementById('inline-addr-detail').value = '';
+  document.getElementById('inline-addr-province').innerHTML = '<option value="">Chọn Tỉnh/TP</option>';
+  document.getElementById('inline-addr-district').innerHTML = '<option value="">Chọn Quận/Huyện</option>';
+  document.getElementById('inline-addr-ward').innerHTML = '<option value="">Chọn Phường/Xã</option>';
+  document.getElementById('inline-addr-default').checked = false;
+}
+
+// Load danh sách tỉnh/thành phố cho inline form
+async function loadInlineAddressProvinces() {
+  try {
+    const response = await fetch('https://provinces.open-api.vn/api/p/');
+    inlineProvincesData = await response.json();
+    
+    const select = document.getElementById('inline-addr-province');
+    select.innerHTML = '<option value="">Chọn Tỉnh/TP</option>' + 
+      inlineProvincesData.map(p => `<option value="${p.name}" data-code="${p.code}">${p.name}</option>`).join('');
+  } catch (error) {
+    console.error('Error loading provinces:', error);
+  }
+}
+
+// Load danh sách quận/huyện cho inline form
+async function loadInlineAddressDistricts() {
+  const provinceSelect = document.getElementById('inline-addr-province');
+  const selectedOption = provinceSelect.options[provinceSelect.selectedIndex];
+  const provinceCode = selectedOption?.dataset?.code;
+  
+  const districtSelect = document.getElementById('inline-addr-district');
+  const wardSelect = document.getElementById('inline-addr-ward');
+  
+  districtSelect.innerHTML = '<option value="">Chọn Quận/Huyện</option>';
+  wardSelect.innerHTML = '<option value="">Chọn Phường/Xã</option>';
+  
+  if (!provinceCode) return;
+  
+  try {
+    const response = await fetch(`https://provinces.open-api.vn/api/p/${provinceCode}?depth=2`);
+    const data = await response.json();
+    inlineDistrictsData = data.districts || [];
+    
+    districtSelect.innerHTML = '<option value="">Chọn Quận/Huyện</option>' + 
+      inlineDistrictsData.map(d => `<option value="${d.name}" data-code="${d.code}">${d.name}</option>`).join('');
+  } catch (error) {
+    console.error('Error loading districts:', error);
+  }
+}
+
+// Load danh sách phường/xã cho inline form
+async function loadInlineAddressWards() {
+  const districtSelect = document.getElementById('inline-addr-district');
+  const selectedOption = districtSelect.options[districtSelect.selectedIndex];
+  const districtCode = selectedOption?.dataset?.code;
+  
+  const wardSelect = document.getElementById('inline-addr-ward');
+  wardSelect.innerHTML = '<option value="">Chọn Phường/Xã</option>';
+  
+  if (!districtCode) return;
+  
+  try {
+    const response = await fetch(`https://provinces.open-api.vn/api/d/${districtCode}?depth=2`);
+    const data = await response.json();
+    inlineWardsData = data.wards || [];
+    
+    wardSelect.innerHTML = '<option value="">Chọn Phường/Xã</option>' + 
+      inlineWardsData.map(w => `<option value="${w.name}">${w.name}</option>`).join('');
+  } catch (error) {
+    console.error('Error loading wards:', error);
+  }
+}
+
+// Lưu địa chỉ từ inline form và cập nhật lại danh sách địa chỉ ở modal
+async function saveInlineAddress() {
+  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  if (!user || !user.ma_kh) {
+    showToast('Vui lòng đăng nhập!', 'error');
+    return;
+  }
+
+  const fullname = document.getElementById('inline-addr-fullname').value.trim();
+  const phone = document.getElementById('inline-addr-phone').value.trim();
+  const province = document.getElementById('inline-addr-province').value;
+  const district = document.getElementById('inline-addr-district').value;
+  const ward = document.getElementById('inline-addr-ward').value;
+  const detail = document.getElementById('inline-addr-detail').value.trim();
+  const addrType = document.querySelector('input[name="inline-addr-type"]:checked')?.value || 'nha_rieng';
+  const isDefault = document.getElementById('inline-addr-default').checked;
+  
+  // Validate
+  if (!fullname) { showToast('Vui lòng nhập họ tên người nhận!', 'error'); return; }
+  if (!phone) { showToast('Vui lòng nhập số điện thoại!', 'error'); return; }
+  if (!province) { showToast('Vui lòng chọn Tỉnh/TP!', 'error'); return; }
+  if (!district) { showToast('Vui lòng chọn Quận/Huyện!', 'error'); return; }
+  if (!ward) { showToast('Vui lòng chọn Phường/Xã!', 'error'); return; }
+  if (!detail) { showToast('Vui lòng nhập địa chỉ cụ thể!', 'error'); return; }
+  
+  const phoneRegex = /^(0|\+84)[0-9]{9}$/;
+  if (!phoneRegex.test(phone.replace(/\s/g, ''))) {
+    showToast('Số điện thoại không hợp lệ!', 'error');
+    return;
+  }
+  
+  const addressData = {
+    ma_kh: user.ma_kh,
+    ho_ten_nguoi_nhan: fullname,
+    so_dien_thoai: phone,
+    tinh_thanh: province,
+    quan_huyen: district,
+    phuong_xa: ward,
+    dia_chi_cu_the: detail,
+    loai_dia_chi: addrType,
+    mac_dinh: isDefault ? 1 : 0
+  };
+  
+  try {
+    const response = await fetch(`${API_URL}/address`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(addressData)
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      showToast('Thêm địa chỉ mới thành công!', 'success');
+      
+      // Clear inputs và đóng inline form
+      hideInlineAddressForm();
+      
+      // Load lại danh sách địa chỉ trong modal (không reload trang)
+      await openSelectAddressModal();
+      
+      // Lấy địa chỉ mới thêm (địa chỉ đầu tiên/mới nhất hoặc có ID tương ứng)
+      if (allUserAddresses && allUserAddresses.length > 0) {
+        // Địa chỉ mới thêm thường đứng đầu do được sắp xếp theo ngay_tao DESC
+        const newAddress = allUserAddresses[0]; 
+        selectAddress(newAddress); // Tự động chọn địa chỉ mới vừa thêm
+      }
+    } else {
+      showToast(data.message || 'Có lỗi xảy ra!', 'error');
+    }
+  } catch (error) {
+    console.error('Error saving inline address:', error);
+    showToast('Có lỗi xảy ra khi lưu địa chỉ!', 'error');
+  }
+}
+

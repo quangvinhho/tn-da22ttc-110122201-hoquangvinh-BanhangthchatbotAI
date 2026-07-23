@@ -863,8 +863,24 @@ der Success Logic -->
       `;
     }
 
+    function isAccessory(name) {
+      if (!name) return false;
+      const n = name.toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/đ/g, 'd').replace(/Đ/g, 'D');
+      
+      const keywords = [
+        'op lung', 'op luong', 'op magsafe', 'cap sac', 'cu sac', 'sac nhanh', 
+        'tai nghe', 'cuong luc', 'bao da', 'dan man hinh', 'the nho', 
+        'pin du phong', 'sac du phong', 'case', 'kinh cuong luc',
+        'day sac', 'day cap', 'coc sac', 'adapter', 'daysac', 'daycap',
+        'capsac', 'cusac', 'oplung', 'opluong'
+      ];
+      return keywords.some(kw => n.includes(kw)) || /\bsac\b/.test(n) || /\bcap\b/.test(n) || /\bop\b/.test(n);
+    }
+
     // Load suggested products — ưu tiên recommendedProducts từ RAG (lưu trong order),
-    // fallback fetch /api/products theo cùng category
+    // fallback fetch /api/products lấy các sản phẩm phụ kiện (củ sạc, cáp, tai nghe)
     async function loadSuggestedProducts() {
       const container = document.getElementById('suggestedProducts');
 
@@ -878,15 +894,24 @@ der Success Logic -->
       // Bước 2: fallback — fetch /api/products
       try {
         const orderedIds = (currentOrder?.items || []).map(i => i.id || i.ma_sp);
-        const res = await fetch(`${API_URL}/products?limit=15`);
+        const res = await fetch(`${API_URL}/products?limit=60`);
         const data = await res.json();
 
         // API có thể trả {success, data} hoặc thẳng array
         const list = Array.isArray(data) ? data : (data.data || data.products || []);
-        const filtered = list.filter(p => !orderedIds.includes(p.ma_sp));
-        const top5 = filtered.slice(0, 5);
+        
+        // Lọc lấy các sản phẩm phụ kiện chưa mua
+        const accessories = list.filter(p => {
+          const pName = p.ten_sp || p.name || '';
+          return isAccessory(pName) && !orderedIds.includes(p.ma_sp || p.id);
+        });
+        
+        // Ưu tiên hiển thị tối đa 5 phụ kiện. Nếu không có phụ kiện nào, hiển thị sản phẩm thường
+        const finalProducts = accessories.length > 0 
+          ? accessories.slice(0, 5) 
+          : list.filter(p => !orderedIds.includes(p.ma_sp || p.id)).slice(0, 5);
 
-        if (top5.length === 0) {
+        if (finalProducts.length === 0) {
           container.innerHTML = `
             <div class="col-span-full text-center py-8">
               <i class="fas fa-box-open text-4xl text-gray-300 mb-3"></i>
@@ -897,7 +922,7 @@ der Success Logic -->
           return;
         }
 
-        container.innerHTML = top5.map(renderSuggestProductCard).join('');
+        container.innerHTML = finalProducts.map(renderSuggestProductCard).join('');
       } catch (error) {
         console.error('Error loading suggested products:', error);
         container.innerHTML = `

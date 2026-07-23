@@ -17,9 +17,9 @@
     tagline: 'Uy tín - Chất lượng - Giá tốt',
     taxCode: '0312345678',          // MST (demo)
     businessLicense: '41A8123456 - Sở KH&ĐT TP.HCM cấp ngày 15/03/2018',
-    hotline: '1900 6789',
-    hotlineSale: '0901 234 567',
-    hotlineWarranty: '0901 234 568',
+    hotline: '0355 745 120',
+    hotlineSale: '0355 745 120',
+    hotlineWarranty: '0355 745 120',
     email: 'cskh@quanghungmobile.vn',
     website: 'quanghungmobile.vn',
     facebook: 'https://facebook.com/quanghungmobile',

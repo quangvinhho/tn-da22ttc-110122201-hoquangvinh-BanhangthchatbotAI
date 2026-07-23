@@ -3,6 +3,179 @@ const router = express.Router();
 const { pool } = require('../config/database');
 
 // ==========================================
+// UTILITY FUNCTIONS FOR SMART SEARCH
+// ==========================================
+
+// Hàm loại bỏ dấu tiếng Việt để tìm kiếm không dấu
+function removeVietnameseTones(str) {
+    if (!str) return '';
+    str = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g, "a");
+    str = str.replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g, "e");
+    str = str.replace(/ì|í|ị|ỉ|ĩ/g, "i");
+    str = str.replace(/ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g, "o");
+    str = str.replace(/ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g, "u");
+    str = str.replace(/ỳ|ý|ỵ|ỷ|ỹ/g, "y");
+    str = str.replace(/đ/g, "d");
+    str = str.replace(/À|Á|Ạ|Ả|Ã|Â|Ầ|Ấ|Ậ|Ẩ|Ẫ|Ă|Ằ|Ắ|Ặ|Ẳ|Ẵ/g, "A");
+    str = str.replace(/È|É|Ẹ|Ẻ|Ẽ|Ê|Ề|Ế|Ệ|Ể|Ễ/g, "E");
+    str = str.replace(/Ì|Í|Ị|Ỉ|Ĩ/g, "I");
+    str = str.replace(/Ò|Ó|Ọ|Ỏ|Õ|Ô|Ồ|Ố|Ộ|Ổ|Ỗ|Ơ|Ờ|Ớ|Ợ|Ở|Ỡ/g, "O");
+    str = str.replace(/Ù|Ú|Ụ|Ủ|Ũ|Ư|Ừ|Ứ|Ự|Ử|Ữ/g, "U");
+    str = str.replace(/Ỳ|Ý|Ỵ|Ỷ|Ỹ/g, "Y");
+    str = str.replace(/Đ/g, "D");
+    str = str.replace(/\u0300|\u0301|\u0309|\u0303|\u0323/g, ""); 
+    str = str.replace(/\u02C6|\u0306|\u031B/g, ""); 
+    str = str.replace(/[^a-zA-Z0-9\s]/g, " ");
+    str = str.replace(/\s+/g, " ");
+    return str.trim();
+}
+
+// Tiền xử lý từ khóa tìm kiếm: sửa lỗi chính tả và chuyển đổi từ viết tắt tiếng Việt
+function preprocessSearchQuery(query) {
+    if (!query) return '';
+    let processed = query.toLowerCase().trim();
+
+    const phraseMap = {
+        "xung xam": "samsung",
+        "sam sung": "samsung",
+        "sa mi": "xiaomi",
+        "sao mi": "xiaomi",
+        "xiao mi": "xiaomi",
+        "real me": "realme",
+        "vi vo": "vivo",
+        "no kia": "nokia",
+        "c luc": "cường lực",
+        "c lực": "cường lực",
+        "cuong luc": "cường lực",
+        "tai nghe": "tai nghe",
+        "t nghe": "tai nghe",
+        "sac dp": "sạc dự phòng",
+        "s dự phòng": "sạc dự phòng",
+        "s du phong": "sạc dự phòng",
+        "sac du phong": "sạc dự phòng",
+        "op lung": "ốp lưng",
+        "ốp lung": "ốp lưng",
+        "op lưng": "ốp lưng",
+        "cu sac": "củ sạc",
+        "co sac": "củ sạc",
+        "coc sac": "củ sạc",
+        "day sac": "dây sạc",
+        "cap sac": "cáp sạc",
+        "kinh cuong luc": "kính cường lực"
+    };
+
+    for (const [key, val] of Object.entries(phraseMap)) {
+        processed = processed.replace(new RegExp('\\b' + key + '\\b', 'g'), val);
+    }
+
+    const wordMap = {
+        "xungxam": "samsung",
+        "sámung": "samsung",
+        "samsum": "samsung",
+        "samsug": "samsung",
+        "ss": "samsung",
+        "ip": "iphone",
+        "ipon": "iphone",
+        "ifone": "iphone",
+        "iphne": "iphone",
+        "ipho": "iphone",
+        "aple": "apple",
+        "appple": "apple",
+        "op": "oppo",
+        "opo": "oppo",
+        "xiami": "xiaomi",
+        "redmi": "redmi",
+        "readmi": "redmi",
+        "remy": "redmi",
+        "dt": "điện thoại",
+        "đt": "điện thoại",
+        "dthoai": "điện thoại",
+        "cl": "cường lực",
+        "tn": "tai nghe",
+        "sdp": "sạc dự phòng",
+        "pk": "phụ kiện",
+        "cs": "củ sạc",
+        "ds": "dây sạc",
+        "ol": "ốp lưng"
+    };
+
+    let words = processed.split(/\s+/);
+    words = words.map(w => wordMap[w] || w);
+    processed = words.join(" ");
+    return processed;
+}
+
+// So khớp thông minh giữa sản phẩm và từ khóa tìm kiếm (trả về điểm độ tương quan)
+function getSearchRelevanceScore(product, query) {
+    if (!query) return 1;
+    
+    const correctedQuery = preprocessSearchQuery(query);
+    if (!correctedQuery) return 0;
+
+    const normQuery = removeVietnameseTones(correctedQuery).toLowerCase();
+    const queryTokens = normQuery.split(/\s+/).filter(t => t.length > 0);
+    if (queryTokens.length === 0) return 0;
+
+    const normName = removeVietnameseTones(product.name || '').toLowerCase();
+    const normBrand = removeVietnameseTones(product.brand || '').toLowerCase();
+    const normCategory = removeVietnameseTones(product.category || '').toLowerCase();
+    const normType = removeVietnameseTones(product.type || '').toLowerCase();
+    const normDesc = removeVietnameseTones(product.description || '').toLowerCase();
+    
+    let vietnameseCategory = '';
+    if (product.category === 'phukien') vietnameseCategory = 'phu kien';
+    else if (product.category === 'dienthoai') vietnameseCategory = 'dien thoai';
+    const normVietnameseCategory = removeVietnameseTones(vietnameseCategory);
+
+    let matchCount = 0;
+    let nameMatchCount = 0;
+
+    for (const token of queryTokens) {
+        let isTokenMatched = false;
+
+        if (normName.includes(token)) {
+            nameMatchCount++;
+            isTokenMatched = true;
+        }
+        
+        if (normBrand.includes(token) || 
+            normCategory.includes(token) || 
+            normVietnameseCategory.includes(token) ||
+            normType.includes(token) || 
+            normDesc.includes(token)) {
+            isTokenMatched = true;
+        }
+
+        if (isTokenMatched) {
+            matchCount++;
+        }
+    }
+
+    const requiredMatches = queryTokens.length <= 2 ? queryTokens.length : Math.max(2, queryTokens.length - 1);
+    if (matchCount < requiredMatches) {
+        return 0;
+    }
+
+    let score = (matchCount / queryTokens.length) * 100;
+
+    if (normName.includes(normQuery)) {
+        score += 50;
+    }
+
+    score += nameMatchCount * 10;
+
+    if (queryTokens.some(token => normBrand === token)) {
+        score += 30;
+    }
+
+    if (normName.startsWith(queryTokens[0])) {
+        score += 15;
+    }
+
+    return score;
+}
+
+// ==========================================
 // API TÌM KIẾM KIỂU YOUTUBE - NÂNG CẤP
 // ==========================================
 
@@ -142,7 +315,8 @@ router.get('/autocomplete', async (req, res) => {
             return res.json({ success: true, data: [] });
         }
 
-        const keyword = q.trim().toLowerCase();
+        const corrected = preprocessSearchQuery(q);
+        const keyword = (corrected || q).trim().toLowerCase();
         const startWith = `${keyword}%`;
         const contains = `%${keyword}%`;
 
@@ -326,10 +500,11 @@ router.get('/suggest', async (req, res) => {
 
         // ========== TRƯỜNG HỢP 1: Có từ khóa tìm kiếm ==========
         if (q && q.trim() !== '') {
-            const keyword = q.trim();
+            const corrected = preprocessSearchQuery(q);
+            const keyword = corrected || q.trim();
             const keywordLower = keyword.toLowerCase();
-            const startWith = `${keyword}%`;
-            const contains = `%${keyword}%`;
+            const startWith = `${keywordLower}%`;
+            const contains = `%${keywordLower}%`;
 
             // 1. Autocomplete từ lịch sử phổ biến
             const [autocompleteSuggestions] = await pool.query(
@@ -357,20 +532,58 @@ router.get('/suggest', async (req, res) => {
                 userHistory = history;
             }
 
-            // 3. Sản phẩm phù hợp với hình ảnh và giá
-            const [products] = await pool.query(
-                `SELECT ma_sp, ten_sp as text, gia, anh_dai_dien, 'product' as type,
-                    CASE 
-                        WHEN LOWER(ten_sp) LIKE LOWER(?) THEN 1
-                        WHEN LOWER(ten_sp) LIKE LOWER(?) THEN 2
-                        ELSE 3
-                    END as priority
-                 FROM san_pham 
-                 WHERE LOWER(ten_sp) LIKE LOWER(?) OR LOWER(mo_ta) LIKE LOWER(?)
-                 ORDER BY priority, ten_sp 
-                 LIMIT 6`,
-                [startWith, contains, contains, contains]
+            // 3. Sản phẩm phù hợp với hình ảnh và giá (sử dụng in-memory relevance scoring)
+            const [allDbProducts] = await pool.query(
+                `SELECT sp.ma_sp, sp.ten_sp, sp.gia, sp.anh_dai_dien, sp.mo_ta, hsx.ten_hang
+                 FROM san_pham sp
+                 LEFT JOIN hang_san_xuat hsx ON sp.ma_hang = hsx.ma_hang
+                 WHERE COALESCE(sp.trang_thai, 'active') <> 'discontinued'`
             );
+
+            const scoredProducts = allDbProducts.map(row => {
+                const nameLower = (row.ten_sp || '').toLowerCase();
+                const isAccessory = nameLower.includes('ốp') || 
+                                   nameLower.includes('case') ||
+                                   nameLower.includes('tai nghe') || 
+                                   nameLower.includes('earpods') || 
+                                   nameLower.includes('airpods') || 
+                                   nameLower.includes('buds') || 
+                                   nameLower.includes('sạc') || 
+                                   nameLower.includes('cáp') || 
+                                   nameLower.includes('dây sạc') || 
+                                   nameLower.includes('cường lực');
+                
+                const product = {
+                    id: row.ma_sp,
+                    name: row.ten_sp,
+                    brand: row.ten_hang || 'unknown',
+                    category: isAccessory ? 'phukien' : 'dienthoai',
+                    description: row.mo_ta || '',
+                    type: (() => {
+                        if (nameLower.includes('tai nghe') || nameLower.includes('earpods') || nameLower.includes('airpods') || nameLower.includes('buds')) return 'tainghe';
+                        if (nameLower.includes('ốp') || nameLower.includes('case')) return 'oplung';
+                        if (nameLower.includes('cường lực')) return 'cuongluc';
+                        if (nameLower.includes('cáp') || nameLower.includes('dây sạc')) return 'cap';
+                        if (nameLower.includes('sạc dự phòng') || nameLower.includes('pin dự phòng')) return 'sac';
+                        if (nameLower.includes('sạc') || nameLower.includes('củ sạc') || nameLower.includes('cốc sạc')) return 'sac';
+                        return null;
+                    })()
+                };
+
+                const score = getSearchRelevanceScore(product, q);
+                return {
+                    ma_sp: row.ma_sp,
+                    text: row.ten_sp,
+                    gia: row.gia,
+                    anh_dai_dien: row.anh_dai_dien,
+                    type: 'product',
+                    score: score
+                };
+            })
+            .filter(p => p.score > 0)
+            .sort((a, b) => b.score - a.score);
+
+            const products = scoredProducts.slice(0, 6);
 
             // Kết hợp và loại bỏ trùng lặp
             const seen = new Set();

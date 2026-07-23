@@ -1,0 +1,1166 @@
+  ĐẠI HỌC TRÀ VINH
+TRƯỜNG KỸ THUẬT VÀ CÔNG NGHỆ
+
+
+
+
+ĐỒ ÁN TỐT NGHIỆP
+XÂY DỰNG WEBSITE BÁN HÀNG
+ TÍCH HỢP CHATBOT AI
+ HỖ TRỢ TƯ VẤN VÀ GỢI Ý SẢN PHẨM
+
+Giảng viên hướng dẫn: ThS. LÊ MINH TỰ
+Sinh viên thực hiện: HỒ QUANG VINH
+Mã số sinh viên: 110122201
+Lớp: DA22TTC
+Khóa: 2022
+
+
+
+
+
+
+Vĩnh Long, tháng   năm 2026
+
+  ĐẠI HỌC TRÀ VINH
+TRƯỜNG KỸ THUẬT VÀ CÔNG NGHỆ
+
+
+
+
+ ĐỒ ÁN TỐT NGHIỆP
+XÂY DỰNG WEBSITE BÁN HÀNG
+ TÍCH HỢP CHATBOT AI 
+HỖ TRỢ TƯ VẤN VÀ GỢI Ý SẢN PHẨM
+
+Giảng viên hướng dẫn: ThS. LÊ MINH TỰ
+Sinh viên thực hiện: HỒ QUANG VINH
+Mã số sinh viên: 110122201
+Lớp: DA22TTC
+Khóa: 2022
+
+
+
+
+
+
+Vĩnh Long, tháng   năm 2026
+MỤC LỤC
+LỜI CẢM ƠNVI
+LỜI MỞ ĐẦUVII
+DANH MỤC HÌNH ẢNHXVI
+DANH MỤC BẢNG BIỂUXVIII
+KÝ HIỆU CÁC CỤM TỪ VIẾT TẮTXIX
+CHƯƠNG 1. TỔNG QUAN NGHIÊN CỨU20
+1.1. Lý do chọn đề tài20
+1.2. Mục tiêu nghiên cứu20
+1.3. Nội dung nghiên cứu21
+1.4. Đối tượng và phạm vi nghiên cứu21
+1.5. Phương pháp thực hiện21
+CHƯƠNG 2. NGHIÊN CỨU LÝ THUYẾT23
+2.1. Tổng quan hệ thống quản lý xây dựng website bán hàng tích hợp chatbot AI hỗ trợ tư vấn và gợi ý sản phẩm.23
+2.2. Công nghệ xây dựng Website24
+2.2.1. HTML (Hyper Text Markup Language)24
+2.3. Node.js26
+2.3.1. Khái niệm về Node.js26
+2.3.2. Các Thành phần của Node.js26
+2.3.3. Ưu nhược điểm của Node.js30
+2.4. Express.js31
+2.4.1. Các thành phần chính của Express.js31
+2.4.2. Ưu nhược điểm32
+2.5. CSS (Cascading Style Sheets)33
+2.5.1. Tổng quan về CSS33
+2.5.2. Lịch sử hình thành và phát triển của CSS33
+2.5.3. Kết luận34
+2.6. Tailwind CSS34
+2.7. MySQL36
+2.7.1. Khái niệm MySQL36
+2.7.2. Các đặc điểm chính của MySQL36
+2.8. Python37
+2.8.1. Các đặc điểm cốt lõi38
+2.8.2. Cơ chế hoạt động và thực thi38
+2.8.3. Quản lý bộ nhớ (Memory Management)38
+2.8.4. Hệ sinh thái và thư viện tiêu chuẩn39
+2.8.5. Ưu và nhược điểm39
+2.9. Chatbot AI39
+2.9.1. Công nghệ thuật toán đằng sau chatbot AI40
+2.9.2. Các chatbot AI40
+2.9.3. Ứng dụng chatbot vào dự án.40
+2.10. Mô hình LLM42
+2.10.1. Thành phần cơ bản43
+2.10.2. Ứng dụng LLM vào dự án44
+2.11. Mô hình RAG45
+2.11.1. Cơ chế hoạt động của mô hình46
+2.11.2. Cơ sở toán học47
+2.11.3. Ưu nhược điểm của RAG48
+2.11.4. Ứng dụng mô hình RAG với dự án49
+2.12. Hệ thống gợi ý cá nhân hóa người dùng50
+2.12.1. Collaborative Filtering50
+2.12.2. Content-Based Filtering51
+2.12.3. Hybrid Recommendation52
+CHƯƠNG 3. HIỆN THỰC HÓA NGHIÊN CỨU54
+3.1. Mô tả hệ thống54
+3.1.1. Kiến trúc hệ thống54
+3.2. Chức năng hệ thống57
+3.2.1. Mô hình thực thể kết hợp ERD57
+3.2.2. Sơ đồ lớp58
+3.2.3. Sơ đồ Usecase58
+3.2.4. Sơ đồ phân cấp chức năng hệ thống59
+3.2.5. Chức năng dành cho khách hàng60
+3.2.6. Chức năng dành cho quản trị viên61
+3.2.7. Chức năng dành cho Khách vãng lai:61
+3.2.8. Yêu cầu phi chức năng62
+3.3. Thiết kế dữ liệu62
+3.4. Sơ đồ hoạt động65
+3.4.1. Đăng ký và đăng nhập hệ thống65
+3.4.2. Tìm kiếm và lọc sản phẩm65
+3.4.3. Quản lý giỏ hàng65
+3.4.4. Thanh toán đơn hàng66
+3.4.5. Quản lý tài khoản và theo dõi đơn hàng66
+3.4.6. Đọc tin tức và khuyến mãi66
+3.4.7. Sơ đồ hoạt động chatbot AI67
+3.5. Sơ đồ tuần tự67
+3.5.1. Quy trình tìm kiếm và xem chi tiết sản phẩm67
+3.5.2. Quy trình thanh toán đơn hàng68
+3.5.3. Quy trình đánh giá và bình luận sản phẩm68
+3.5.4. Quy trình admin duyệt và xử lý đơn hàng69
+CHƯƠNG 4. KẾT QUẢ ĐẠT ĐƯỢC70
+4.1. Tổng quan70
+4.2. Giao diện của người dùng70
+4.2.1. Giao diện trang chủ70
+4.2.2. Giao diện trang đăng ký71
+4.2.3. Giao diện trang đăng nhập71
+4.2.4. Giao diện trang giới thiệu72
+4.2.5. Giao diện trang sản phẩm72
+4.2.6. Giao diện trang khuyến mãi73
+4.2.7. Giao diện trang giỏ hàng73
+4.2.8. Giao diện trang đặt hàng/thanh toán74
+4.2.9. Giao diện trang bảo hành75
+4.2.10. Giao diện chatbot AI tư vấn gợi ý76
+4.2.11. Giao diện trang tin tức76
+4.2.12. Giao diện trang hồ sơ người dùng77
+4.2.13. Giao diện Dashboard77
+4.2.14. Giao diện quản lý đơn hàng78
+4.2.15. Giao diện quản lý sản phẩm, tồn kho78
+4.2.16. Giao diện quản lý tin tức, khuyến mãi79
+4.2.17. Giao diện quản lý khách hàng, nhân viên80
+4.2.18. Giao diện quản lý danh mục, bảo hành81
+4.2.19. Giao diện tri thức chatbot AI82
+4.2.20. Giao diện quản lý sở thích người dùng82
+4.3. Kết luận83
+CHƯƠNG 5. KẾT LUẬN VÀ HƯỚNG PHÁT TRIỂN84
+5.1. Kết luận84
+5.1.1. Kết quả đạt được84
+5.1.2. Ý nghĩa thực tiễn85
+5.2. Hạn chế85
+5.3. Hướng phát triển85
+5.4. Lời kết86
+TÀI LIỆU THAM KHẢO87
+
+
+LỜI CẢM ƠN
+Lời đầu tiên, xin gửi lời cảm ơn sâu sắc đến giảng viên hướng dẫn đã tận tình chỉ bảo, hỗ trợ trong suốt quá trình thực hiện và hoàn thành báo cáo Đồ án tốt nghiệp. Trong thời gian thực hiện đề tài, nhiều kiến thức mới và bổ ích trong lĩnh vực Công nghệ thông tin đã được tiếp thu, từ quá trình nghiên cứu cho đến khi hoàn thiện hệ thống. Thông qua báo cáo này, xin chân thành cảm ơn Thầy Lê Minh Tự, giảng viên Khoa Công nghệ Thông tin, đã tận tình hướng dẫn, định hướng và truyền đạt những kiến thức quý báu, góp phần quan trọng trong việc hoàn thành đề tài: “Xây dựng website bán hàng tích hợp chatbot AI hỗ trợ tư vấn và gợi ý sản phẩm”. Đồng thời, xin gửi lời cảm ơn đến Trường Đại học Trà Vinh, Trường Kỹ thuật và Công nghệ, cùng Khoa Công nghệ Thông tin đã tạo điều kiện thuận lợi, cung cấp nền tảng kiến thức và tài liệu cần thiết trong suốt quá trình học tập và thực hiện đồ án. Do hạn chế về kiến thức và kinh nghiệm thực tiễn, báo cáo không thể tránh khỏi những thiếu sót. Rất mong nhận được sự góp ý, đánh giá từ giảng viên để nội dung được hoàn thiện hơn.
+Tôi xin chân thành cảm ơn!
+
+LỜI MỞ ĐẦU
+Trong bối cảnh công nghệ số phát triển mạnh mẽ, việc ứng dụng công nghệ thông tin vào hoạt động kinh doanh đã trở thành xu hướng tất yếu, đặc biệt trong lĩnh vực thương mại điện tử. Sự gia tăng nhu cầu mua sắm trực tuyến đặt ra yêu cầu các hệ thống bán hàng không chỉ đảm bảo chức năng quản lý hiệu quả mà còn phải nâng cao trải nghiệm người dùng thông qua các giải pháp thông minh. Tuy nhiên, nhiều website bán hàng hiện nay vẫn còn hạn chế trong việc hỗ trợ tư vấn khách hàng một cách nhanh chóng và cá nhân hóa, dẫn đến việc chưa khai thác hiệu quả nhu cầu và hành vi mua sắm của người dùng. Vì vậy, việc tích hợp các công nghệ trí tuệ nhân tạo, đặc biệt là chatbot AI, vào hệ thống bán hàng được xem là một hướng đi tiềm năng nhằm nâng cao chất lượng dịch vụ và hiệu quả kinh doanh.
+Xuất phát từ thực tiễn đó, đề tài “Xây dựng website bán hàng tích hợp chatbot AI hỗ trợ tư vấn và gợi ý sản phẩm” được triển khai nhằm xây dựng một hệ thống bán hàng trực tuyến hoàn chỉnh. Hệ thống không chỉ hỗ trợ quản lý sản phẩm, đơn hàng và khách hàng mà còn tích hợp chatbot AI có khả năng tương tác, tư vấn và đề xuất sản phẩm phù hợp với nhu cầu người dùng. Đề tài hướng đến việc vận dụng các kiến thức về phát triển web, cơ sở dữ liệu và trí tuệ nhân tạo vào thực tiễn, qua đó xây dựng một giải pháp có tính ứng dụng cao, phù hợp với xu hướng công nghệ hiện nay và đáp ứng nhu cầu ngày càng đa dạng của thị trường.
+
+
+NHẬN XÉT
+(Của giảng viên hướng dẫn trong đồ án, khóa luận của sinh viên)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Giảng viên hướng dẫn
+                                                                                                                               (ký và ghi rõ họ tên)
+
+UBND TỈNH VĨNH LONGCỘNG HOÀ XÃ HỘI CHỦ NGHĨA VIỆT NAM
+  ĐẠI HỌC TRÀ VINH   Độc lập – Tự do – Hạnh Phúc
+
+BẢN NHẬN XÉT ĐỒ ÁN, KHÓA LUẬN TỐT NGHIỆP
+(Của giảng viên hướng dẫn)
+
+Họ và tên sinh viên: Hồ Quang Vinh                                MSSV: 110122201
+Ngành: Công nghệ thông tin                                              Khóa: 2022
+Tên đề tài: Xây dựng website bán hàng tích hợp chatbot AI hỗ trợ tư vấn và gợi ý sản phẩm.
+Họ và tên Giáo viên hướng dẫn: Lê Minh Tự
+Chức danh:  Giảng viên                                                       Học vị: Thạc sĩ
+NHẬN XÉT
+Nội dung đề tài:
+
+
+
+
+
+
+
+
+
+
+
+
+
+Ưu điểm:
+
+
+
+
+Khuyết điểm:
+
+
+
+
+
+Điểm mới đề tài:
+
+
+
+
+
+Giá trị thực trên đề tài:
+
+
+
+
+
+
+
+
+7. Đề nghị sửa chữa bổ sung:
+
+
+
+
+
+
+
+8. Đánh giá:
+
+
+
+
+Vĩnh Long, ngày        tháng      năm 20…
+Giảng viên hướng dẫn 
+(Ký & ghi rõ họ tên)
+
+NHẬN XÉT
+(Của giảng viên chấm trong đồ án, khóa luận của sinh viên)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Giảng viên chấm
+(ký và ghi rõ họ tên)
+UBND TỈNH VĨNH LONG CỘNG HOÀ XÃ HỘI CHỦ NGHĨA VIỆT NAM
+    ĐẠI HỌC TRÀ VINH Độc lập - Tự do - Hạnh phúc
+
+BẢN NHẬN XÉT ĐỒ ÁN, KHÓA LUẬN TỐT NGHIỆP
+(Của cán bộ chấm đồ án, khóa luận)
+Họ và tên người nhận xét: 
+Chức danh:  Học vị:   
+Chuyên ngành: 
+Cơ quan công tác:  
+Tên sinh viên: 
+Tên đề tài đồ án, khóa luận tốt nghiệp: 
+
+
+I. Ý KIẾN NHẬN XÉT
+1. Nội dung: 
+
+
+
+
+
+
+
+
+
+
+2. Điểm mới các kết quả của đồ án, khóa luận:
+
+
+
+3. Ứng dụng thực tế:
+
+
+
+
+
+II. CÁC VẤN ĐỀ CẦN LÀM RÕ
+(Các câu hỏi của giáo viên phản biện)
+
+
+
+
+
+
+
+
+
+
+
+
+
+III. KẾT LUẬN
+(Ghi rõ đồng ý hay không đồng ý cho bảo vệ đồ án khóa luận tốt nghiệp)
+
+
+
+
+
+……………, ngày …… tháng …… năm 20…
+Người nhận xét
+(Ký & ghi rõ họ tên)
+
+
+DANH MỤC HÌNH ẢNH
+Hình 2.1 Logo HTML24
+Hình 2.2 Logo Node.js26
+Hình 2.3 Logo Express.js31
+Hình 2.4 Logo CSS33
+Hình 2.5 Logo Tailwind CSS34
+Hình 2.6 logo MySQL36
+Hình 2.7 Logo Python37
+Hình 2.9 Logo RAG45
+Hình 2.10 Mô hình RAG46
+Hình 2.11 Ví dụ lọc cộng tác51
+Hình 2.12 Ví dụ lọc nội dung52
+Hình 2.13 Mô hình kết hợp lai53
+Hình 3.1 Sơ đồ Kiến trúc hệ thống54
+Hình 3.2 Mô hình thực thể kết hợp ERD57
+Hình 3.3 Sơ đồ lớp58
+Hình 3.4 Sơ đồ User58
+Hình 3.5 Sơ đồ phân cấp chức năng59
+Hình 3.6 Sơ đồ hoạt động đăng ký và đăng nhập65
+Hình 3.7 Sơ đồ hoạt động tìm kiếm và lọc sản phẩm65
+Hình 3.8 Sơ đồ hoạt động quản lý giỏ hàng65
+Hình 3.9 Sơ đồ hoạt động thanh toán đơn hàng66
+Hình 3.10 Sơ đồ hoạt động quản lý tài khoản và theo dõi đơn hàng66
+Hình 3.11 Sơ đồ hoạt động đọc tin tức và khuyến mãi66
+Hình 3.12 Sơ đồ hoạt động chatbot AI67
+Hình 3.13 Sơ đồ Tuần tự quy trình tìm kiếm và xem chi tiết sản phẩm67
+Hình 3.14 Sơ đồ Tuần tự quy trình thanh toán đơn hàng68
+Hình 3.15 Sơ đồ Tuần tự quy trình đánh giá và bình luận sản phẩm68
+Hình 3.16 Sơ đồ Tuần tự quy trình admin duyệt và xử lý đơn hàng69
+Hình 4.1 Giao diện trang chủ70
+Hình 4.2 Giao diện trang đăng ký cho khách hàng71
+Hình 4.3 Giao diện trang đăng nhập71
+Hình 4.4 Giao diện trang giới thiệu cửa hàng72
+Hình 4.5 Giao diện trang sản phẩm cửa hàng72
+Hình 4.6 Giao diện trang khuyến mãi cửa hàng73
+Hình 4.7 Giao diện trang giỏ hàng73
+Hình 4.8 Giao diện trang đặt hàng74
+Hình 4.9 Giao diện trang đặt hàng thành công75
+Hình 4.10 Giao diện trang bảo hành cửa hàng75
+Hình 4.11 Giao diện trang chatbot AI cửa hàng76
+Hình 4.12 Giao diện trang tin tức cửa hàng76
+Hình 4.13 Giao diện trang thông tin người dùng77
+Hình 4.14 Giao diện trang Dashboard78
+Hình 4.15 Giao diện trang quản lý đơn hàng78
+Hình 4.16 Giao diện trang quản lý sản phẩm78
+Hình 4.17 Giao diện trang quản lý tồn kho79
+Hình 4.18 Giao diện trang quản lý tin tức và khuyến mãi79
+Hình 4.19 Giao diện trang quản lý khách hàng80
+Hình 4.20 Giao diện trang quản lý nhân viên81
+Hình 4.21 Giao diện trang quản lý danh mục81
+Hình 4.22 Giao diện trang quản lý bảo hành81
+Hình 4.23 Giao diện trang quản lý tri thức chatbot82
+Hình 4.24 Giao diện trang quản lý cá nhân hóa người dùng82
+
+DANH MỤC BẢNG BIỂU
+Bảng 2.1 Thành phần node.js27
+Bảng 2.2 Đối tượng cục bộ28
+
+
+KÝ HIỆU CÁC CỤM TỪ VIẾT TẮT
+Viết tắt
+Diễn giải
+AI
+Artificial Intelligence
+API
+Application Programming Interface
+HTML
+HyperText Markup Language
+CSS
+Cascading Style Sheets
+JS
+JavaScript
+SQL
+Structured Query Language
+CRUD
+Create Read Update Delete
+KNN
+K-Nearest Neighbors
+RAG
+Retrieval-Augmented Generation
+LLM
+Large Language Model
+NLP
+Natural Language Processing
+HTTP
+HyperText Transfer Protocol
+HTTPS
+HyperText Transfer Protocol Secure
+OOP
+Object-Oriented Programming
+CI/CD
+Continuous Integration / Continuous Deployment
+
+
+
+
+
+
+
+TỔNG QUAN NGHIÊN CỨU
+ Lý do chọn đề tài
+Trong bối cảnh công nghệ thông tin phát triển mạnh mẽ hiện nay và xu hướng chuyển đổi số đang diễn ra trên nhiều lĩnh vực và hoạt động thương mại điện tử ngày càng trở nên phổ biến, đặc biệt trong lĩnh vực bán lẻ các sản phẩm công nghệ như điện thoại di động. Việc xây dựng các website bán hàng không chỉ giúp doanh nghiệp mở rộng quy mô kinh doanh mà còn nâng cao hiệu quả quản lý và khả năng tiếp cận khách hàng. Trên thực tế, nhiều hệ thống bán hàng hiện nay vẫn còn hạn chế trong việc hỗ trợ khách hàng trong quá trình lựa chọn sản phẩm. Người dùng thường phải tự tìm kiếm và so sánh thông tin, gây mất thời gian và dễ dẫn đến trải nghiệm không tốt. Bên cạnh đó, việc thiếu các công cụ tư vấn tự động và gợi ý thông minh khiến doanh nghiệp chưa khai thác hiệu quả dữ liệu người dùng để nâng cao chất lượng dịch vụ. Trong hoàn cảnh đó, việc ứng dụng trí tuệ nhân tạo, đặc biệt là chatbot AI, vào hệ thống bán hàng trực tuyến đang trở thành xu hướng tất yếu. Chatbot có khả năng hỗ trợ tư vấn nhanh chóng, giải đáp thắc mắc và đưa ra các gợi ý sản phẩm phù hợp dựa trên nhu cầu và hành vi của người dùng, từ đó góp phần nâng cao trải nghiệm khách hàng và gia tăng doanh thu cho cửa hàng.
+Xuất phát từ những yếu tố cùng với các yêu cầu thực tiễn đó, với mong muốn vận dụng các kiến thức đã học về lập trình web, cơ sở dữ liệu và trí tuệ nhân tạo, đề tài “Xây dựng website bán hàng tích hợp chatbot AI hỗ trợ tư vấn và gợi ý sản phẩm” được lựa chọn nhằm hướng đến việc xây dựng một hệ thống bán hàng trực tuyến hoàn chỉnh, tích hợp chatbot AI nhằm hỗ trợ tư vấn và gợi ý sản phẩm một cách thông minh, góp phần nâng cao hiệu quả kinh doanh và trải nghiệm người dùng.
+ Mục tiêu nghiên cứu
+Với mục tiêu xây dựng một hệ thống bán hàng trên nền tảng web có khả năng quản lý toàn diện các hoạt động kinh doanh như quản lý sản phẩm, đơn hàng, khách hàng và thống kê báo cáo. Đồng thời, hệ thống tích hợp chatbot AI nhằm hỗ trợ tư vấn và gợi ý sản phẩm dựa trên nhu cầu và hành vi người dùng, góp phần nâng cao trải nghiệm khách hàng và hiệu quả kinh doanh.
+
+  Nội dung nghiên cứu
+Đề tài tập trung xây dựng hệ thống bán điện thoại với các chức năng chính bao gồm quản lý sản phẩm, đơn hàng và khách hàng. Hệ thống cho phép người dùng tìm kiếm, xem thông tin chi tiết và lọc sản phẩm theo nhu cầu, đồng thời hỗ trợ quản trị viên theo dõi và quản lý hoạt động kinh doanh thông qua các chức năng thống kê, báo cáo. Song song đó, đề tài còn nghiên cứu và tích hợp chatbot AI nhằm hỗ trợ tư vấn và tương tác với người dùng trong quá trình mua sắm. Chatbot có khả năng trả lời các câu hỏi cơ bản, hỗ trợ tìm kiếm sản phẩm, đưa ra các gợi ý và tư vấn phù hợp dựa trên nhu cầu và hành vi người dùng.
+Ngoài ra, hệ thống đề xuất sản phẩm được xây dựng dựa trên việc phân tích dữ liệu người dùng và thông tin sản phẩm, góp phần nâng cao tính cá nhân hóa và cải thiện trải nghiệm mua sắm.
+ Đối tượng và phạm vi nghiên cứu
+Đối tượng nghiên cứu của đề tài là hệ thống bán điện thoại trên nền tảng web, bao gồm các thành phần chính như người dùng hệ thống (khách hàng và quản trị viên, nhân viên) cùng với các dữ liệu liên quan như sản phẩm, đơn hàng, thông tin khách hàng và hành vi người dùng. Đó là cơ sở để xây dựng các chức năng quản lý, tư vấn và gợi ý sản phẩm trong hệ thống.
+Phạm vi nghiên cứu của đề tài tập trung xây dựng một website bán hàng quy mô nhỏ đến trung bình, với các chức năng chính như quản lý sản phẩm, đơn hàng, khách hàng và thống kê báo cáo. Ngoài ra hệ thống tích hợp chatbot AI nhằm hỗ trợ tư vấn và gợi ý sản phẩm cho người dùng ở mức cơ bản.
+ Phương pháp thực hiện
+Phương pháp nghiên cứu lý thuyết: Tìm hiểu và tổng hợp các tài liệu liên quan đến xây dựng website bán hàng, cơ sở dữ liệu và các công nghệ phát triển hệ thống web. Đồng thời nghiên cứu các khái niệm cơ bản về chatbot AI và phương pháp gợi ý sản phẩm nhằm làm cơ sở cho việc thiết kế hệ thống. 
+Phương pháp nghiên cứu thực nghiệm: Tiến hành phân tích, thiết kế và xây dựng hệ thống website bán điện thoại với các chức năng quản lý sản phẩm, đơn hàng và khách hàng. Tích hợp chatbot AI hỗ trợ tư vấn và gợi ý sản phẩm ở mức cơ bản, sau đó thực hiện kiểm thử và đánh giá hoạt động của hệ thống.
+
+
+
+
+
+
+
+
+NGHIÊN CỨU LÝ THUYẾT
+Tổng quan hệ thống quản lý xây dựng website bán hàng tích hợp chatbot AI hỗ trợ tư vấn và gợi ý sản phẩm.
+Trong thời đại công nghệ thương mại điện tử ngày càng phát triển, việc ứng dụng công nghệ vào quản lý bán hàng là điều cần thiết nhằm nâng cao hiệu quả kinh doanh cùng với trải nghiệm người dùng. Hệ thống quản lý bán hàng tích hợp Chatbot AI được xây dựng nhằm hỗ trợ doanh nghiệp quản lý toàn bộ hoạt động bán hàng trên nền tảng trực tuyến một cách tự động hóa quy trình bán hàng, giúp nâng cao tốc độ và độ chính xác so với phương pháp thủ công. Hệ thống cho phép quản lý sản phẩm một cách hiệu quả thông qua các chức năng như thêm, sửa, xóa và cập nhật thông tin sản phẩm bao gồm tên, giá, hình ảnh, mô tả và số lượng tồn kho. Việc này giúp người quản trị dễ kiểm soát danh mục sản phẩm cũng như đảm bảo thông tin luôn được cập nhật kịp thời.
+Ngoài ra hệ thống còn hỗ trợ quản lý đơn hàng xuyên suốt từ khi khách hàng đặt mua cho đến khi hoàn tất giao dịch mua sắm. Với các thao tác như tạo đơn hàng, cập nhật trạng thái (đang xử lý, đang giao, hoàn thành) và quản lý thanh toán được thực hiện một cách rõ ràng và chính xác. Nhờ vào đó mà quá trình xử lý đơn hàng trở nên nhanh chóng, hạn chế sai sót và nâng cao hiệu suất làm việc. Chức năng quản lý khách hàng giúp lưu trữ thông tin cá nhân, lịch sử mua hàng và hành vi sử dụng dịch vụ. Dữ liệu này đóng vai trò quan trọng trong việc phân tích nhu cầu khách hàng, từ đó hỗ trợ xây dựng các chiến lược chăm sóc và tiếp cận khách hàng một cách hiệu quả hơn. Đặc điểm nổi bật của hệ thống là tích hợp chatbot AI, cho phép tương tác trực tiếp với khách hàng. Chatbot có khả năng trả lời các câu hỏi thường gặp, hỗ trợ tìm kiếm sản phẩm và tư vấn lựa chọn phù hợp dựa trên nhu cầu của người dùng. Ngoài ra, thông qua việc phân tích dữ liệu hành vi người dùng, hệ thống có thể đưa ra các gợi ý sản phẩm phù hợp, góp phần nâng cao trải nghiệm mua sắm. Hệ thống cũng cung cấp các chức năng hỗ trợ như tìm kiếm và lọc sản phẩm theo nhiều tiêu chí khác nhau, giúp người dùng dễ dàng tìm thấy sản phẩm mong muốn. Đối với người quản trị, hệ thống cung cấp các báo cáo và thống kê như doanh thu, số lượng đơn hàng, sản phẩm bán chạy hoặc bán chậm theo từng thời gian, hỗ trợ việc đánh giá và đưa ra quyết định kinh doanh chính xác hơn.
+Tóm lại, hệ thống quản lý bán hàng tích hợp chatbot AI không chỉ giúp tự động hóa quy trình bán hàng mà còn hỗ trợ phân tích dữ liệu và tối ưu trải nghiệm người dùng. Việc áp dụng hệ thống này góp phần nâng cao hiệu quả hoạt động, giảm thiểu sai sót và tăng khả năng cạnh tranh trong môi trường kinh doanh hiện đại
+Công nghệ xây dựng Website
+HTML (Hyper Text Markup Language)
+Giới thiệu HTML
+HTML (HyperText Markup Language) là ngôn ngữ đánh dấu siêu văn bản được sử dụng trong việc xây dựng các cấu trúc và cách bố trí nội dung cho các trang web. Đây là nền tảng để định nghĩa cách tổ chức các thành phần như văn bản, hình ảnh,  liên kết, bảng biểu và biểu mẫu trên trình duyệt [1]. HTML không đảm nhận trách nhiệm về việc định dạng lại giao diện mà nó chủ yếu tập trung mô tả ý nghĩa và cấu trúc để tạo nên một website hoàn chỉnh, HTML thường được kết hợp với CSS để xây dựng giao diện và JavaScript để xử lý các chức năng. 
+Lịch sử phát triển
+HTML (HyperText Markup Language) được Tim Berners-Lee phát triển vào đầu những năm 1990 nhằm phục vụ nhu cầu chia sẻ và trao đổi tài liệu trên internet. Phiên bản đầu tiên của HTML bao gồm một số lượng nhỏ các thẻ cơ bản phục vụ cho việc hiển thị văn bản và liên kết giữa các tài liệu. Các phiên bản quan trọng của HTML bao gồm: HTML 2.0 được chuẩn hóa vào năm 1995, HTML 4 được công bố vào năm 1999 và HTML 5 được phát hành chính thức vào năm 2014 và được xem là tiêu chuẩn hóa bởi các tổ chức quốc tế nhằm đáp ứng yêu cầu xây dựng các ứng dụng web phức tạp hiện nay [2].
+Cách hoạt động của HTML
+HTML sử dụng các “markup” để chú thích nội dung như văn bản, hình ảnh và các loại nội dung khác để hiển thị trên trình duyệt web. Các markup này bao gồm các thành phần (elements) đặc biệt như:
+Các thẻ cơ bản: <head>, <title>, <body>, <header>, <footer>, <article>, <section>.
+Các thẻ định dạng: <p> (đoạn văn), <div> (phân chia khối), <span> (phân chia dòng).
+Các thẻ đa phương tiện: <img> (hình ảnh), <audio> (âm thanh), <video> (video), <canvas> (vẽ đồ họa).
+Các thẻ tương tác: <form> (biểu mẫu), <input> (trường nhập liệu), <button> (nút bấm).
+Các thẻ điều hướng: <nav> (thanh điều hướng), <a> (liên kết) [1]. 
+Cấu trúc của một phần tử HTML
+Mỗi phần tử HTML được xác định bởi các “thẻ” (tags) bao quanh tên phần tử đó, ví dụ <p>, <h1>, <div>, v.v. Tên của phần tử có thể được viết bằng chữ hoa, chữ thường hoặc kết hợp cả hai, ví dụ như <Title>, <TITLE>, nhưng chuẩn khuyến nghị hiện nay là nên viết bằng chữ thường để đảm bảo tính nhất quán và dễ đọc.
+Kết luận
+HTML là ngôn ngữ cơ bản nhưng vô cùng quan trọng trong lập trình web. Hiểu và thành thạo HTML là bước đầu tiên giúp người dùng xây dựng các trang web và ứng dụng trực tuyến hiệu quả.
+Node.js
+Khái niệm về Node.js
+Node.js là một môi trường thực thi JavaScript phía máy chủ được xây dựng trên nền tảng V8 JavaScript Engine của Google và được tạo ra bởi Ryan Dahl vào năm 2009 nhanh chóng trở thành một trong những nền tảng phát triển phổ biến hiện nay. Công nghệ này được giới thiệu nhằm mở rộng khả năng của JavaScript từ môi trường trình duyệt sang máy chủ, cho phép lập trình viên sử dụng cùng một ngôn ngữ cho cả frontend và backend [3]. Nhờ đó quá trình phát triển ứng dụng web trở nên thống nhất, song song đó việc nắm vững các công cụ tự động hóa cũng đóng vai trò quan trọng trong việc xây dựng quy trình CI/CD.
+Các Thành phần của Node.js
+Module trong Node.js giống như những gói thư viện nhỏ, chứa các hàm, đối tượng và các lớp được viết sẵn để thực hiện các tác vụ cụ thể. Điều này giúp cho việc phát triển ứng dụng trở nên module hóa và dễ dàng quản lý. Để sử dụng một module trong ứng dụng chỉ cần sử dụng hàm require. Ở Node.JS có nhiều Module với nhiều chức năng khác nhau và đều cần thiết cho một ứng dụng web [3]. Dưới đây là một số Module thường được sử dụng trong ứng dụng web:
+Bảng 2.1 Thành phần node.js
+Module chính
+Mô tả
+http
+Tạo và quản lý máy chủ HTTP dùng để xây dựng API và xử lý các yêu cầu từ client trong ứng dụng web.
+util
+Cung cấp các hàm tiện ích hỗ trợ lập trình như định dạng dữ liệu, kiểm tra kiểu dữ liệu, kế thừa đối tượng,… giúp giảm bớt công việc xử lý thủ công.
+fs
+Tương tác với hệ thống file: đọc, ghi, cập nhật và xóa file; thường dùng để lưu log server hoặc thao tác với tệp cấu hình.
+url
+Phân tích cú pháp URL để trích xuất các thành phần như protocol, host, pathname, query,… phục vụ xử lý request web.
+querystring
+Xử lý chuỗi truy vấn (query string) trong URL, cho phép chuyển đổi qua lại giữa dạng chuỗi và dạng đối tượng.
+stream
+Làm việc với dữ liệu dạng dòng (stream) giúp tối ưu hiệu suất khi xử lý tệp dung lượng lớn như hình ảnh sản phẩm.
+zlib
+Nén và giải nén dữ liệu để giảm kích thước truyền tải, cải thiện tốc độ phản hồi của server.
+Bảng Điều khiển
+Đây là công cụ giao tiếp giữa lập trình viên và hệ thống. Nó giúp in ra các thông tin cần thiết (như giá trị biến, kết quả tính toán) hoặc thông báo lỗi lên màn hình dễ dàng kiểm tra. Một trong những phương pháp phổ biến để sử dụng bảng điều khiển là sử dụng hàm console.log(). Hàm này cho phép in ra bất kỳ giá trị nào lên màn hình console.
+Cluster
+Node.js, nổi tiếng với khả năng lập trình không đồng bộ, thường được xây dựng dựa trên mô hình đơn luồng. Tuy nhiên, để cải thiện hiệu năng và tận dụng tối đa tài nguyên CPU, Cluster là một giải pháp hoàn hảo.
+Module Cluster trong Node.js cho phép tạo ra nhiều tiến trình con (worker processes), mỗi tiến trình sẽ xử lý các yêu cầu đến. Điều này giúp cân bằng tải và ngăn chặn việc một tiến trình bị quá tải. Các worker process này chia sẻ cùng một cổng máy chủ, tạo nên một cụm các tiến trình làm việc cùng nhau.
+Đối tượng cục bộ 
+Trong Node.JS các đối tượng toàn cục đóng vai trò vô cùng quan trọng. Đây là những biến hoặc hàm được sẵn có trong mọi module của Node.js, cho phép các lập trình viên truy cập và sử dụng chúng trực tiếp mà không cần khai báo lại. Một số đối tượng toàn cục phổ biến ở trong bảng.
+Bảng 2.2 Đối tượng cục bộ
+Đối tượng
+Mô tả
+global
+Đối tượng gốc chứa các biến và hàm toàn cục, có thể truy cập ở mọi module.
+__dirname
+Đường dẫn thư mục chứa file hiện tại.
+__filename
+Đường dẫn đầy đủ kèm tên file hiện tại.
+exports
+Dùng để xuất biến/hàm ra ngoài module.
+module
+Đại diện cho module hiện tại, quản lý thông tin xuất – nhập.
+require()
+Hàm dùng để import module khác vào file hiện tại.
+process
+Cung cấp thông tin về tiến trình Node.js, biến môi trường và sự kiện hệ thống.
+setTimeout/setInterval
+Thực thi hàm sau delay hoặc lặp theo chu kỳ.
+clearTimeout/clearInterval
+Hủy timeout hoặc interval đã tạo trước đó.
+Streaming (Luồng)
+Luồng (Streaming) là một dòng dữ liệu liên tục được truyền từ nguồn đến đích. Trong lập trình, luồng được sử dụng để đọc hoặc ghi dữ liệu vào các thiết bị ngoại vi như file, mạng, hoặc các bộ nhớ đệm (buffer).
+Có 4 loại luồng chính:
+Luồng đọc: Chỉ cho phép đọc dữ liệu từ nguồn.
+Luồng ghi: Chỉ cho phép ghi dữ liệu vào đích.
+Luồng duplex: Cho phép vừa đọc vừa ghi dữ liệu.
+Luồng chuyển đổi: Thay đổi định dạng hoặc mã hóa dữ liệu trong quá trình truyền.
+Buffer (Bộ nhớ đệm): Buffer là một cấu trúc dữ liệu được sử dụng để lưu trữ và thao tác hiệu quả với dữ liệu nhị phân. Buffer cung cấp một cách linh hoạt để làm việc với dữ liệu thô trong bộ nhớ.
+Tên miền (Domain): Module tên miền giúp ngăn chặn và khắc phục các lỗi tiềm ẩn trong website của. Module này sử dụng hai cơ chế chính để đảm bảo hoạt động ổn định của hệ thống:
+Liên kết nội bộ: Bộ phát lỗi sẽ được tích hợp trực tiếp vào mã nguồn của website, giúp xác định và xử lý lỗi một cách nhanh chóng và hiệu quả.
+Liên kết bên ngoài: Có thể thêm thủ công các bộ phát lỗi vào tên miền thông qua cấu hình hệ thống. Điều này đặc biệt hữu ích khi bạn muốn theo dõi và quản lý các lỗi từ các nguồn bên ngoài.
+DNS: Module DNS dùng để tương tác với các máy chủ Hệ thống tên miền (DNS). Module DNS cho phép các nhà phát triển hiệu quả phân giải tên miền thành địa chỉ IP.
+Có hai phương pháp chính để phân giải DNS:
+dns.resolve(): Phương pháp này thiết lập kết nối mạng với máy chủ DNS để thực hiện quá trình phân giải. Phù hợp cho các ứng dụng yêu cầu tra cứu DNS thời gian thực hoặc cần xử lý các truy vấn DNS phức tạp.
+dns.lookup(): Phương pháp này thực hiện phân giải DNS mà không cần kết nối mạng. Phù hợp cho các trường hợp kết nối mạng bị hạn chế hoặc không đáng tin cậy, chẳng hạn như ứng dụng ngoại tuyến hoặc cơ chế lưu trữ cache. 
+Debugger (Trình gỡ lỗi): Node.js có công cụ gỡ lỗi tích hợp vô cùng tiện lợi, giúp các nhà phát triển kiểm tra và khắc phục lỗi trong mã nguồn một cách hiệu quả. Mặc dù không sở hữu nhiều tính năng phức tạp như các trình gỡ lỗi chuyên dụng, nhưng công cụ này hoàn toàn đáp ứng nhu cầu kiểm tra code đơn giản trong quá trình phát triển ứng dụng.
+Ưu nhược điểm của Node.js
+Ưu điểm
+Dễ dàng mở rộng cho phép các ứng dụng phát triển một cách hiệu quả nhờ vào kiến trúc không đồng bộ;
+Thời gian thực thi nhanh hữu ích cho các ứng dụng yêu cầu phản hồi nhanh như các ứng dụng thời gian thực;
+Sử dụng JavaScript – một ngôn ngữ lập trình dễ học;
+Tương thích với nhiều nền tảng có thể chạy trên Windows, macOS và Linux;
+Chia sẻ cùng code ở cả phía client và server;
+NPM(Node Package Manager) và module Node đang ngày càng phát triển mạnh;
+Cộng đồng hỗ trợ tích cực;
+Cho phép stream các file có kích thước lớn.
+Nhược điểm
+Không có khả năng mở rộng, vì vậy không thể tận dụng lợi thế mô hình đa lõi trong các phần cứng cấp server hiện nay;
+Khó thao tác với cơ sở dữ liệu quan hệ;
+Yêu cầu bảo mật cao đặc biệt khi sử dụng các package từ bên thứ ba;
+Mỗi callback sẽ đi kèm với rất nhiều callback lồng nhau khác;
+Cần có kiến thức tốt về JavaScript.
+Express.js
+Express.js là một framework được sử dụng rộng rãi nhất để xây dựng ứng dụng web và API trên nền tảng Node.js. Framework này cung cấp cơ chế xử lý yêu cầu HTTP một cách rõ ràng, quản lý tuyến đường (routing), tích hợp middleware và nhiều tiện ích cần thiết khác, giúp việc phát triển ứng dụng web trở nên nhanh chóng và hiệu quả hơn. Về mặt kiến thức nền tảng, Express.js hỗ trợ lập trình viên xây dựng cấu trúc ứng dụng theo hướng rõ ràng và tối ưu. Mọi luồng yêu cầu phản hồi đều được xử lý thông qua hệ thống middleware linh hoạt, cho phép mở rộng tính năng bằng cách tích hợp các thư viện bên ngoài. Điều này giúp ứng dụng dễ dàng mở rộng, bảo trì và phù hợp với nhiều mô hình phát triển web hiện đại [4].
+Các thành phần chính của Express.js
+Router (Bộ định tuyến): Router là thành phần cốt lõi dùng để xác định và xử lý các tuyến đường (routes) của ứng dụng. Mỗi route sẽ gắn với một HTTP method (GET, POST, PUT, DELETE…) và một đường dẫn cụ thể. Giúp ứng dụng tổ chức luồng điều hướng rõ ràng và tách biệt logic xử lý theo từng chức năng.
+Middleware (Phần mềm trung gian): Middleware là các hàm được thực thi theo chuỗi khi có yêu cầu gửi đến server.Vai trò của middleware:
+Xử lý dữ liệu request trước khi vào route.
+Xác thực người dùng.
+Kiểm tra token, session.
+Log hoạt động.
+Quản lý lỗi.
+Đây là điểm mạnh nhất của Express.js vì giúp mở rộng ứng dụng và linh hoạt.
+Ưu nhược điểm
+Ưu điểm
+Nhẹ và linh hoạt: Express.js là framework tối giản, không áp đặt cấu trúc cứng nhắc, cho phép lập trình viên tự do thiết kế kiến trúc ứng dụng theo nhu cầu.
+Hiệu suất cao: Hoạt động trên nền tảng Node.js với mô hình non-blocking I/O, Express.js xử lý tốt các yêu cầu, phù hợp cho các ứng dụng web và API .
+Hệ thống middleware mạnh mẽ: Cho phép mở rộng chức năng dễ dàng như xác thực, logging, xử lý lỗi, bảo mật, nén dữ liệu và dễ bảo trì.
+Dễ tích hợp với các công nghệ khác: Express.js có thể kết hợp hiệu quả với các cơ sở dữ liệu (MongoDB, MySQL, PostgreSQL), các frontend framework (React, Angular, Vue) và các dịch vụ bên thứ ba.
+Nhược điểm
+Thiếu cấu trúc mặc định: Do không áp đặt kiến trúc sẵn, các dự án lớn nếu không được thiết kế cẩn thận sẽ dễ trở nên rối rắm và khó mở rộng.
+Phụ thuộc nhiều vào thư viện bên ngoài: Nhiều chức năng nâng cao như ORM, validation hay bảo mật phải tích hợp thêm thư viện, làm tăng độ phức tạp trong quản lý dự án.
+Không phù hợp cho ứng dụng quá lớn nếu thiếu kinh nghiệm: Với các hệ thống phức tạp, Express.js đòi hỏi lập trình viên có kiến thức tốt về kiến trúc phần mềm để đảm bảo khả năng mở rộng và bảo trì lâu dài.
+Xử lý lỗi cần thiết kế cẩn thận: Nếu không xây dựng middleware xử lý lỗi hợp lý, việc debug và quản lý lỗi trong ứng dụng có thể gặp khó khăn.
+CSS (Cascading Style Sheets)
+Tổng quan về CSS
+CSS (Cascading Style Sheets) là ngôn ngữ định dạng được sử dụng để mô tả cách hiển thị của các phần tử HTML trên trình duyệt bao gồm: Định dạng văn bản người dùng có thể thay đổi màu sắc, kiểu chữ, kích thước chữ, khoảng cách giữa các dòng và chữ. Thiết kế bố cục định vị các thành phần trên trang, căn lề, chia cột, tạo thanh điều hướng, và sắp xếp các phần tử sao cho hợp lý. Tạo hiệu ứng đặc biệt sử dụng các hiệu ứng chuyển động, thay đổi hình ảnh, hiệu ứng mờ, và nhiều hiệu ứng khác để làm trang web trở nên sinh động. Tất cả là yếu tố mang lại cho các trang web vẻ ngoài tinh tế và chuyên nghiệp [5].
+Lịch sử hình thành và phát triển của CSS
+Trước khi CSS xuất hiện,  các thuộc tính trình bày thông thường định dạng trang web đều được thực hiện trực tiếp bằng HTML. Các thẻ như <font> để chỉnh màu sắc văn bản hay <center> để căn giữa văn bản đã từng rất phổ biến. Tuy nhiên, khi các trang web ngày càng phức tạp hơn, cách tiếp cận này trở nên rối rắm và khó bảo trì. Điều này đã dẫn đến sự ra đời của CSS vào năm 1996.
+Qua nhiều lần phát triển từ năm 1996 đến CSS2 năm 1998 và CSS3 năm 2011 và cuối cùng là CSS4 mặc dù đang phát triển nhưng đã cho thấy được tầm quan trọng của nó thông qua những cải tiến mang lại [5].
+Kết luận
+CSS là một công cụ mạnh mẽ và linh hoạt giúp các nhà phát triển web tạo ra các trang web đẹp mắt và dễ sử dụng. Hiểu rõ và thành thạo CSS sẽ giúp người dùng xây dựng những giao diện chuyên nghiệp, tối ưu hóa trải nghiệm người dùng, và tiết kiệm thời gian trong quá trình phát triển web.
+Việc sử dụng CSS một cách hiệu quả sẽ không chỉ làm cho trang web của người dùng trở nên hấp dẫn hơn mà còn giúp cải thiện hiệu suất và khả năng tương thích của nó trên nhiều thiết bị và trình duyệt khác nhau. Đây là một kỹ năng không thể thiếu cho bất kỳ ai muốn trở thành nhà phát triển web chuyên nghiệp.
+Tailwind CSS 
+Tailwind CSS là framework CSS theo hướng “utility-first” được phát triển bởi Tailwind Labs. Không giống với các framework truyền thống thường có cung cấp sẵn các thành phần hoàn chỉnh, ở đây nó sẽ cung cấp các lớp tiện ích giúp lập trình viên xây dựng giao diện trực tiếp trên mã HTML một cách tự do, trực quan và có kiểm soát [6].
+Đặc điểm chính
+Ưu tiên lớp tiện ích: Mỗi lớp chỉ làm một việc nhỏ, như bg-blue-500 để đổi màu nền xanh, p-4 để thêm khoảng cách bên trong, font-bold để chữ in đậm. Kết hợp chúng để tạo thành phần giao diện hoàn chỉnh mà không cần file CSS riêng.
+Tùy chỉnh dễ dàng: Dùng file tailwind.config.js để thay đổi màu sắc, kích thước chữ, khoảng cách, và các điểm ngắt cho màn hình khác nhau. Bạn có thể thêm lớp mới hoặc dùng phần mở rộng.
+Hỗ trợ màn hình đa dạng: Có các lớp cho màn hình nhỏ, trung bình, lớn, và biến thể như hover hoặc focus để giao diện thay đổi phù hợp trên điện thoại, máy tính bảng hay máy tính.
+Tiết kiệm tài nguyên: Tự động loại bỏ các lớp không dùng để file CSS nhỏ hơn, giúp trang web tải nhanh.
+Dễ kết hợp: Làm việc tốt với React, Vue, Next.js. Có nhiều mẫu sẵn và cộng đồng hỗ trợ lớn.
+Cách sử dụng
+Cài đặt qua npm: Chạy lệnh npm install tailwindcss, rồi tạo file cấu hình bằng npx tailwindcss init.
+Thêm lớp vào HTML:
+<button class="bg-blue-600 text-white px-4 py-2 rounded shadow-lg hover:bg-blue-700"> 
+ Click Me 
+</button> 
+Chỉnh sửa màu, khoảng cách, hoặc lớp cho màn hình khác nhau trong file cấu hình theo nhu cầu dự án.
+Dùng công cụ gợi ý lớp trong VS Code để viết code nhanh hơn.
+Ví dụ cho giao diện thay đổi theo màn hình:
+<div class="w-full md:w-1/2 lg:w-1/3 p-4"> 
+ Hộp thay đổi kích thước 
+</div> 
+Kết luận
+Tailwind CSS giúp bạn tiết kiệm thời gian thiết kế, giữ giao diện nhất quán, tải trang nhanh và dễ thích ứng với mọi thiết bị. Đây là lựa chọn phổ biến cho lập trình viên làm phần giao diện web.
+MySQL
+Khái niệm MySQL 
+MySQL là một hệ quản trị cơ sở dữ liệu quan hệ (RDBMS - Relational Database Management System) mã nguồn mở, được sử dụng phổ biến rộng rãi trong các hệ thống ứng dụng trong phát triển web hiện nay. Với khả năng lưu trữ, quản lý và truy xuất dữ liệu, MySQL đã trở thành một trong những lựa chọn phổ biến cho các hệ thống thương mại điện tử, hệ thống quản lý nội dung và các ứng dụng doanh nghiệp. Bên cạnh đó nó hỗ trợ các thao tác cơ bản như CRUD (Create, Read, Update, Delete) và hoạt động hiệu quả với nhiều ngôn ngữ lập trình như PHP, Python, và Java. Bên cạnh đó, MySQL cung cấp các tính năng bảo mật mạnh mẽ, bao gồm phân quyền người dùng và mã hóa dữ liệu, giúp bảo vệ hệ thống khỏi các mối đe dọa tiềm ẩn. Đồng thời, cơ sở dữ liệu này hỗ trợ tối ưu hóa truy vấn thông qua chỉ mục và cung cấp các cơ chế như khóa chính, khóa ngoại để đảm bảo tính toàn vẹn dữ liệu. Nhờ vào hiệu suất cao, dễ sử dụng và khả năng tích hợp tốt, MySQL trở thành lựa chọn lý tưởng cho nhiều loại ứng dụng web, từ các trang thương mại điện tử đến hệ thống quản lý nội dung [7].
+Các đặc điểm chính của MySQL
+Mã nguồn mở: MySQL miễn phí sử dụng, nhưng cũng cung cấp các phiên bản thương mại với tính năng nâng cao.
+Kiến trúc quan hệ: Dữ liệu được lưu trữ dưới dạng bảng (tables), với các hàng (rows) và cột (columns), hỗ trợ chuẩn hóa dữ liệu.
+Hiệu suất cao và khả năng mở rộng: MySQL được thiết kế tối ưu hóa cho các ứng dụng có lượng truy vấn lớn và yêu cầu tốc độ xử lý nhanh.
+Đa nền tảng: MySQL có thể chạy trên nhiều hệ điều hành như Windows, Linux, macOS, và Unix.
+Hỗ trợ đa người dùng: Nhiều người dùng có thể kết nối và làm việc với cơ sở dữ liệu cùng lúc mà không gây xung đột.
+Tương thích tốt: MySQL dễ dàng tích hợp với nhiều ngôn ngữ lập trình phổ biến như PHP, Python, Java, .NET, và các framework web như Laravel, Django, Spring.
+Bảo mật cao: Cung cấp hệ thống quản lý người dùng, mật khẩu, mã hóa SSL và hỗ trợ các quyền truy cập tùy chỉnh.
+Python
+Python là một ngôn ngữ lập trình bậc cao, được phát triển bởi  Guido van Rossum và được phát hành lần đầu vào năm 1991. Với thiết kế hướng đến sự đơn giản và khả năng đọc hiểu mã nguồn, Python nhanh chóng trở thành một trong những ngôn ngữ lập trình phổ biến hiện nay đáp ứng được trên nhiều ứng dụng rộng rãi trong nhiều lĩnh vực khác nhau từ phần mềm, phân tích dữ liệu, trí tuệ nhân tạo, máy học và tự động hóa quy trình. Điểm nổi bật là cú pháp ngắn gọn và dễ tiếp cận với số lượng dòng lệnh ít hơn, từ đó giúp rút ngắn thời gian phát triển và có thời gian nâng cao bảo mật nhờ ưu điểm này mà Python được nhiều người sử dụng phổ biến trong cả môi trường học thuật lẫn thực tiễn doanh nghiệp [8].
+Các đặc điểm cốt lõi
+Ngôn ngữ thông dịch (Interpreted): Mã nguồn Python được dịch và thực thi từng dòng lệnh tại thời điểm chạy (runtime) bởi trình thông dịch, giúp quá trình gỡ lỗi (debug) dễ dàng hơn.
+Kiểu dữ liệu động (Dynamically Typed): Trong Python, người lập trình không cần khai báo kiểu dữ liệu cho biến. Kiểu của biến được tự động xác định trong lúc thực thi, giúp việc viết code nhanh và linh hoạt hơn.
+Đa mô hình lập trình (Multi-paradigm): Python hỗ trợ hoàn toàn cả lập trình hướng đối tượng (Object-Oriented Programming - OOP), lập trình thủ tục (Procedural) và lập trình hàm (Functional Programming).
+Mã nguồn mở và miễn phí: Python được phát triển dưới giấy phép mã nguồn mở, cho phép cộng đồng sử dụng, sửa đổi và phân phối một cách tự do.
+Tính đa nền tảng (Cross-platform): Các ứng dụng viết bằng Python có thể chạy trên nhiều hệ điều hành khác nhau như Windows, macOS, Linux mà không cần phải viết lại mã nguồn [8].
+ Cơ chế hoạt động và thực thi
+Kiến trúc thực thi của Python trải qua hai giai đoạn chính:
+Biên dịch thành Bytecode: Khi một chương trình Python (.py) được chạy, trình biên dịch nội bộ sẽ chuyển đổi mã nguồn thành dạng mã trung gian gọi là Bytecode (thường lưu dưới dạng .pyc).
+Máy ảo Python (Python Virtual Machine - PVM): PVM đóng vai trò là công cụ thực thi nền tảng. PVM sẽ đọc Bytecode ở bước trước và dịch chúng thành các chỉ thị mã máy để phần cứng có thể hiểu và thực thi [8].
+Quản lý bộ nhớ (Memory Management)
+Python quản lý bộ nhớ hoàn toàn tự động thông qua hai cơ chế:
+Đếm tham chiếu (Reference Counting): Python theo dõi số lượng tham chiếu trỏ đến một đối tượng trong bộ nhớ. Khi số lượng tham chiếu bằng 0 (không còn biến nào trỏ tới), vùng nhớ đó sẽ bị huỷ. 
+Trình thu gom rác (Garbage Collector): Cơ chế này chạy ngầm nhằm dọn dẹp các đối tượng tham chiếu vòng (circular references) mà bộ đếm tham chiếu không thể tự xử lý, giúp ngăn ngừa tình trạng rò rỉ bộ nhớ (memory leak).
+Hệ sinh thái và thư viện tiêu chuẩn
+Sức mạnh lớn nhất của Python nằm ở hệ sinh thái rộng lớn, tuân theo triết lý "Batteries Included" (Pin đã được bao gồm sẵn).
+Thư viện tiêu chuẩn (Standard Library): Hỗ trợ sẵn hầu hết các thao tác cơ bản như xử lý chuỗi, đọc ghi file, kết nối mạng, xử lý JSON/XML, nền tảng giao diện GUI.
+Hệ sinh thái bên thứ ba (PyPI): Thông qua công cụ quản lý gói pip, lập trình viên có thể dễ dàng cài đặt hàng trăm nghìn thư viện từ cộng đồng cho mọi lĩnh vực: Web (Django, Flask), Trí tuệ nhân tạo/Học máy (TensorFlow, PyTorch), Phân tích dữ liệu (Pandas, NumPy), cho đến Tự động hóa (Selenium).
+ Ưu và nhược điểm
+Ưu điểm: Cú pháp ngắn gọn, dễ học cho người mới bắt đầu; tiết kiệm thời gian phát triển phần mềm; cộng đồng hỗ trợ lớn nhất thế giới.
+Nhược điểm: Tốc độ thực thi chậm hơn so với các ngôn ngữ biên dịch trực tiếp ra mã máy (như C, C++). Tiêu tốn nhiều bộ nhớ hơn do cơ chế kiểu dữ liệu động và máy ảo. Tuy nhiên, trong đa số bài toán thực tế, ưu điểm về thời gian phát triển vượt trội hoàn toàn so với độ trễ nhỏ rào cản về hiệu năng.
+Chatbot AI 
+Được hiểu là một ứng dụng của công nghệ trí tuệ nhân tạo được thiết kế để tương tác với con người thông qua các tài liệu hay các giọng nói ở đây nó khác với chatbot đơn thuần chỉ dựa trên kịch bản có sẵn hay các ràng buộc cố định. Chatbot AI có khả năng tự học, cải thiện qua thời gian dựa trên các dữ liệu giao tiếp thực tế nhờ vào khả năng xử lý ngôn ngữ tự nhiên nắm bắt được ngữ cảnh, cảm xúc và mục đích của người dùng cho phép nó đưa ra phản hồi tự nhiên phù hợp linh hoạt [9].
+Công nghệ thuật toán đằng sau chatbot AI
+Chatbot AI dựa trên một số công nghệ chủ đạo thứ nhất là công nghệ xử lý ngôn ngữ tự nhiên là nền tảng giúp chatbot hiểu được ngôn ngữ con người cho phép nó nhận diện câu hỏi, phân tích ngữ pháp, ngữ cảnh nhờ đó mà đưa ra phản hồi tự nhiên cho từng trường hợp cụ thể.
+Ngoài ra còn có các thuật toán máy học Machine Learning được sử dụng để chạy chatbot AI xử lý các truy vấn phản hồi dựa trên các dữ liệu giao tiếp được tích lũy được qua thời gian. Nhằm cải thiện độ chính xác của phản hồi. Để nâng cao khả năng xử lý phức tạp các mô hình học sâu được áp dụng có thể học được các đặc trưng trong dữ liệu, cung cấp những phản hồi tinh vi hay là sáng tạo ra các phản hồi không chỉ dựa trên dữ liệu đã học mà còn có khả năng “sáng tạo” nội dung mới mang lại [10].
+Các chatbot AI 
+Chatbot AI bán hàng: có khả năng hỗ trợ tự động hóa các hoạt động bán hàng 24/7. Có khả năng tương tác với khách hàng tiềm năng, tư vấn và gợi ý sản phẩm phù hợp cho khách hàng. Nhưng chatbot bán hàng không dùng các phần mềm xử lý ngôn ngữ tự nhiên nên chỉ cho phép tương tác thông qua block tương tác. 
+Chatbot AI chăm sóc khách hàng: tập trung vào việc chú tâm chăm sóc trả lời các vấn đề hay các câu hỏi theo kịch bản và dữ liệu sẵn có còn đối với các câu hỏi đơn giản sẽ tự động trả lời còn các câu hỏi phức tạp hơn sẽ tự động chuyển đến nhân viên chăm sóc giải quyết.
+Chatbot AI trò chuyện theo từ khóa: được vận hành dựa trên công nghệ Machine Learning có khả năng xử lý các truy vấn của người dùng thông qua các cụm từ liên quan đến câu hỏi.
+Chatbot AI trò chuyện theo ngữ cảnh: được lập trình dựa trên sự kết hợp ngôn ngữ xử lý tự nhiên và trí tuệ nhân tạo máy học ghi nhớ lại thông tin của người truy cập từ cuộc trò chuyện trước đó để chatbot đưa ra các câu trả lời phù hợp nhất.
+Ứng dụng chatbot vào dự án.
+Trong hệ thống bán hàng trực tuyến, Chatbot AI đóng vai trò là cầu nối giữa khách hàng và doanh nghiệp. Thay vì phải tự tìm kiếm thông tin sản phẩm hoặc chờ nhân viên tư vấn, khách hàng có thể nhận được sự hỗ trợ ngay lập tức thông qua chatbot. Điều này giúp rút ngắn thời gian tìm kiếm thông tin, nâng cao trải nghiệm mua sắm và góp phần tăng tỷ lệ chuyển đổi đơn hàng. Trong dự án, chatbot được tích hợp trực tiếp trên giao diện website và hoạt động như một trợ lý ảo thông minh 24/7. Hệ thống có khả năng đồng hành cùng khách hàng trong suốt quá trình mua sắm, hỗ trợ giải đáp thắc mắc, tư vấn sản phẩm, tìm kiếm thông tin và đưa ra các gợi ý phù hợp với nhu cầu của người dùng. Điểm khác biệt và nâng cấp của Chatbot trong dự án này so với các hệ thống chatbot truyền thống là việc áp dụng Trí tuệ nhân tạo (AI) kết hợp với kiến trúc RAG 
+1. Các kịch bản ứng dụng thực tế trong hệ thống
+Tư vấn và so sánh sản phẩm: Chatbot có khả năng truy vấn thông tin kỹ thuật của các dòng điện thoại từ cơ sở dữ liệu nội bộ (RAM, ROM, dung lượng pin, camera...) để trả lời chi tiết cho khách hàng hoặc đưa ra bảng so sánh trực quan giữa hai hoặc nhiều dòng máy.
+Hỗ trợ tìm kiếm sản phẩm theo nhu cầu cá nhân: Khách hàng có thể đưa ra các câu hỏi dạng ngôn ngữ tự nhiên như: "Tìm giúp tôi điện thoại Samsung tầm giá dưới 10 triệu đồng có camera chụp ảnh đẹp" hoặc "Tôi muốn mua máy chơi game pin trâu". Chatbot sẽ phân tích ý định và lọc ra danh sách sản phẩm phù hợp nhất.
+Giải đáp chính sách dịch vụ: Chatbot tự động trả lời các câu hỏi về chính sách bảo hành, chính sách đổi trả, quy trình giao hàng hoặc phương thức thanh toán của cửa hàng dựa trên tài liệu quy định nội bộ được cấu hình sẵn.
+2. Mô hình hoạt động và luồng dữ liệu (Data Flow)
+Hệ thống Chatbot vận hành thông qua sự kết hợp giữa Frontend, Node.js Backend và một dịch vụ xử lý AI độc lập viết bằng Python:
+Tiếp nhận yêu cầu (Frontend): Người dùng nhập câu hỏi vào khung chat trên website, yêu cầu được đóng gói và gửi về server Node.js qua endpoint /api/chatbot.
+Xử lý và Chuyển tiếp (Node.js Backend): Node.js tiếp nhận tin nhắn, thực hiện các bước kiểm tra cơ bản và chuyển tiếp dữ liệu đến máy chủ Python chuyên biệt.
+Truy xuất kiến thức nội bộ (Python RAG Service): Máy chủ Python sử dụng cơ chế RAG để tìm kiếm các thông tin liên quan nhất từ cơ sở dữ liệu sản phẩm và tài liệu chính sách của cửa hàng (Knowledge Base).
+Sinh câu trả lời (LLM): Dữ liệu truy xuất được kết hợp cùng câu hỏi gốc của khách hàng để làm ngữ cảnh (Context) đưa vào mô hình ngôn ngữ lớn (LLM). Mô hình sẽ sinh ra câu trả lời tự nhiên, chính xác và không bị sai lệch thông tin (Hallucination).
+Phản hồi người dùng: Câu trả lời được chuyển ngược về Node.js và hiển thị ngay lập tức lên khung chat của khách hàng.
+3. Lợi ích mang lại cho dự án
+Tối ưu hóa trải nghiệm khách hàng: Cung cấp câu trả lời tức thì, giảm thiểu thời gian chờ đợi của khách hàng khi cần tìm hiểu thông tin về sản phẩm.
+Tăng tỷ lệ chuyển đổi đơn hàng: Tư vấn đúng nhu cầu, đúng giá tiền ngay tại thời điểm khách hàng đang phân vân giúp thúc đẩy quyết định mua hàng nhanh chóng.
+Giảm tải vận hành cho cửa hàng: Hệ thống tự động xử lý hơn 80% các câu hỏi thường gặp (FAQs) về sản phẩm và chính sách, giúp đội ngũ nhân viên chăm sóc khách hàng tập trung vào các ca hỗ trợ phức tạp hoặc chốt đơn trực tiếp.
+Điểm khác biệt của chatbot trong đề tài: Chatbot được xây dựng dựa trên sự kết hợp giữa mô hình ngôn ngữ lớn (LLM), kiến trúc Retrieval-Augmented Generation (RAG) và hệ thống gợi ý sản phẩm cá nhân hóa. Nhờ cơ chế RAG, chatbot có thể truy xuất thông tin từ cơ sở dữ liệu và nguồn tri thức nội bộ của cửa hàng để tạo ra các câu trả lời chính xác và phù hợp với ngữ cảnh. Bên cạnh đó, hệ thống còn có khả năng đề xuất sản phẩm dựa trên nhu cầu của khách hàng, giúp nâng cao mức độ cá nhân hóa trong quá trình tư vấn và mua sắm.
+Mô hình LLM
+Mô hình ngôn ngữ lớn (Large Language Model - LLM) là một dạng mô hình trí tuệ nhân tạo được thiết kế để hiểu, phân tích và sinh ngôn ngữ tự nhiên. Các mô hình này được huấn luyện trên khối lượng dữ liệu văn bản rất lớn, bao gồm nhiều ngôn ngữ, chủ đề và ngữ cảnh khác nhau, giúp chúng có khả năng hiểu ý định của người dùng và tạo ra các phản hồi tự nhiên, mạch lạc. LLM hiện đại thường được xây dựng dựa trên kiến trúc Transformer, cho phép mô hình học các mối quan hệ ngữ nghĩa và ngữ cảnh trong văn bản một cách hiệu quả. Nhờ khả năng học sâu (Deep Learning), LLM có thể thực hiện nhiều tác vụ như trả lời câu hỏi, tóm tắt văn bản, dịch ngôn ngữ, phân tích nội dung và hỗ trợ hội thoại thông minh [10].
+Thành phần cơ bản
+Lớp embedding đóng vai trò quan trọng trong việc chuyển đổi văn bản sang vector số học;
+Lớp feedforward chịu trách nhiệm biến đổi các embedding thành các thông tin từ đó cải thiện khả năng xử lý ngữ nghĩa;
+Lớp recurrent xử lý các từ trong văn bản theo thứ tự tuần tự;
+Lớp attention quyết định giúp mô hình tập trung vào những phần quan trọng trong văn bản đầu vào.
+Ngoài ra còn có 3 mô hình chính là:
+Mô hình ngôn ngữ cơ bản: Chuyên dự đoán từ tiếp theo có khả năng xảy ra cao nhất dựa trên dữ liệu đã học. Thường dùng cho các tác vụ hoàn thành câu thô hoặc gõ phím thông minh.
+Mô hình ngôn ngữ có hướng dẫn: Dạng được huấn luyện để trả lời cho các văn bản đầu vào đã có trước đó nhằm nâng cao để thực hiện chính xác các yêu cầu mệnh lệnh trong prompt của người dùng.
+Mô hình ngôn ngữ đối thoại: Được tối ưu hóa chuyên biệt cho các cuộc hội thoại tương tác qua lại, có khả năng nhớ ngữ cảnh lịch sử chat để trả lời tự nhiên. Trong đồ án này, nhóm sử dụng mô hình đối thoại Llama 3.1 8B làm động cơ sinh câu trả lời cho khách hàng. 
+Giai đoạn đào tạo: LLM được huấn luyện bằng cách sử dụng một lượng lớn dữ liệu văn bản thu vào từ các nguồn mở quá trình này được diễn ra dưới dạng giám sát
+Giai đoạn tinh chỉnh: Sau khi được đào tạo cơ bản, LLM cần được tinh chỉnh để phù hợp với các tác vụ cụ thể, ví dụ như dịch thuật. Quá trình tinh chỉnh này giúp mô hình tập trung vào một số nhiệm vụ đặc thù, từ đó cải thiện độ chính xác và hiệu quả khi thực hiện các tác vụ đó.
+Kỹ thuật tinh chỉnh câu lệnh: Ngoài fine-tuning, prompt-tuning là một phương pháp hiệu quả để điều chỉnh LLM thực hiện các nhiệm vụ cụ thể thông qua các hướng dẫn rõ ràng (prompts)
+Ứng dụng LLM vào dự án
+Trong đồ án này, mô hình ngôn ngữ lớn (LLM) được sử dụng là Llama 3.1 8B thông qua nền tảng Groq API, đóng vai trò là thành phần trung tâm trong việc xử lý ngôn ngữ tự nhiên và điều phối các chức năng của hệ thống chatbot. Mô hình được ứng dụng để xử lý hội thoại, phân tích yêu cầu người dùng và sinh phản hồi tự nhiên. Kết hợp với kiến trúc RAG (Retrieval-Augmented Generation), hệ thống có khả năng khai thác nguồn tri thức nội bộ, từ đó nâng cao độ chính xác của câu trả lời và hạn chế hiện tượng sinh thông tin sai lệch.
+Định tuyến yêu cầu người dùng (Agentic Routing): Mô hình phân tích nội dung câu hỏi để xác định mục đích của người dùng, từ đó tự động chuyển yêu cầu đến luồng xử lý phù hợp như tư vấn sản phẩm hoặc truy vấn dữ liệu thống kê.
+Tư vấn sản phẩm thông minh (RAG Generator): LLM tiếp nhận dữ liệu sản phẩm được truy xuất từ cơ sở dữ liệu vector Chroma DB kết hợp với lịch sử hội thoại để tạo ra câu trả lời tự nhiên, mạch lạc và phù hợp với nhu cầu của khách hàng.
+Chuyển đổi ngôn ngữ tự nhiên sang SQL (Text-to-SQL): Đối với quản trị viên, hệ thống cho phép nhập các câu hỏi thống kê bằng tiếng Việt, chẳng hạn như “Doanh thu hôm nay” hoặc “Số đơn hàng chờ duyệt”. LLM sẽ tự động chuyển đổi các yêu cầu này thành câu lệnh SQL tương ứng để truy vấn dữ liệu từ cơ sở dữ liệu MySQL.
+Lý do lựa chọn Llama 3.1 8B là vì mô hình có khả năng xử lý ngôn ngữ tự nhiên hiệu quả, hỗ trợ tiếng Việt tương đối tốt và đáp ứng được yêu cầu của hệ thống chatbot bán hàng. Bên cạnh đó, việc kết hợp với Groq API giúp tăng tốc độ phản hồi, giảm độ trễ trong quá trình xử lý, đồng thời tối ưu chi phí triển khai, phù hợp với phạm vi và mục tiêu của đồ án tốt nghiệp.
+Mô hình RAG
+RAG (Retrieval-Augmented Generation – Sinh văn bản tăng cường truy xuất) là một kiến trúc trí tuệ nhân tạo kết hợp giữa khả năng truy xuất thông tin của hệ thống Information Retrieval và khả năng sinh ngôn ngữ tự nhiên của các mô hình ngôn ngữ lớn (Large Language Models – LLMs). Khái niệm này được giới thiệu lần đầu trong nghiên cứu Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks bởi Patrick Lewis cùng các cộng sự tại Facebook AI Research vào năm 2020.
+Trong nghiên cứu này, RAG được xây dựng như một mô hình lai (hybrid probabilistic model) nhằm kết hợp giữa hai dạng bộ nhớ cốt lõi:
+Parametric Memory (Bộ nhớ tham số): Là phần tri thức được lưu trữ bên trong các trọng số (weights) của một mô hình ngôn ngữ đã được huấn luyện trước. Trong kiến trúc RAG gốc, nhóm tác giả sử dụng mô hình BART làm thành phần sinh văn bản (Generator). Bộ nhớ này giúp mô hình hiểu ngữ pháp, ngữ nghĩa và cách hành văn tự nhiên.
+Non-Parametric Memory (Bộ nhớ phi tham số): Là nguồn tri thức bên ngoài được lưu dưới dạng chỉ mục vector (dense vector index) chứa các đoạn văn bản từ tài liệu hoặc cơ sở dữ liệu. Thành phần này được truy cập thông qua bộ truy xuất dữ liệu (Retriever). Nó cho phép bổ sung, cập nhật kiến thức liên tục mà không cần huấn luyện lại mô hình gốc.
+Mục tiêu chính của RAG là khắc phục các hạn chế của mô hình ngôn ngữ truyền thống, chẳng hạn như hiện tượng sinh ra thông tin không chính xác (hallucination), giới hạn tri thức do dữ liệu huấn luyện bị giới hạn theo thời gian (knowledge cutoff), cũng như khả năng thiếu hụt dữ liệu chuyên ngành hoặc dữ liệu nội bộ của tổ chức. Thay vì chỉ phụ thuộc vào kiến thức đã học trong quá trình huấn luyện, RAG cho phép mô hình truy xuất thêm dữ liệu từ nguồn bên ngoài để hỗ trợ quá trình tạo câu trả lời có độ chính xác và tính cập nhật cao hơn [10].
+Cơ chế hoạt động của mô hình
+Kiến trúc mô hình RAG hoạt động thường thông qua hai giai đoạn chính:
+A. Giai đoạn chuẩn bị dữ liệu (Data Indexing Pipeline)
+Phân mảnh (Chunking): Những tài liệu hay văn bản có kích thước lớn được chia thành nhiều đoạn văn bản nhỏ hơn nhằm giữ được những ngữ nghĩa ngữ cảnh có nội dung và phù hợp với những giới hạn xử lý của mô hình.
+Nhúng vector (Embedding): Các đoạn văn bản này được phân mảnh sẽ được chuyển đổi thành những vector số thông qua mô hình nhúng (Embedding Model). Những vector này biểu diễn ý nghĩa ngữ nghĩa của văn bản không gian nhiều chiều.
+Lưu trữ (Storage): Các vector cùng thông tin mô tả sẽ được hệ thống lưu trữ trong hệ thống chỉ mục của vector hoặc cơ sở dữ liệu để phục vụ cho việc tìm kiếm ngữ nghĩa với tốc độ cao. 
+B. Giai đoạn Truy xuất và Sinh văn bản (Retrieval and Generation Pipeline)
+Truy vấn (Query Embedding): Câu hỏi của người dùng được chuyển đổi thành vector bằng chính mô hình nhúng đã sử dụng ở giai đoạn chuẩn bị dữ liệu.
+Truy xuất dữ liệu (Retrieval): Hệ thống so sánh vector câu hỏi với các vector trong cơ sở dữ liệu để tìm ra các đoạn văn bản có độ tương đồng về nghĩa cao nhất
+Tăng cường ngữ cảnh (Augmentation): Các đoạn văn trên sau khi được truy xuất sẽ được kết hợp với câu hỏi ban đầu để tạo thành một khuôn mẫu câu hỏi nhằm cung cấp thêm ngữ cảnh thực tế cho mô hình.
+Sinh văn bản (Generation): Mô hình ngôn ngữ lớn sẽ được sử dụng phần ngữ nghĩa cùng với ngữ cảnh đã được bổ sung để tạo ra câu trả lời hoàn chỉnh với ngôn ngữ tự nhiên nhất [10].
+Cơ sở toán học 
+Phương pháp phổ biến hiện nay của RAG  là đo lường độ tương đồng phép tích vô hướng ( Dot Product) hay độ tương đồng cosine. Phép tích vô hướng , độ tương đồng giữa vector câu hỏi Q và vector tài liệu là D được tính theo công thức:
+.  
+Trong đó:
+Q: vector biểu diễn câu hỏi của người dùng 
+D: vector biểu diễn tài liệu 
+n: số chiều của vector embedding 
+Giá trị Score(Q,D) càng lớn thì mức độ tương đồng ngữ nghĩa giữa câu hỏi và tài liệu càng cao.
+ Ví dụ: Giả sử hệ thống tư vấn điện thoại sử dụng vector gồm 2 chiều đặc trưng
+Chiều 1: Hiệu năng chơi game 
+Chiều 2: Chất lượng camera 
+Các sản phẩm trong cơ sở dữ liệu được biểu diễn như sau:
+Sản phẩm A (iPhone 15 Pro Max): 
+Sản phẩm B (điện thoại giá rẻ): 
+Người dùng đặt câu hỏi:
+“Tư vấn điện thoại chơi game mượt, không cần camera quá tốt.”
+Sau khi qua mô hình embedding, câu hỏi được biểu diễn thành vector:
+
+Hệ thống sẽ tính độ tương đồng:
+Đối với sản phẩm A: 
+
+
+Đối với sản phẩm B: 
+
+
+Kết quả cho thấy sản phẩm A có độ tương đồng cao hơn nên sẽ được Retriever ưu tiên lựa chọn. Thông tin của sản phẩm này sẽ được đưa vào Prompt tăng cường ngữ cảnh trước khi chuyển cho mô hình ngôn ngữ lớn (LLM) sinh câu trả lời cuối cùng.
+Bản chất của cơ chế Retrieval trong RAG là biểu diễn ngữ nghĩa của văn bản trong không gian vector nhiều chiều. Những câu hoặc tài liệu có ý nghĩa tương đồng sẽ có vị trí gần nhau trong không gian này, ngay cả khi chúng không chứa cùng từ khóa. Nhờ đó, RAG có thể tìm kiếm thông tin dựa trên ngữ nghĩa thay vì chỉ dựa trên từ khóa truyền thống.
+Ưu nhược điểm của RAG
+Ưu điểm:
+Đơn giản và hiệu quả: Phương pháp đơn giản và hiệu quả dễ sửa dụng, dùng đoạn văn (chunk) cho cả embedding, synthesis (tổng hợp ra câu phản hồi), đơn giản hóa quá trình retrieval.
+Đồng nhất trong xử lý dữ liệu: Nó duy trì tính nhất quán trong dữ liệu được sử dụng trong cả 2 giai đoạn retrieval và synthesis.
+Nhược điểm:
+Hạn chế trong hiểu ngữ cảnh: LLMs yêu cầu ngữ cảnh đầy đủ hơn cho việc tổng hợp ra phản hồi tốt hơn nhưng phương pháp này lại không thể cung cấp đầy đủ được.
+Các phản hồi được sinh ra có thể không tối ưu: Do ngữ cảnh bị hạn chế, chính vì thế LLM có thể không có đủ thông tin để tạo ra phản hồi chính xác và phù hợp nhất.
+Ứng dụng mô hình RAG với dự án
+Trên nền tảng lý thuyết cốt lõi trung tâm hệ thống chatbot tư vấn sẽ được xây dựng bám sát kiến trúc mô hình, đồng thời mở rộng thêm tác tử định tuyến để phù hợp với nghiệp vụ thương mại điện tử thực tế hiện nay.
+Ánh xạ các thành phần bộ nhớ.
+Bộ nhớ tham số (Parametric Memory): trong dự án này mô hình được đảm nhận bởi mô hình Gemini 2.5 Flash (Thông qua chatGooleGenrativeAI). Mô hình này được cung cấp cho năng lực thấu hiểu ngôn ngữ tự nhiên sâu sắc, phân tích ý định người dùng và sinh ra các câu tư vấn bán hàng trôi chảy và thân thiện;
+Bộ nhớ phi tham số (Non-Parametric Memory): kho tri thức độc quyền của hệ thống được lưu trữ tại cơ sở dữ liệu vector Chroma DB, nơi đây lưu giữ toàn bộ dữ liệu nghiệp vụ liên quan.
+Giai đoạn chuẩn bị tri thức (Data Indexing) thay vì trích xuất từ tài liệu tĩnh, dự án áp dụng phương pháp Structured Chunking nó là phân mảnh có cấu trúc trực tiếp từ cơ sở dữ liệu liên quan trong MySQL đang dữ liệu. 
+Giai đoạn truy xuất và sinh văn bản (Retrieval và Generation) Thông qua thư viện LangChain, quy trình xử lý câu hỏi của khách hàng diễn ra:
+Hệ thống sử dụng thuật toán tìm kiếm tương đồng vector để truy xuất ra top 15 sát nhất với ý định của khách hàng;
+Bên cạnh đó hệ thống sẽ thu thập 5 đoạn chat hội thoại gần nhất của khách hàng để duy trì bối cảnh. 
+Điểm cải tiến: Lớp định tuyến tác tử (Agentic Routing) Vượt ra ngoài RAG  truyền thống là vì hệ thống dự án được tích hợp một lớp định tuyến bằng LLM trước khi thực hiện truy xuất, câu hỏi được được đánh giá phân loại. Nếu là câu hỏi về tra cứu sản phẩm hay tư vấn, hệ thống sẽ đi theo luồng xử lý RAG như trên. Bên cạnh đó người quản trị hỏi về doanh thu số lượng đơn hàng KPI hệ thống sẽ sang luồng Text-to-SQL, cho phép chuyển đổi ngôn ngữ tự nhiên thành câu lệnh SQL để truy vấn thống kê, biến chatbot thành một trợ lý toàn diện cho cả khách hàng và ban quản trị.  
+Hệ thống gợi ý cá nhân hóa người dùng
+Collaborative Filtering 
+Lọc cộng tác là quá trình lọc thông tin hoặc mẫu bằng cách sử dụng các kỹ thuật liên quan đến sự hợp tác giữa nhiều tác nhân, quan điểm, nguồn dữ liệu với nhau như tập trung vào hành vi của cộng đồng người dùng [11].
+Hệ thống này chia ra làm hai bước đơn giản:
+tìm những người có cùng mô hình đánh giá với người dùng hiện tại tức là người dùng mà dự đoán hướng đến.
+sử dụng xếp hạng từ những người có cùng quan điểm để tìm được ở bước 1 để tính toán dự đoán cho người dùng hoạt động.
+Ví dụ: Người dùng nam đã mua chuối, người nữ đã mua lê. Hệ thống sẽ nhận nam đã nữ có sở thích tương tự ( cùng mua những loại trái cây giống nhau trong những trường hợp khác).Do đó, hệ thống dự đoán rằng nữ có thể cũng sẽ thích chuối vs gợi ý chuối cho nữ. 
+
+Hình 2.10 Ví dụ lọc cộng tác
+Content-Based Filtering 
+Là phương pháp gợi ý dựa trên những đặc điểm và thuộc tính của sản phẩm hoặc nội dung mà người dùng đã từng quan tâm trước đó. Hệ thống đề xuất cho người dùng bên cạnh đó chủ yếu tập trung chủ yếu vào hồ sơ sở thích, lịch sử tương tác như lượt xem, lượt thích [12].
+Nguyên lý hoạt động 
+Thu thập đặc trưng sản phẩm: Hệ thống phân tích thuộc tính của sản phẩm như tên hay mô tả các từ khóa liên quan.
+Dữ liệu: Thuộc tính được chuyển thành vector số thông qua các kỹ thuật.
+Xây dựng hồ sơ người dùng: Xác định sở thích của người và sản phẩm mà họ tương tác trước đó.
+Tính độ tương đồng: Tính độ tương đồng giữa hồ sơ người dùng và sản phẩm.
+Đề xuất sản phẩm: Đưa lên những sản phẩm có độ tương đồng cao được hệ thống gợi ý cho người dùng.
+Ví dụ: Gợi ý các item dựa vào hồ sơ (profiles) của người dùng hoặc dựa vào nội dung/thuộc tính (attributes) của những item tương tự như item mà người dùng đã chọn trong quá khứ.
+
+Hình 2.11 Ví dụ lọc nội dung
+Hybrid Recommendation
+phương pháp lai kết hợp lọc cộng tác, lọc nội dung dựa trên các phương pháp khác. Các nền tảng thương mại điện tử thường sử dụng các phương pháp lai để khắc phục các vấn đề như vấn đề khởi đầu, trong đó người dùng mới không có lịch sử để lọc cộng tác phân tích. Không có lý do gì mà một số kỹ thuật khác nhau cùng loại không thể được kết hợp. Các phương pháp lai có thể được triển khai theo nhiều cách: bằng cách đưa ra dự đoán dựa trên nội dung và dựa trên cộng tác riêng biệt rồi kết hợp chúng; bằng cách thêm khả năng dựa trên nội dung vào phương pháp dựa trên cộng tác (và ngược lại); hoặc bằng cách hợp nhất các phương pháp thành một mô hình [13]. 
+Một số kỹ thuật lai ghép bao gồm:
+Có trọng số: Kết hợp điểm số của các thành phần đề xuất khác nhau theo phương pháp số học.
+Chuyển đổi: Lựa chọn giữa các thành phần đề xuất và áp dụng thành phần đã chọn.
+Kết hợp: Các đề xuất từ nhiều nguồn khác nhau được trình bày cùng nhau để đưa ra đề xuất cuối cùng.
+Thuật toán xếp tầng (Cascade ): Các hệ thống đề xuất được ưu tiên nghiêm ngặt, trong đó các hệ thống có độ ưu tiên thấp hơn sẽ quyết định khi có sự trùng điểm giữa các hệ thống có độ ưu tiên cao hơn.
+Cấp độ siêu cấp: Một kỹ thuật đề xuất được áp dụng và tạo ra một loại mô hình nào đó, sau đó được sử dụng làm đầu vào bởi kỹ thuật tiếp theo. 
+Thuật toán Apriori
+Thuật toán Apriori là một trong những thuật toán khai phá dữ liệu phổ biến được sử dụng để tìm ra các tập mục thường xuyên (Frequent Itemsets) và xây dựng các luật kết hợp (Association Rules) từ dữ liệu giao dịch. Thuật toán hoạt động dựa trên nguyên lý: nếu một tập dữ liệu là phổ biến thì mọi tập con của nó cũng phải là phổ biến. Nhờ đặc điểm này, Apriori giúp loại bỏ sớm các tập dữ liệu không thỏa điều kiện, từ đó giảm đáng kể số lượng phép tính cần thực hiện.
+Quá trình hoạt động của Apriori bao gồm các bước chính:
+Thu thập dữ liệu: Hệ thống lấy dữ liệu từ lịch sử mua hàng của khách hàng. Mỗi đơn hàng được xem là một giao dịch chứa các sản phẩm đã mua.
+Tìm các sản phẩm xuất hiện nhiều: Thuật toán thống kê số lần xuất hiện của từng sản phẩm hoặc nhóm sản phẩm và chỉ giữ lại những sản phẩm có số lần xuất hiện lớn hơn ngưỡng Support đã đặt.
+Tạo các nhóm sản phẩm lớn hơn: Từ các sản phẩm phổ biến, thuật toán tiếp tục kết hợp chúng thành các nhóm sản phẩm lớn hơn và kiểm tra lại điều kiện Support. Quá trình này lặp lại cho đến khi không còn nhóm sản phẩm nào đạt yêu cầu.
+Tạo luật kết hợp: Từ các nhóm sản phẩm phổ biến, thuật toán tạo ra các luật kết hợp và tính độ tin cậy (Confidence) để xác định những sản phẩm thường được mua cùng nhau.
+Gợi ý sản phẩm: Các luật có độ tin cậy cao sẽ được hệ thống sử dụng để gợi ý sản phẩm mua kèm cho khách hàng khi xem hoặc mua một sản phẩm trong cửa hàng.
+Ví dụ: Nếu nhiều khách hàng mua iPhone 16 thường mua thêm ốp lưng và kính cường lực, hệ thống sẽ gợi ý hai sản phẩm này khi khách hàng chọn mua iPhone 16.
+Trong đề tài này, thuật toán Apriori được áp dụng để phân tích lịch sử mua hàng của khách hàng nhằm phát hiện những sản phẩm thường được mua cùng nhau. Kết quả của thuật toán được sử dụng để xây dựng chức năng “Gợi ý mua kèm”, giúp hệ thống đề xuất các phụ kiện hoặc sản phẩm liên quan phù hợp với sản phẩm mà khách hàng đang xem hoặc đã thêm vào giỏ hàng, góp phần nâng cao trải nghiệm mua sắm và tăng doanh thu cho cửa hàng.
+ Thuật toán K-Nearest Neighbors (KNN)
+K-Nearest Neighbors (KNN) là một thuật toán học máy đơn giản nhưng hiệu quả, thường được sử dụng trong các bài toán phân loại, dự đoán và gợi ý sản phẩm. Ý tưởng của thuật toán là tìm ra K đối tượng có đặc điểm giống nhất với đối tượng cần xét, sau đó đưa ra kết quả dựa trên những đối tượng lân cận đó. 
+Quá trình hoạt động của thuật toán KNN
+Thu thập dữ liệu: Hệ thống lấy thông tin của khách hàng như sở thích, thương hiệu yêu thích hoặc lịch sử mua hàng.
+Tính độ tương đồng: Hệ thống so sánh khách hàng hiện tại với các khách hàng khác để xác định mức độ giống nhau.
+Chọn K khách hàng gần nhất: Thuật toán chọn ra K khách hàng có độ tương đồng cao nhất với khách hàng hiện tại.
+Phân tích dữ liệu của các khách hàng gần nhất: Hệ thống tổng hợp các sản phẩm mà những khách hàng này đã xem hoặc đã mua.
+Gợi ý sản phẩm: Các sản phẩm được nhiều khách hàng tương đồng quan tâm sẽ được đề xuất cho khách hàng hiện tại.
+Ví dụ: Khách hàng A có sở thích Samsung, màn hình AMOLED và chơi game. Sau khi so sánh, hệ thống tìm thấy 5 khách hàng có sở thích tương tự. Nếu phần lớn các khách hàng này đã mua Samsung Galaxy S25, hệ thống sẽ gợi ý sản phẩm này cho khách hàng A.
+Trong đề tài này, thuật toán KNN được áp dụng để xây dựng chức năng “Khách hàng cùng sở thích”. Hệ thống sử dụng thông tin sở thích của người dùng để xác định những khách hàng có đặc điểm tương đồng, sau đó đề xuất các sản phẩm mà những khách hàng này đã quan tâm hoặc đã mua. Phương pháp này giúp nâng cao khả năng cá nhân hóa và cải thiện độ chính xác của hệ thống gợi ý sản phẩm.
+
+HIỆN THỰC HÓA NGHIÊN CỨU
+Mô tả hệ thống
+Hệ thống xây dựng website bán hàng tích hợp chatbot AI hỗ trợ tư vấn và gợi ý sản phẩm được xây dựng nhằm hỗ trợ khách hàng tra cứu thông tin sản phẩm, thực hiện mua sắm trực tuyến một cách tiện lợi nhanh chóng và giúp quản trị viên quản lý toàn bộ hoạt động kinh doanh của cửa hàng ngoài ra nhân viên sẽ hỗ trợ quản lý để giảm nhẹ gánh nặng cho quản trị viên. Bên cạnh đó hệ thống được phát triển theo mô hình Client – Server, trong đó frontend được xây dựng bằng HTML, CSS, JavaScript và Tailwind CSS.  Backend sẽ được phát triển bằng Node.js và Express.js dữ liệu được quản lý bằng hệ quản trị cơ sở dữ liệu MySQL đồng thời AI được huấn luyện bằng Python với mô hình RAG  nhằm đáp ứng yêu cầu của đề tài.
+Kiến trúc hệ thống
+
+Hình 3.1 Sơ đồ Kiến trúc hệ thống
+Để triển khai hệ thống một cách tối ưu và dễ dàng bảo trì, kiến trúc tổng thể của dự án được thiết kế theo mô hình phân lớp hệ thống sẽ chia thành 4 lớp riêng biệt, mỗi phân hệ sẽ đảm nhận một vai trò cụ thể nhằm giảm sự phụ thuộc lẫn nhau.
+1. Lớp giao diện (Client Layer)Đây là phần giao diện tiếp xúc trực tiếp với người dùng. Tầng này được xây dựng chủ yếu bằng các công nghệ web cơ bản như HTML5, CSS3 và JavaScript. Để tiết kiệm thời gian code và giữ cho giao diện luôn đồng nhất, dự án có tích hợp thêm CSS framework là TailwindCSS.Về cơ bản, phần giao diện sẽ giải quyết 3 bài toán hiển thị:
+Trang web dành cho khách (Customer Website): Cung cấp các luồng chức năng mua sắm như lướt xem danh mục, tìm kiếm, thêm vào giỏ, đặt hàng, đánh giá và quản lý thông tin cá nhân;
+Trang quản trị (Admin Dashboard): Khu vực dành riêng cho chủ shop hoặc admin để theo dõi kho, duyệt đơn, tạo mã khuyến mãi, cũng như xem các biểu đồ thống kê doanh thu;
+Hiển thị linh hoạt (Mobile Browser): Giao diện được thiết kế chuẩn Responsive, tự động co giãn đẹp mắt dù khách hàng dùng trình duyệt trên máy tính bàn hay điện thoại;
+2. Lớp xử lý trung tâm (Server Layer)Đóng vai trò như người giao tiếp với client, tầng Server được xây dựng bằng Node.js kết hợp cùng framework Express.js. Điểm mạnh là khả năng xử lý bất đồng bộ rất tốt, phù hợp chuẩn với các web bán hàng có lượng request lớn.Hệ thống tận dụng khá nhiều các middleware quen thuộc để xử lý nghiệp vụ:
+CORS: Dùng để chặn và kiểm soát truy cập từ các domain khác nhau;
+Session & JWT (qua Passport.js): Lo phần chứng thực tài khoản, giúp bảo mật phiên đăng nhập của người dùng an toàn hơn;
+Multer: Hỗ trợ mảng xử lý luồng upload file (khi admin tải ảnh sản phẩm);
+Nodemailer: Đảm nhận việc tự động đẩy luồng email như lúc khách cần lấy lại mật khẩu hay thông báo chốt đơn thành công.
+Toàn bộ quá trình trao đổi dữ liệu giữa frontend và server được thực hiện thông qua các API RESTful với định dạng JSON. Hệ thống phân chia các endpoint một cách rõ ràng theo từng chức năng, chẳng hạn như /api/products, /api/orders, /api/chatbot, giúp việc phát triển, bảo trì và mở rộng hệ thống trở nên thuận tiện hơn.
+3. Lớp dịch vụ Trí tuệ nhân tạo (AI & Recommendation Service)Do Node.js không được tối ưu hóa cho các tác vụ tính toán nặng và song song của Trí tuệ nhân tạo, nhóm thực hiện quyết định tách biệt chức năng này thành một AI Service chạy bằng Python (sử dụng FastAPI). Phân hệ Python AI này sẽ liên thông với Backend chính (Node.js) thông qua giao thức HTTP RESTful API. Khi người dùng gửi câu hỏi chat hoặc yêu cầu gợi ý, Node.js sẽ gửi yêu cầu sang Python Service để xử lý thông qua các thư viện như LangChain (quản lý RAG), ChromaDB (tìm kiếm vector) và thuật toán KNN, sau đó nhận kết quả trả về hiển thị lên giao diện:
+Động cơ RAG (RAG Engine): Xây dựng một chatbot hiểu rõ thông tin cửa hàng, lấy kiến thức của shop để trả lời thắc mắc cho khách một cách linh hoạt nhất. Bọn mình kết hợp dùng cơ sở dữ liệu vector ChromaDB để việc bóc tách văn bản trở nên nhanh chóng;
+Động cơ Đề xuất (Recommend Engine): Hệ thống sẽ chấm điểm và gợi ý các sản phẩm liên quan dựa trên nhu cầu, thói quen để kích thích hành vi mua hàng.
+4. Lớp lưu trữ dữ liệu (Data Layer)Ở tầng cuối cùng, dự án sử dụng MySQL làm hệ quản trị cơ sở dữ liệu chính nhờ tính ổn định của cơ sở dữ liệu quan hệ. Database được chuẩn hóa khá kỹ, bao gồm việc bóc tách thành các cụm bảng (table) chính để thông tin không bị dư thừa:
+Nhóm quản lý người dùng: Gồm khach_hang, admin;
+Nhóm dữ liệu sản phẩm: Gồm san_pham, khuyen_mai;
+Nhóm luồng giao dịch: Chứa don_hang, gio_hang, thanh_toan;
+Nhóm thông tin, tương tác, liên hệ.
+Giữa các bảng này được thiết lập các ràng buộc khóa ngoại khắt khe. Việc này giúp bảo vệ tính vẹn toàn của dữ liệu, và tự động xử lý (cascade) các record liên quan nếu có thao tác xóa hay cập nhật xảy ra.
+Sơ đồ quy trình hoạt động chatbot AI
+
+
+Chức năng hệ thống
+Mô hình thực thể kết hợp ERD
+
+Hình 3.2 Mô hình thực thể kết hợp ERD
+Sơ đồ lớp
+
+Hình 3.3 Sơ đồ lớp
+Sơ đồ Usecase
+
+Hình 3.4 Sơ đồ User 
+Sơ đồ mô tả bốn nhóm người dùng chính: Khách vãng lai, Khách hàng (thành viên), nhân viên và admin, mỗi nhóm có quyền truy cập các chức năng khác nhau trong hệ thống website Quang Hưng Mobile.
+ Khách vãng lai có thể xem các nội dung công khai như: trang chủ, thông tin sản phẩm và tin tức. 
+Khách hàng (người dùng đã đăng ký) được sử dụng thêm các chức năng nâng cao như: đăng ký, đăng nhập, tìm kiếm sản phẩm, đặt hàng và đánh giá sản phẩm.
+Nhân viên có quyền bán hàng, xem sản phẩm, đăng nhập vào hệ thống nhần giảm nhẹ lượng công việc của admin. 
+Admin có quyền quản trị hệ thống, bao gồm: quản lý sản phẩm, quản lý khách hàng, quản lý tin tức, quản lý danh mục, quản lý đơn hàng và xem thống kê báo cáo. Sơ đồ thể hiện rõ ràng phạm vi hệ thống và mối liên hệ giữa các actor với các chức năng tương ứng.
+Sơ đồ phân cấp chức năng hệ thống 
+
+Hình 3.5 Sơ đồ phân cấp chức năng
+Chức năng dành cho khách hàng
+Xem danh sách sản phẩm là: Khách hàng có thể xem danh sách điện thoại theo thương hiệu, mức giá hoặc danh mục sản phẩm có trong trang web. Mỗi sản phẩm được hiển thị đầy đủ tên, hình ảnh, giá bán, khuyến mãi và số lượng còn lại của chúng.
+Tìm kiếm & lọc sản phẩm: Hệ thống hỗ trợ tìm kiếm theo từ khóa và lọc nâng cao theo: Thương hiệu (Apple, Samsung, Xiaomi,…), khoảng giá, dung lượng bộ nhớ, tính năng nổi bật qua đây giúp người dùng nhanh chóng tìm sản phẩm phù hợp.
+Xem chi tiết sản phẩm bao gồm: Mô tả sản phẩm, hình ảnh chất lượng cao ,cấu hình chi tiết, số lượng hàng, chính sách bảo hành qua đây người dùng có thể thêm sản phẩm vào giỏ hàng ngay tại trang này hoặc ấn mua trực tiếp mà không cần thêm vào giỏ hàng cửa người dùng.
+Giỏ hàng: ở đây người dùng có thể thêm/xóa sản phẩm, cập nhật số lượng, tính tổng tiền tự động và áp dụng mã khuyến mãi (nếu có) cho từng sản phẩm.
+Đặt hàng: Khách hàng sẽ nhập thông tin cá nhân gồm: Họ tên, số điện thoại, địa chỉ nhận hàng sau khi nhận được thông tin hệ thống tạo đơn hàng và ghi nhận vào cơ sở dữ liệu cho đối tượng người dùng.
+Thanh toán hỗ trợ hai hình thức: COD (trả tiền khi nhận hàng) hoặc có thể Thanh toán QR Code (mã QR có thời gian hết hạn để tránh gian lận)
+ Hỗ trợ tư vấn: Website tích hợp chatbot AI để trả lời các câu hỏi tư vấn cùng với gợi ý sản phẩm cho người dùng.
+Chức năng nhận gợi ý phụ kiện hậu mãi (Cross-selling): Ngay sau khi đơn hàng chuyển sang trạng thái "Hoàn thành", hệ thống tự động tìm các phụ kiện tương thích (như bao da, kính cường lực) dành riêng cho dòng máy khách vừa mua để hiển thị ở mục gợi ý cá nhân hóa.
+Chức năng tra cứu và yêu cầu bảo hành chủ động qua Chatbot: Khách hàng có thể chat trực tiếp với chatbot để hỏi về thời hạn bảo hành còn lại của máy đã mua. Chatbot tự động truy vấn thông tin đơn hàng và IMEI để trả lời kèm hướng dẫn đăng ký đổi trả trong vòng 7 ngày đầu tiên nếu máy gặp lỗi phần cứng.
+Chức năng dành cho quản trị viên 
+Quản lý sản phẩm admin: Sẽ Thêm sản phẩm mới, sửa thông tin (giá, cấu hình, hình ảnh, tồn kho,…), xóa hoặc vô hiệu hóa sản phẩm, hình ảnh được tải lên máy chủ và liên kết tự động với sản phẩm.
+Quản lý danh mục & thương hiệu phân chia các nhóm điện thoại theo: Hãng sản xuất và Loại sản phẩm Giúp người quản lý dễ truy vấn và kiểm tra một cách nhanh chóng và tiện lợi hơn
+ Quản lý người dùng: theo dõi tài khoản khách hàng, lịch sử mua hàng và trạng thái hoạt động của tài khoản để quản trị viên đánh giá tiềm năng của khách hàng đó cùng với nhu cầu mua sắm để tổng hợp lại và phát triển hệ thống.
+Quản lý đơn hàng admin: có thể xác nhận đơn hàng, cập nhật trạng thái (đã xử lý, đang giao, hoàn thành, đã hủy), xem chi tiết đơn hàng theo thời gian, xuất báo cáo theo ngày,tháng 
+Quản lý tin tức và khuyến mãi: Cho phép thêm, sửa, xóa bài viết, quản lý chương trình giảm giá sau đó gửi thông báo cho khách hàng biết được những tin tức và khuyến mãi mới nhât.
+Thống kê và báo cáo:  Tổng hợp thống kê doanh thu theo tháng, sản phẩm bán chạy, số lượng đơn hàng theo trạng thái, dữ liệu được trực quan bằng biểu đồ.
+Chức năng dành cho Khách vãng lai:
+Xem tin tức: Đọc các bài viết, tin tức về công nghệ
+Xem trang chủ: Truy cập và xem giao diện trang chủ website
+Cơ chế thu thập thông tin khách hàng tiềm năng: Khi khách vãng lai trò chuyện hỏi giá hoặc thông số máy, chatbot AI sẽ tự động đề xuất tặng mã giảm giá ưu đãi 10% cho lần mua đầu tiên với điều kiện khách hàng cung cấp Email hoặc Số điện thoại để hệ thống gửi mã. Thông tin này được lưu lại để phục vụ các chiến dịch tiếp thị và chăm sóc khách hàng về sau
+Yêu cầu phi chức năng
+Hệ thống đảm bảo tải trang nhanh, API phản hồi mượt mà và tối ưu hình ảnh bằng lazy loading, cache dữ liệu. 
+Mật khẩu được mã hóa bcrypt, sử dụng HTTPS, bảo vệ chống SQL Injection, XSS, CSRF, token có thời hạn và mã QR thanh toán tự hết hạn. Giao diện responsive tương thích Desktop, Tablet, Mobile và các trình duyệt phổ biến, thông báo lỗi rõ ràng bằng tiếng Việt.
+ Hệ thống hoạt động ổn định, backup dữ liệu định kỳ và ghi log các hoạt động quan trọng. Kiến trúc cho phép nâng cấp khi lượng sản phẩm và đơn hàng tăng. Hệ thống tích hợp được với các cổng thanh toán và dịch vụ vận chuyển phổ biến tại Việt Nam. Giao diện hoàn toàn tiếng Việt, định dạng tiền VNĐ, ngày DD/MM/YYYY và múi giờ Việt Nam.
+Thiết kế dữ liệu
+Để giao tiếp giữa Frontend (giao diện website) và Backend (Node.js) được trơn tru, toàn bộ hệ thống API của dự án đều được thiết kế dựa trên tiêu chuẩn RESTful. Định dạng dữ liệu trả về được thống nhất dùng JSON dễ dàng bóc tách dữ liệu client.
+Về mặt tổ chức, các API endpoint được chia ra theo từng cụm chức năng riêng biệt để code không bị rối và dễ debug hơn khi ráp nối:
+A. Nhóm chức năng Quản lý Tài khoản (Authentication)Nhóm phân luồng đầu vào, giải quyết các tác vụ liên quan đến bảo mật và phiên đăng nhập của người dùng.
+Đăng ký và xác thực: Để đảm bảo user dùng email thật, khi gọi POST /api/auth/send-otp hệ thống sẽ đẩy mã OTP về mail. Sau đó POST /api/auth/verify-otp và POST /api/auth/register sẽ chịu trách nhiệm check lại OTP và tạo tài khoản mới;
+Đăng nhập và phân quyền: Nhóm thiết kế POST/api/auth/login dành cho khách và một nhánh an toàn hơn POST/api/auth/admin/login dành riêng cho quản trị viên. Kết hợp thêm GET/api/auth/google cho phép người dùng click đăng nhập nhanh qua Google OAuth mà không cần nhớ pass;
+Tác vụ bảo mật: Các lệnh PUT/api/auth/profile/:id;
+POST /api/auth/forgot-password, POST /api/auth/reset-password vàPUT /api/auth/change-password/:id được sử dụng để xử lý các chức năng liên quan đến bảo mật tài khoản như cập nhật thông tin cá nhân, quên mật khẩu và thay đổi mật khẩu của khách hàng;
+B. Nhóm chức năng Sản phẩm (Products)Block này đảm nhận việc kéo dữ liệu điện thoại từ cơ sở dữ liệu lên website.
+GET/api/products: Trả về danh mục tổng, nhóm có cài cắm thêm khả năng nhận tham số để tìm kiếm theo tên hoặc lọc, sắp xếp mức giá;
+GET/api/products/brand/:brandId và GET/api/products/:id: Bóc tách sản phẩm theo hãng (như Apple, Samsung...) và lấy toàn bộ thông số kỹ thuật (RAM, ROM...) của một sản phẩm khi khách bấm vào xem chi tiết;
+GET/api/products/top-selling và GET/api/products/related/:id: Hỗ trợ kích cầu bằng cách chưng ra các mẫu máy bán chạy hoặc máy có cấu hình tương đương ở phía dưới màn hình;
+C. Nhóm Quản lý Giỏ hàng (Cart)Để mang lại trải nghiệm mua sắm quen thuộc, luồng giỏ hàng được quản lý chặt chẽ theo ID người dùng:
+GET/api/cart/:userId: Cập nhật trạng thái giỏ hàng khi user vừa load trang;
+POST /api/cart và PUT /api/cart/update: Cho phép thêm mới điện thoại hoặc nhấn dấu (+), (-) để tăng/giảm số lượng thiết bị muốn mua, hệ thống sẽ tự tính lại thành tiền;
+DELETE /api/cart/:userId/:productId xử lý việc đá sản phẩm ra khỏi giỏ nếu khách hết thích, và DELETE /api/cart/clear/:userId dùng để dọn sạch giỏ tự động ngay sau khi khách đã ấn "Đặt hàng" thành công.
+D. Nhóm Vận hành Đơn hàng (Orders)Luồng sống còn của Web bán hàng, ghi nhận doanh thu:
+POST /api/orders: Gom các sản phẩm trong giỏ và chèn (insert) vào cơ sở dữ liệu tạo thành hóa đơn thật;
+Từ phía admin, có thể gọi GET/api/orders/:orderId để check rõ khách mua gì. Từ phía khách, họ gọi GET/api/orders/user/:userId để xem lại máy móc mình đã đặt trước đây;
+PUT/api/orders/:orderId/payment và PUT/api/orders/:orderId/cancel: Hỗ trợ đẩy trạng thái cập nhật khi tiền mặt đã gạch hoặc khi khách đột ngột báo hủy đơn.
+E. Nhóm Đánh giá, Tin tức & Địa chỉHoàn thiện các chức năng râu ria giúp website trông thật và chuyên nghiệp hơn:
+Bình luận (Reviews): GET/api/reviews/product/:productId đổ ra luồng bình luận dưới từng máy. Điểm đặc biệt là tụi mình dùng logic chặn bằng GET/api/reviews/can-review/:productId/:userId để đảm bảo ông nào mua máy rồi mới được quyền thả sao (rating);
+Tin bài (News): Phục vụ đăng các mẹo công nghệ với GET /api/news (lấy danh sách) hay giới hạn quyền Thêm/Xóa/Sửa tin cho admin qua phương thức POST, PUT, DELETE;
+Địa chỉ phục vụ nhằm cho phép người dùng lưu nhiều địa chỉ khác nhau như nhà riêng hoặc công ty như GET, POST, PUT, DELETE địa chỉ . Đồng thời, người dùng có thể chọn một địa chỉ làm nơi giao hàng mặc định để thuận tiện hơn trong quá trình thanh toán.
+F. Nhóm API cho Trí tuệ nhân tạo (Chatbot & AI)Điểm nhấn của đề tài nằm ở đây. Thay vì viết chatbot rule-base cứng nhắc. Nhóm mở ra endpoint POST /api/chatbot chạy bên Node.js, luồng dữ liệu đoạn chat của khách sẽ được API này hứng lấy, ném sang dịch vụ RAG viết bằng Python, chờ bot sinh câu trả lời bằng ngôn ngữ tự nhiên từ data nội bộ, sau đó vác kết quả trả về lại khung cửa sổ chat cho khách. Quản gia. Điệu thoại trực tuyến của khách.
+Sơ đồ hoạt động 
+ Đăng ký và đăng nhập hệ thống
+
+Hình 3.6 Sơ đồ hoạt động đăng ký và đăng nhập
+Tìm kiếm và lọc sản phẩm
+
+Hình 3.7 Sơ đồ hoạt động tìm kiếm và lọc sản phẩm
+ Quản lý giỏ hàng
+
+Hình 3.8 Sơ đồ hoạt động quản lý giỏ hàng
+Thanh toán đơn hàng 
+
+Hình 3.9 Sơ đồ hoạt động thanh toán đơn hàng
+Quản lý tài khoản và theo dõi đơn hàng
+
+Hình 3.10 Sơ đồ hoạt động quản lý tài khoản và theo dõi đơn hàng
+Đọc tin tức và khuyến mãi
+
+Hình 3.11 Sơ đồ hoạt động đọc tin tức và khuyến mãi
+Sơ đồ hoạt động chatbot AI
+
+Hình 3.12 Sơ đồ hoạt động chatbot AI
+
+Sơ đồ tuần tự
+Quy trình tìm kiếm và xem chi tiết sản phẩm
+
+Hình 3.13 Sơ đồ Tuần tự quy trình tìm kiếm và xem chi tiết sản phẩm
+ Quy trình thanh toán đơn hàng
+
+Hình 3.14 Sơ đồ Tuần tự quy trình thanh toán đơn hàng
+Quy trình đánh giá và bình luận sản phẩm
+
+Hình 3.15 Sơ đồ Tuần tự quy trình đánh giá và bình luận sản phẩm
+Quy trình admin duyệt và xử lý đơn hàng
+
+Hình 3.16 Sơ đồ Tuần tự quy trình admin duyệt và xử lý đơn hàng
+ Thiết kế và triển khai hệ thống gợi ý sản phẩm
+
+Hình 3.17 Sơ đồ gợi ý sản phẩm 
+Phân tích yêu cầu xây dựng chức năng gợi ý
+Hệ thống thương mại điện tử thông thường chỉ hiển thị sản phẩm tĩnh (sản phẩm mới, bán chạy), chưa tối ưu cho từng cá nhân. Website Quang Hưng Mobile thiết kế chức năng “Dành riêng cho bạn” để tự động gợi ý sản phẩm phù hợp với nhu cầu của từng nhóm khách hàng:
+Khách thích chơi game (Gamer): Cần cấu hình mạnh (Chip Snapdragon 8, RAM ≥8GB≥8GB, Pin ≥5000mAh≥5000mAh).
+Khách thích chụp ảnh (Photographer): Cần camera độ phân giải cao (≥50MP≥50MP, OIS).
+Học sinh, sinh viên (Budget): Cần máy giá rẻ (dưới 88 triệu đồng) nhưng hiệu năng ổn định.
+Nghiên cứu và lựa chọn phương pháp gợi ý (Mô hình Hybrid)
+Hệ thống sử dụng mô hình gợi ý lai Hybrid Recommendation kết hợp 3 thành phần thuật toán để cho ra kết quả tối ưu:
+Thành phần 1: Gợi ý theo sở thích cá nhân (Content-Based)
+Dữ liệu đầu vào: Bảng so_thich_khach_hang (lưu sở thích của khách như: Apple, Samsung, Gaming, Camera...).
+Cách xử lý: Hệ thống tự động đối chiếu sở thích với thông số kỹ thuật trong bảng sản phẩm.
+Ví dụ: Khách thích "Gaming" →→ Ưu tiên chọn máy có chip Snapdragon mạnh, RAM ≥8GB≥8GB.
+Thành phần 2: Gợi ý dựa trên hành vi duyệt web (Collaborative Filtering KNN)
+Dữ liệu đầu vào: Bảng lich_su_xem_san_pham.
+Cách xử lý: Thuật toán KNN tìm nhóm khách hàng có chung thói quen duyệt web (ví dụ: cùng thích xem dòng Samsung S24 Ultra). Từ đó, lấy các sản phẩm mà nhóm người này đã mua/xem để gợi ý cho khách hàng hiện tại.
+Thành phần 3: Gợi ý mua kèm (Association Rules Apriori)
+Dữ liệu đầu vào: Lịch sử đơn hàng trong bảng don_hang và chi_tiet_don_hang.
+Cách xử lý: Thuật toán Apriori tìm ra các sản phẩm thường được mua cùng nhau.
+Ví dụ luật kết hợp: Mua iPhone 15 →→ Mua kèm Củ sạc nhanh 20W (Độ tin cậy 75%75%). Khi khách xem iPhone 15, hệ thống sẽ đề xuất ngay củ sạc này ở mục mua kèm.
+Thiết kế mô hình tính điểm gợi ý sản phẩm
+Để kết hợp 3 thuật toán, hệ thống chấm điểm cho từng sản phẩm theo công thức:
+Tổng điểm (Score)=0.5×Điểm sở thích+0.3×Điểm lịch sử xem+0.2×Điểm kèm    Tổng điểm (Score)=0.5×Điểm sở thích+0.3×Điểm lịch sử xem+0.2×Điểm mua kèm
+Điểm sở thích (tối đa 5.0đ): Cộng điểm nếu sản phẩm đúng hãng hoặc đúng nhu cầu (Gaming/Camera) khách thích.
+Điểm lịch sử xem (tối đa 3.0đ): Cộng điểm cho các sản phẩm nằm trong danh mục khách thường xuyên xem.
+Điểm mua kèm (tối đa 2.0đ): Cộng điểm nếu sản phẩm thường được mua chung với sản phẩm trong giỏ hàng.
+Bộ lọc đa dạng (Diversity): Để tránh hiển thị quá nhiều sản phẩm cùng một hãng liên tiếp (ví dụ hiển thị liền lúc 5 chiếc iPhone), hệ thống sử dụng thuật toán sắp xếp xen kẽ (Round-Robin) giữa các thương hiệu (Apple, Samsung, Xiaomi...).
+Xử lý dữ liệu thực nghiệm trong hệ thống
+Dữ liệu gợi ý được đồng bộ và xử lý tự động giữa database và Python AI service chạy ngầm:
+Dữ liệu sản phẩm: Lấy từ bảng san_pham, cau_hinh (tên, giá, RAM, ROM, chip, ảnh).
+Dữ liệu người dùng: Lấy từ bảng khach_hang, so_thich_khach_hang.
+Kết luận Trong chương này đã trình bày quá trình thiết kế hệ thống và xây dựng website bán hàng tích hợp chatbot AI hỗ trợ tư vấn và gợi ý sản phẩm cho người dùng. Đã mô tả kiến trúc hoạt động của hệ thống cùng với các chức năng chính dành cho khách hàng và quản trị viên, nhân viên. Bên cạnh, chương cũng trình bày việc thiết kế cơ sở dữ liệu, xây dựng các API và xử lý dữ liệu giữa frontend và backend để đảm bảo hệ thống hoạt động ổn định. Một số chức năng như đăng nhập Google OAuth, xác thực OTP và thanh toán trực tuyến cũng được tích hợp nhằm tăng tính tiện lợi và bảo mật cho người dùng. Song song đó chatbot AI được xây dựng để hỗ trợ khách hàng trong việc tìm kiếm, tư vấn và gợi ý sản phẩm phù hợp với nhu cầu sử dụng. Cùng với các sơ đồ hoạt động và sơ đồ tuần tự cũng giúp mô tả rõ hơn quy trình xử lý của hệ thống trong các chức năng như đăng ký tài khoản, đặt hàng và quản lý đơn hàng. Nhìn chung thì chương này đã hoàn thành phần thiết kế và xây dựng hệ thống, tạo nền tảng cho việc kiểm thử, đánh giá và triển khai thực tế.
+KẾT QUẢ ĐẠT ĐƯỢC
+Tổng quan
+Sau quá trình triển khai, phát triển, xây dựng dự án đã được hoàn thành với đầy đủ các chức năng theo yêu cầu đặt ra. Hệ thống gồm các phần chính. Giao diện người dùng cho phép khách hàng xem và tìm kiếm sản phẩm, đăng ký và đăng nhập, quản lý giỏ hàng, đặt hàng, thanh toán và theo dõi đơn hàng, trò chuyện với chatbot để được tư vấn gợi ý sản phẩm cùng tới giao diện gợi ý sản phẩm thông qua mục sản phẩm yêu thích của khách hàng. Giao diện quản trị cho phép quản trị viên quản lý toàn bộ hoạt động của cửa hàng như sản phẩm, danh mục, khách hàng, đơn hàng, tin tức, khuyến mãi, thống kê báo cáo doanh thu lợi nhuận, và nhân viên. Về phía nhân viên xử lý các đơn hàng và chấm công xem ca làm việc.
+Giao diện của người dùng
+Giao diện trang chủ
+Trang chủ là nơi tiếp xúc trực tiếp với khách hàng nó sẽ hiển thị banner slider tự động với 3 slide quảng cáo (OPPO, Samsung, khuyến mãi) có nút điều khiển. Trang bao gồm các section chính: Giá sốc mỗi ngày với đồng hồ đếm ngược và top bán chạy hiển thị các điện thoại chính hãng từ iPhone, Samsung, OPPO, Xiaomi. Mỗi card sản phẩm hiển thị hình ảnh, badge giảm giá, tên, giá khuyến mãi/giá gốc, đánh giá sao, nút mua ngay và thêm giỏ hàng. Ngoài ra còn có section video review sản phẩm, tin tức công nghệ và giới thiệu cửa hàng ngay bên dưới. Thiết kế responsive, tối ưu SEO với meta tags và Open Graph. Header component với logo, menu điều hướng, giỏ hàng, tài khoản đa dạng các tính năng cho khách hàng trải nghiệm.
+
+Hình 4.1 Giao diện trang chủ
+Giao diện trang đăng ký 
+Đăng ký là nơi giành cho người dùng tạo tài khoản dành cho trang web để admin dễ nấm bắt được đối tượng khách hàng với giao diện thân thiện để khách hàng nhập liệu trực tiếp kế hợp với email để xác thực tài khoản một cách tiện lợi.
+
+Hình 4.2 Giao diện trang đăng ký cho khách hàng
+Giao diện trang đăng nhập
+Đăng nhập giành cho khách hàng sau khi đăng ký tài khoản thành công, tiến hành đăng nhập vào giao diện trang web để tiến hành mua sắm sản phẩm yêu thích. Bên cạnh đó còn tích hợp với email để khách hàng đăng nhập một cách tiện lợi nhanh chóng, tránh lãng phí thời gian của khách hàng.
+
+Hình 4.3 Giao diện trang đăng nhập
+Giao diện trang giới thiệu
+Đây là trang giới thiệu khái quát về lịch sử hình thành của của hàng để cho khách hàng nắm rõ và hiểu thêm về cửa hàng một cách chi tiết và cụ thể nhất ở đây khách hàng sẽ biết được lịch sử hình thành, địa chỉ, và thông tin liên quan của hàng.
+
+Hình 4.4 Giao diện trang giới thiệu cửa hàng
+Giao diện trang sản phẩm
+Trang sản phẩm được thiết kế nhằm mục đích giới thiệu tới khách hàng những sản phẩm và thương hiệu nổi bật. Bộ lọc tìm kiếm giúp khách hàng tiềm hiểu rõ hơn về sản phẩm cùng với đó giúp khách hàng tìm hiểu sản phẩm một cách nhanh chống cùng với các banner quản cáo về sản phẩm của cửa hàng.
+
+Hình 4.5 Giao diện trang sản phẩm cửa hàng
+Giao diện trang khuyến mãi
+Trang khuyến mãi ở đây được thiết kế nhằm tạo ra chương trình tri ân tới khách hàng với HOT SALE CUỐI TUẦN và cùng với đó là các mã giảm giá khuyến mãi đang chờ đợi khách hàng.
+
+Hình 4.6 Giao diện trang khuyến mãi cửa hàng
+Giao diện trang giỏ hàng 
+Giỏ hàng là nơi chứa các sản phẩm mà khách hàng đã thêm vào để lưu trữ nó sẽ hiển thị được giá cả và ở đây khách hàng có thể thêm hoặc xóa sản phẩm một cách tùy ý. Song song đó nếu khách hàng ưng ý thì có thể tiến hành đến với việc thanh toán các xsanr phẩm được lựa chọn.
+
+Hình 4.7 Giao diện trang giỏ hàng 
+Giao diện trang đặt hàng/thanh toán
+Đây là giao diện sau khi khách hàng tiến hành thanh toán ở đây yêu cầu khách hàng nhập địa chỉ nếu như chưa có. Bên cạnh đó sẽ hiện lên thông tin đơn hàng khách hàng có thể áp mã khuyến mãi hoặc không tùy vào nhu cầu sau đó chọn phương thức vận chuyển và phương thức thanh toán xong tiến hành đặt hàng. 
+
+Hình 4.8 Giao diện trang đặt hàng 
+Sau khi khách hàng đặt hàng thành công sẽ chuyển đến trang đặt hàng thành công và ở đây hiện ra các thông tin chi tiết về đơn hàng và trạng thái của đơn hàng, cùng với mã khuyến mãi.
+
+Hình 4.9 Giao diện trang đặt hàng thành công 
+Giao diện trang bảo hành
+Đây là chính sách cần thiết cho khách hàng áp dụng với khách hàng đã mua sản phẩm, được đổi trả sản phẩm trong vòng 7 ngày và check xem sản phẩm đã mua có còn bảo hành hay không.
+
+Hình 4.10 Giao diện trang bảo hành cửa hàng
+Giao diện chatbot AI tư vấn gợi ý 
+Đây là giao diện giúp người dùng chat với AI để AI tư vấn và đưa ra gợi ý phù hợp để chọn ra sản phẩm phù hợp nhất.
+
+Hình 4.11 Giao diện trang chatbot AI cửa hàng
+Giao diện trang tin tức
+Ở đây hiển thị các tin tức công nghệ, tin chính của cửa hàng để khách hàng hiểu thêm và về các thông tin mới nhất của cửa hàng.
+
+Hình 4.12 Giao diện trang tin tức cửa hàng
+Giao diện trang hồ sơ người dùng
+Đây là giao diện khá quan trong đối với khách hàng khách hàng sẽ chủ động có thể thai đổi thông tin của chỉnh mình, xem  thông tin về đơn hàng, cập nhập lại địa chỉ, mật khẩu, xem sản phẩm yêu thích, và tạo sở thích cá nhân. Song song đó là nhận thông báo từ cửa hàng.
+
+Hình 4.13 Giao diện trang thông tin người dùng
+Giao diện Dashboard
+Là trung tâm điều hành giúp admin giám sát toàn diện và đánh giá nhanh tình hình kinh doanh của cửa hàng theo thời gian thực. Thanh menu bên trái giúp admin dễ dàng chuyển đổi giữa các mục quản lý hệ thống. Bên dưới, hiển thị tức thời các chỉ số cốt lõi: doanh thu, lợi nhuận, số lượng đơn hàng và khách hàng mới. Các biểu đồ cột/đường thể hiện rõ xu hướng biến động của doanh thu/lợi nhuận theo thời gian (ngày, tuần, tháng). Cho phép admin chọn bộ lọc thời gian để truy xuất số liệu và hỗ trợ xuất báo cáo nhanh.
+
+
+Hình 4.14 Giao diện trang Dashboard
+Giao diện quản lý đơn hàng
+Admin nắm bắt được giá trị thực tế của người mua xem chi tiết và tiến hành cập nhật trạng thái cập nhật đơn hàng cho người mua.
+
+Hình 4.15 Giao diện trang quản lý đơn hàng
+Giao diện quản lý sản phẩm, tồn kho 
+Admin trực tiếp thêm sản phẩm hoặc thay đổi sản phẩm tùy vào như cầu để đảm bảo cửa hàng hoạt động một cách trơn tru nhất.
+
+Hình 4.16 Giao diện trang quản lý sản phẩm
+Đồng thời sẽ quản lí tồn kho số lượng sản phẩm thong qua các biểu đồ cụ thể, như quản lí màu xong sẽ biết được sản phẩm nào tồn và sản phẩm nào cần cập nhật thêm cho cửa hàng.
+
+Hình 4.17 Giao diện trang quản lý tồn kho
+Giao diện quản lý tin tức, khuyến mãi
+Đây là giao diện giúp admin quản lí và thêm cách thông tin chi tiết về tin tức và khuyến mãi.
+
+
+Hình 4.18 Giao diện trang quản lý tin tức và khuyến mãi
+Giao diện quản lý khách hàng, nhân viên
+Cập nhật giúp cho người quản lí hiểu rõ về tệp khách hàng dễ dàng quản lý.
+
+Hình 4.19 Giao diện trang quản lý khách hàng
+Giao diện nhân viên giúp admin dễ quản quản lý nhân viên một cách hợp lí hiệu quả nhất có thể.
+
+
+
+Hình 4.20 Giao diện trang quản lý nhân viên
+Giao diện quản lý danh mục, bảo hành
+Thể hiện rõ các mã thương hiệu của cửa hàng hiện có hoặc có thể thêm thương hiệu mới để tiến hành thêm sản phẩm nhằm đa dạng sự lựa chọn cho đối tượng.
+
+Hình 4.21 Giao diện trang quản lý danh mục
+Cập nhật và chịu trách nhiệm về bảo hành và thông báo lại cho người mua.
+
+Hình 4.22 Giao diện trang quản lý bảo hành
+Giao diện tri thức chatbot AI
+ Đây là cơ sở hình thành và trả lời về các câu hỏi liên quan cần thiết giúp chatbot AI hoạt động hiệu quả bằng cách thêm tài liệu để chatbot hoặc và trả lời.
+
+Hình 4.23 Giao diện trang quản lý tri thức chatbot
+Giao diện quản lý sở thích người dùng
+Nhằm mục đích cá nhân hóa người dùng để ghi lại cách sở thích và lịch sử người dùng để đề xuất sản sản phẩm phù hợp với người dùng nhất có thể.
+
+
+Hình 4.24 Giao diện trang quản lý cá nhân hóa người dùng
+Kết luận 
+Giao diện người dùng được thiết kế theo tiêu chuẩn hiện đại, thân thiện, dễ sử dụng. Khách hàng có thể dễ dàng tìm kiếm sản phẩm, mua hàng, thanh toán và quản lý tài khoản trò chuyện trực tiếp với chatbot AI để đưa ra lựa chọn phù hợp. Admin có thể theo dõi hoạt động kinh doanh, quản lý sản phẩm, đơn hàng một cách hiệu quả thông qua dashboard trực quan.
+
+
+
+KẾT LUẬN VÀ HƯỚNG PHÁT TRIỂN
+Kết luận 
+Kết quả đạt được
+Sau quá trình nghiên cứu, phân tích, thiết kế và triển khai, đồ án đã hoàn thành việc xây dựng website bán hàng kết tích hợp chatbot AI tư vấn gợi ý sản phẩm. Một hệ thống thương mại điện tử tương đối hoàn chỉnh, hỗ trợ hiệu quả cho hoạt động kinh doanh và quản lý bán hàng trực tuyến, với các kết quả chính sau:
+Về mặt chức năng:
+Xây dựng thành công hệ thống website bán hàng với đầy đủ chức năng dành cho khách hàng như: xem danh sách sản phẩm, tìm kiếm và lọc theo nhiều tiêu chí, xem chi tiết sản phẩm, quản lý giỏ hàng, đặt hàng và thanh toán trực tuyến, tư vấn người dùng thông qua việc tích hợp chatbot AI một cách hợp lý.
+Phát triển hệ thống quản trị (Admin) với giao diện dashboard trực quan, cho phép quản lý toàn diện sản phẩm, danh mục, khách hàng, đơn hàng, tin tức và thống kê trích xuất doanh thu, lợi nhuận. Hỗ trợ đăng ký, đăng nhập người dùng bằng tài khoản thông thường và Google.
+Xây dựng hệ thống tin tức và khuyến mãi giúp cửa hàng truyền tải thông tin đến khách hàng một cách hiệu quả nhanh chống.
+Về mặt kỹ thuật:
+Áp dụng kiến trúc Client – Server kết hợp RESTful API. Sử dụng các công nghệ như Node.js, Express.js, Python, MySQL và Tailwind CSS cùng với mô hình KNN và LLM làm phát triển rộng về mảng cá nhân người dùng và quản lý chatbot.
+Thiết kế cơ sở dữ liệu quan hệ, đáp ứng tốt nhu cầu lưu trữ và truy xuất. Xây dựng hệ thống API phục vụ các chức năng chính của website như xác thực, sản phẩm, giỏ hàng, đơn hàng và tin tức. Áp dụng cơ chế xác thực JWT nhằm đảm bảo an toàn thông tin người dùng.Thiết kế giao diện responsive, hoạt động ổn định ở Desktop, Tablet và Mobile.
+
+Về mặt giao diện:
+Giao diện website được thiết kế hiện đại, thân thiện với người dùng và dễ thao tác đối với mọi đối tượng như quản lý, nhân viên, người dùng. Sử dụng Tailwind CSS giúp giao diện đồng nhất, dễ mở rộng và bảo trì. Bố cục rõ ràng, màu sắc hài hòa, phù hợp với lĩnh vực kinh doanh thiết bị công nghệ như là điện thoại và các thiết bị khác. Hiệu năng website ổn định, thời gian tải trang nhanh, đáp ứng tốt trải nghiệm.
+Ý nghĩa thực tiễn
+Đối với cửa hàng: Hệ thống giúp số hóa quy trình kinh doanh, quản lý hiệu quả sản phẩm, đơn hàng, khách hàng, nhân viên. Đồng thời mở rộng kênh bán hàng trực tuyến, góp phần nâng cao hiệu quả kinh doanh và tăng doanh thu cho cửa hàng.
+Đối với khách hàng: Website mang lại trải nghiệm mua sắm điện thoại tiện lợi, cho phép tìm kiếm và đặt mua sản phẩm mọi lúc, mọi nơi, với hình thức thanh toán linh hoạt an toàn cùng với trò chuyện với chatbot tiện lợi để đưa ra lựa chọn phù hợp.
+Đối với lĩnh vực thương mại điện tử: Đồ án cung cấp một mô hình website bán lẻ thiết bị công nghệ có tính ứng dụng, có thể làm tài liệu tham khảo cho việc xây dựng và triển khai các hệ thống thương mại điện tử tương tự.
+Hạn chế
+Bên cạnh những kết quả đạt được, đồ án vẫn còn tồn tại một số hạn chế như:
+Chưa phát triển ứng dụng mobile native, hệ thống hiện chỉ hoạt động dưới dạng website responsive gây ảnh hưởng đến người dùng;
+Chưa tích hợp nhiều cổng thanh toán điện tử phổ biến như VNPay, ZaloPay;
+Chưa có chương trình khách hàng thân thiết và hệ thống tích điểm;
+Website chưa được tối ưu đầy đủ cho công cụ tìm kiếm (SEO).
+Hướng phát triển
+Trong thời gian tới, hệ thống có thể được tiếp tục mở rộng và hoàn thiện theo các hướng sau:
+Tích hợp thêm các cổng thanh toán trực tuyến phổ biến như ví điện tử và ngân hàng nhằm đa dạng hóa phương thức thanh toán cho người dùng.
+Nâng cấp chatbot AI để hỗ trợ tư vấn thông minh hơn. Phát triển ứng dụng mobile (Android/iOS) nhằm mở rộng khả năng tiếp cận và nâng cao trải nghiệm người dùng.
+Tăng cường các giải pháp bảo mật như xác thực đa yếu tố, mã hóa dữ liệu và kiểm soát truy cập nâng cao. Tối ưu hiệu năng hệ thống, mở rộng khả năng chịu tải để đáp ứng số lượng người dùng lớn khi triển khai thực tế.
+Những hướng phát triển trên sẽ giúp hệ thống hoàn thiện hơn, đáp ứng tốt hơn nhu cầu thực tế và nâng cao giá trị ứng dụng của đề tài trong tương lai.
+Lời kết
+Đồ án “Xây dựng website bán hàng tích hợp chatbot AI tư vấn gợi ý sản phẩm” đã hoàn thành các mục tiêu đề ra, xây dựng được một hệ thống thương mại điện tử tương đối hoàn chỉnh, đáp ứng tốt các yêu cầu về chức năng, kỹ thuật và giao diện. Kết quả đạt được không chỉ giúp sinh viên củng cố kiến thức chuyên môn mà còn tạo nền tảng cho việc nghiên cứu và phát triển các hệ thống web thương mại điện tử trong thực tế.
+
+TÀI LIỆU THAM KHẢO
+
+[1] 
+Hoàn, "HTML là gì? Ưu nhược điểm & cách hoạt động của HTML," JobsGO Blog, 24 5 2024. [Online]. Available: https://jobsgo.vn/blog/html-la-gi/. [Accessed 12 5 2026].
+[2] 
+Minh, "Lịch sử và nguồn gốc của HTML ảnh hưởng như thế nào đến thiết kế website ngày nay," LIGHT, 15 10 2024. [Online]. Available: https://light.com.vn/lich-su-va-nguon-goc-cua-html. [Accessed 12 5 2026].
+[3] 
+Quỳnh, "Nodejs Là Gì? Kiến Thức Chi Tiết Về Nodejs," JobsGO Blog, 2 7 2024. [Online]. Available: https://jobsgo.vn/blog/nodejs-la-gi/. [Accessed 3 5 2026].
+[4] 
+TopDev, "Tìm hiểu về ExpressJS và những ưu nhược điểm của ExpressJS," TopDev, 30 5 2024. [Online]. Available: https://topdev.vn/blog/express-js-la-gi/. [Accessed 1 6 2026].
+[5] 
+TechWorks, "Những kiến thức bạn cần biết về HTML, CSS, Javascript," TechWorks, 10 10 2024. [Online]. Available: https://techworks.vn/blog/html-css-javascript. [Accessed 12 4 2026].
+[6] 
+CareerLink, "Tailwind CSS là gì? Tìm hiểu chi tiết về Tailwind CSS," CareerLink.vn, 8 8 2024. [Online]. Available: https://www.careerlink.vn/cam-nang-viec-lam/tu-van-nghe-nghiep/tailwind-css-la-gi. [Accessed 5 6 2026].
+[7] 
+TopDev, "MySQL là gì? Giải đáp chi tiết và hướng dẫn cài đặt MySQL," TopDev, 22 2 2022. [Online]. Available: https://topdev.vn/blog/gioi-thieu-ve-mysql/. [Accessed 5 10 2026].
+[8] 
+TopDev, "Python là gì? Tổng hợp kiến thức cho người mới bắt đầu," TopDev, 19 10 2022. [Online]. Available: https://topdev.vn/blog/python-la-gi/. [Accessed 6 5 2026].
+[9] 
+H. Hiếu, "Chatbot AI," Công ty Cổ phần Tin Học Lạc Việt, 18 03 2025. [Online]. Available: https://lacviet.vn/chatbot-ai/. [Accessed 19 06 2026].
+[10] 
+V. AI, "Chatbot AI là gì? Ứng dụng và xu hướng phát triển của Chatbot AI," VNPT AI, 10 1 2025. [Online]. Available: https://vnptai.io/vi/blog/detail/chatbot-ai-la-gi. [Accessed 27 6 2026].
+[11] 
+V. IDC, "LLM là gì? Tìm hiểu về mô hình ngôn ngữ lớn (Large Language Model)," Viettel IDC, [Online]. Available: https://www.viettelidc.com.vn/tin-tuc/llm-la-gi. [Accessed 27 6 2026].
+[12] 
+Khôi, "RAG là gì? Tìm hiểu mô hình Retrieval-Augmented Generation trong AI," Base.vn, 18 8 2025. [Online]. Available: https://base.vn/blog/rag-la-gi/. [Accessed 6 5 2026].
+[13] 
+Kurama, "Collaborative Filtering: A Simple Introduction," Built In, 12 9 2025. [Online]. Available: https://builtin.com/data-science/collaborative-filtering-recommender-system. [Accessed 6 6 2026].
+[14] 
+Hà, "Tìm hiểu về Content-based Filtering - Phương pháp gợi ý dựa theo nội dung (Phần 1)," Viblo, 17 6 2019. [Online]. Available: https://viblo.asia/p/tim-hieu-ve-content-based-filtering-phuong-phap-goi-y-dua-theo-noi-dung-phan-1-V3m5WGBg5O7. [Accessed 17 6 2026].
+[15] 
+FMIT, "Hybrid Recommendation AI là gì - Hệ thống gợi ý kết hợp trong trí tuệ nhân tạo," FMIT, 5 20 2025. [Online]. Available: https://fmit.vn/tu-dien-quan-ly/hybrid-recommendation-ai-la-gi. [Accessed 6 10 2026].
+[16] 
+TechWorks, Những kiến thức bạn cần biết về HTML, CSS, Javascript, Hà Nội: TechWorks, 2024. 
+[17] 
+Viettel IDC, "Website là gì?," Viettel IDC, 2024. [Online]. Available: https://viettelidc.com.vn/tin-tuc/website-la-gi. [Accessed 6 2 2026].
+
+
+
+

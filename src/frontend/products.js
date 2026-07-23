@@ -17,6 +17,180 @@ let selectedCategories = [];
 let selectedAccessoryTypes = [];
 let currentSort = 'featured';
 let searchQuery = '';
+let recommendedProductIds = new Set();
+
+// ==========================================
+// UTILITY FUNCTIONS FOR SMART SEARCH
+// ==========================================
+
+// Hàm loại bỏ dấu tiếng Việt để tìm kiếm không dấu
+function removeVietnameseTones(str) {
+    if (!str) return '';
+    str = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g, "a");
+    str = str.replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g, "e");
+    str = str.replace(/ì|í|ị|ỉ|ĩ/g, "i");
+    str = str.replace(/ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g, "o");
+    str = str.replace(/ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g, "u");
+    str = str.replace(/ỳ|ý|ỵ|ỷ|ỹ/g, "y");
+    str = str.replace(/đ/g, "d");
+    str = str.replace(/À|Á|Ạ|Ả|Ã|Â|Ầ|Ấ|Ậ|Ẩ|Ẫ|Ă|Ằ|Ắ|Ặ|Ẳ|Ẵ/g, "A");
+    str = str.replace(/È|É|Ẹ|Ẻ|Ẽ|Ê|Ề|Ế|Ệ|Ể|Ễ/g, "E");
+    str = str.replace(/Ì|Í|Ị|Ỉ|Ĩ/g, "I");
+    str = str.replace(/Ò|Ó|Ọ|Ỏ|Õ|Ô|Ồ|Ố|Ộ|Ổ|Ỗ|Ơ|Ờ|Ớ|Ợ|Ở|Ỡ/g, "O");
+    str = str.replace(/Ù|Ú|Ụ|Ủ|Ũ|Ư|Ừ|Ứ|Ự|Ử|Ữ/g, "U");
+    str = str.replace(/Ỳ|Ý|Ỵ|Ỷ|Ỹ/g, "Y");
+    str = str.replace(/Đ/g, "D");
+    str = str.replace(/\u0300|\u0301|\u0309|\u0303|\u0323/g, ""); 
+    str = str.replace(/\u02C6|\u0306|\u031B/g, ""); 
+    str = str.replace(/[^a-zA-Z0-9\s]/g, " ");
+    str = str.replace(/\s+/g, " ");
+    return str.trim();
+}
+
+// Tiền xử lý từ khóa tìm kiếm: sửa lỗi chính tả và chuyển đổi từ viết tắt tiếng Việt
+function preprocessSearchQuery(query) {
+    if (!query) return '';
+    let processed = query.toLowerCase().trim();
+
+    const phraseMap = {
+        "xung xam": "samsung",
+        "sam sung": "samsung",
+        "sa mi": "xiaomi",
+        "sao mi": "xiaomi",
+        "xiao mi": "xiaomi",
+        "real me": "realme",
+        "vi vo": "vivo",
+        "no kia": "nokia",
+        "c luc": "cường lực",
+        "c lực": "cường lực",
+        "cuong luc": "cường lực",
+        "tai nghe": "tai nghe",
+        "t nghe": "tai nghe",
+        "sac dp": "sạc dự phòng",
+        "s dự phòng": "sạc dự phòng",
+        "s du phong": "sạc dự phòng",
+        "sac du phong": "sạc dự phòng",
+        "op lung": "ốp lưng",
+        "ốp lung": "ốp lưng",
+        "op lưng": "ốp lưng",
+        "cu sac": "củ sạc",
+        "co sac": "củ sạc",
+        "coc sac": "củ sạc",
+        "day sac": "dây sạc",
+        "cap sac": "cáp sạc",
+        "kinh cuong luc": "kính cường lực"
+    };
+
+    for (const [key, val] of Object.entries(phraseMap)) {
+        processed = processed.replace(new RegExp('\\b' + key + '\\b', 'g'), val);
+    }
+
+    const wordMap = {
+        "xungxam": "samsung",
+        "sámung": "samsung",
+        "samsum": "samsung",
+        "samsug": "samsung",
+        "ss": "samsung",
+        "ip": "iphone",
+        "ipon": "iphone",
+        "ifone": "iphone",
+        "iphne": "iphone",
+        "ipho": "iphone",
+        "aple": "apple",
+        "appple": "apple",
+        "op": "oppo",
+        "opo": "oppo",
+        "xiami": "xiaomi",
+        "redmi": "redmi",
+        "readmi": "redmi",
+        "remy": "redmi",
+        "dt": "điện thoại",
+        "đt": "điện thoại",
+        "dthoai": "điện thoại",
+        "cl": "cường lực",
+        "tn": "tai nghe",
+        "sdp": "sạc dự phòng",
+        "pk": "phụ kiện",
+        "cs": "củ sạc",
+        "ds": "dây sạc",
+        "ol": "ốp lưng"
+    };
+
+    let words = processed.split(/\s+/);
+    words = words.map(w => wordMap[w] || w);
+    processed = words.join(" ");
+    return processed;
+}
+
+// So khớp thông minh giữa sản phẩm và từ khóa tìm kiếm (trả về điểm độ tương quan)
+function getSearchRelevanceScore(product, query) {
+    if (!query) return 1;
+    
+    const correctedQuery = preprocessSearchQuery(query);
+    if (!correctedQuery) return 0;
+
+    const normQuery = removeVietnameseTones(correctedQuery).toLowerCase();
+    const queryTokens = normQuery.split(/\s+/).filter(t => t.length > 0);
+    if (queryTokens.length === 0) return 0;
+
+    const normName = removeVietnameseTones(product.name || '').toLowerCase();
+    const normBrand = removeVietnameseTones(product.brand || '').toLowerCase();
+    const normCategory = removeVietnameseTones(product.category || '').toLowerCase();
+    const normType = removeVietnameseTones(product.type || '').toLowerCase();
+    const normDesc = removeVietnameseTones(product.description || '').toLowerCase();
+    
+    let vietnameseCategory = '';
+    if (product.category === 'phukien') vietnameseCategory = 'phu kien';
+    else if (product.category === 'dienthoai') vietnameseCategory = 'dien thoai';
+    const normVietnameseCategory = removeVietnameseTones(vietnameseCategory);
+
+    let matchCount = 0;
+    let nameMatchCount = 0;
+
+    for (const token of queryTokens) {
+        let isTokenMatched = false;
+
+        if (normName.includes(token)) {
+            nameMatchCount++;
+            isTokenMatched = true;
+        }
+        
+        if (normBrand.includes(token) || 
+            normCategory.includes(token) || 
+            normVietnameseCategory.includes(token) ||
+            normType.includes(token) || 
+            normDesc.includes(token)) {
+            isTokenMatched = true;
+        }
+
+        if (isTokenMatched) {
+            matchCount++;
+        }
+    }
+
+    const requiredMatches = queryTokens.length <= 2 ? queryTokens.length : Math.max(2, queryTokens.length - 1);
+    if (matchCount < requiredMatches) {
+        return 0;
+    }
+
+    let score = (matchCount / queryTokens.length) * 100;
+
+    if (normName.includes(normQuery)) {
+        score += 50;
+    }
+
+    score += nameMatchCount * 10;
+
+    if (queryTokens.some(token => normBrand === token)) {
+        score += 30;
+    }
+
+    if (normName.startsWith(queryTokens[0])) {
+        score += 15;
+    }
+
+    return score;
+}
 
 // Hàm fetch danh sách hãng từ API
 async function fetchBrands() {
@@ -565,8 +739,14 @@ function renderProducts() {
         // Accessory type filter
         if (product.category === 'phukien' && selectedAccessoryTypes.length > 0 && !selectedAccessoryTypes.includes(product.type)) return false;
         
-        // Search filter
-        if (searchQuery && !product.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+        // Search filter using relevance scoring
+        if (searchQuery) {
+            const score = getSearchRelevanceScore(product, searchQuery);
+            if (score <= 0) return false;
+            product.relevanceScore = score; // Store score for sorting
+        } else {
+            product.relevanceScore = 0;
+        }
         
         return true;
     });
@@ -584,7 +764,10 @@ function renderProducts() {
             break;
         case 'featured':
         default:
-            // Keep original order
+            // If searching, sort by relevance score descending
+            if (searchQuery) {
+                allFilteredProducts.sort((a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0));
+            }
             break;
     }
     
@@ -751,6 +934,63 @@ function removePagination() {
     }
 }
 
+// Hàm tải các gợi ý cá nhân hóa dành riêng cho khách hàng (AI Recommendations)
+async function loadPersonalizedRecommendations() {
+    const user = JSON.parse(localStorage.getItem('user') || 'null');
+    const container = document.getElementById('aiRecommendationsContainer');
+    const grid = document.getElementById('aiRecommendationsGrid');
+    
+    if (!user || !user.ma_kh || !container || !grid) return;
+    
+    try {
+        const response = await fetch(`${API_URL}/recommendations`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: user.ma_kh, cartItems: [] })
+        });
+        const result = await response.json();
+        
+        if (result.success && result.data && result.data.length > 0) {
+            // Lưu ID của các sản phẩm được gợi ý để làm nhãn "Dành cho bạn" ở lưới chính
+            result.data.forEach(p => recommendedProductIds.add(p.id));
+            
+            // Render sản phẩm cuộn ngang
+            grid.innerHTML = result.data.map(product => {
+                const priceFormatted = new Intl.NumberFormat('vi-VN').format(product.price) + '₫';
+                let imgPath = product.image || 'images/iphone-17-pro-max-256.jpg';
+                if (imgPath && !imgPath.startsWith('images/') && !imgPath.startsWith('http')) {
+                    imgPath = 'images/' + imgPath;
+                }
+                
+                return `
+                    <div class="snap-start flex-shrink-0 w-[180px] sm:w-[200px] bg-white rounded-2xl p-3 border border-gray-100 hover:border-red-300 shadow-sm relative group flex flex-col justify-between transition-all duration-200">
+                        <a href="product-detail.html?id=${product.id}" class="flex-1 flex flex-col">
+                            <div class="relative h-24 sm:h-28 mb-2 overflow-hidden flex items-center justify-center p-1 bg-gray-50 rounded-xl">
+                                <span class="absolute top-1 left-1 bg-gradient-to-r from-red-600 to-pink-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-md z-10 shadow-sm">Dành Cho Bạn</span>
+                                <img src="${imgPath}" alt="${product.name}" class="w-full h-full object-contain transition-transform duration-200 group-hover:scale-105" onerror="this.src='images/iphone-17-pro-max-256.jpg'">
+                            </div>
+                            <h4 class="font-bold text-xs sm:text-sm text-gray-800 line-clamp-2 min-h-[36px] mb-1 leading-snug">${product.name}</h4>
+                            <div class="text-sm font-black text-[#d70018] mt-auto">${priceFormatted}</div>
+                        </a>
+                        <button onclick="event.preventDefault(); event.stopPropagation(); addToCart(${product.id})"
+                                class="mt-2 w-full bg-red-50 hover:bg-[#d70018] text-[#d70018] hover:text-white text-xs font-bold py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1 shadow-sm">
+                            <i class="fas fa-cart-plus"></i> Thêm giỏ hàng
+                        </button>
+                    </div>
+                `;
+            }).join('');
+            
+            // Hiển thị khung gợi ý
+            container.classList.remove('hidden');
+            
+            // Render lại lưới chính để cập nhật badge "Dành cho bạn"
+            renderProducts();
+        }
+    } catch (error) {
+        console.error('Error loading personalized recommendations:', error);
+    }
+}
+
 function createProductCard(product) {
     const card = document.createElement('div');
     const isOutOfStock = !product.stock || product.stock <= 0;
@@ -762,6 +1002,10 @@ function createProductCard(product) {
     
     const outOfStockBadge = isOutOfStock ? 
         `<span class="out-of-stock-badge"><i class="fas fa-times-circle mr-1"></i>Hết hàng</span>` : '';
+        
+    const isRecommended = typeof recommendedProductIds !== 'undefined' && recommendedProductIds.has(product.id);
+    const recommendedBadge = isRecommended ? 
+        `<span class="absolute top-2 right-2 bg-gradient-to-r from-red-600 to-pink-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm z-10 animate-pulse"><i class="fas fa-heart mr-0.5"></i>Dành cho bạn</span>` : '';
     
     const reviewCount = product.reviews || Math.floor(Math.random() * 200) + 20;
     
@@ -772,10 +1016,11 @@ function createProductCard(product) {
     }
     
     card.innerHTML = `
-        <div class="flex flex-col h-full" onclick="window.location.href='product-detail.html?id=${product.id}'">
+        <div class="flex flex-col flex-1" onclick="window.location.href='product-detail.html?id=${product.id}'">
             <div class="relative aspect-square p-3 flex items-center justify-center bg-white group overflow-hidden">
                 ${discountBadge}
                 ${outOfStockBadge}
+                ${recommendedBadge}
                 <img src="${productImage}"
                      alt="${product.name}"
                      class="w-full h-full object-contain transition-transform duration-500 group-hover:scale-110"
@@ -1320,6 +1565,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         ]);
         console.log('Brands loaded:', BRANDS.length);
         console.log('Products loaded:', PRODUCTS.length);
+        
+        // Tải các gợi ý cá nhân hóa dành riêng cho khách hàng (AI Recommendations)
+        loadPersonalizedRecommendations();
         
         // Render brand filters động từ API
         renderBrandFilters();

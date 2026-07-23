@@ -333,7 +333,8 @@ function renderProductDetail(productId) {
   
   // Update stock
   const stockCountEl = document.getElementById('stockCount');
-  const stockContainer = stockCountEl ? stockCountEl.closest('span') : null;
+  const normalDisplay = document.getElementById('stockDisplayNormal');
+  const hiddenDisplay = document.getElementById('stockDisplayHidden');
   const quantityEl = document.getElementById('quantity');
   
   // Lưu số lượng tồn kho thực tế để kiểm tra
@@ -345,15 +346,17 @@ function renderProductDetail(productId) {
   }
 
   // Kiểm tra cài đặt ẩn tồn kho
-  if (shopSettings.hideStockFromCustomer) {
-    // Ẩn phần hiển thị số lượng tồn kho
-    if (stockContainer) {
-      stockContainer.innerHTML = stock > 0 
+  if (shopSettings && shopSettings.hideStockFromCustomer) {
+    if (normalDisplay) normalDisplay.classList.add('hidden');
+    if (hiddenDisplay) {
+      hiddenDisplay.classList.remove('hidden');
+      hiddenDisplay.innerHTML = stock > 0 
         ? '<i class="fas fa-check-circle text-green-500 mr-1"></i><span class="text-green-600 font-medium">Còn hàng</span>'
         : '<i class="fas fa-times-circle text-red-500 mr-1"></i><span class="text-red-600 font-medium">Hết hàng</span>';
     }
   } else {
-    // Hiển thị số lượng tồn kho bình thường
+    if (hiddenDisplay) hiddenDisplay.classList.add('hidden');
+    if (normalDisplay) normalDisplay.classList.remove('hidden');
     if (stockCountEl) stockCountEl.textContent = stock;
   }
   
@@ -2306,7 +2309,7 @@ function renderUrgencyBanner(stock) {
     const items = [];
 
     const stockNum = parseInt(stock);
-    if (Number.isFinite(stockNum) && stockNum > 0 && stockNum <= 10) {
+    if (!(shopSettings && shopSettings.hideStockFromCustomer) && Number.isFinite(stockNum) && stockNum > 0 && stockNum <= 10) {
         items.push(`
             <div class="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-sm">
                 <i class="fas fa-fire text-amber-500"></i>
@@ -2338,23 +2341,33 @@ function renderUrgencyBanner(stock) {
 
 function updateStockDisplayFromVariant(variant) {
     const el = document.getElementById('stockCount');
-    // Cập nhật urgency banner ngay cả khi stockCount không tồn tại
+    const normalDisplay = document.getElementById('stockDisplayNormal');
+    const hiddenDisplay = document.getElementById('stockDisplayHidden');
+    
+    // Cập nhật urgency banner
     renderUrgencyBanner(variant && variant.stock);
-    if (!el) return;
-    const wrap = el.closest('span') || el.parentElement;
+    
+    const stock = variant ? (parseInt(variant.stock) || 0) : 0;
+
     if (shopSettings && shopSettings.hideStockFromCustomer) {
-        wrap.innerHTML = variant.stock > 0
-            ? '<i class="fas fa-check-circle text-green-500 mr-1"></i><span class="text-green-600 font-medium">Còn hàng</span>'
-            : '<i class="fas fa-times-circle text-red-500 mr-1"></i><span class="text-red-600 font-medium">Hết hàng</span>';
+        if (normalDisplay) normalDisplay.classList.add('hidden');
+        if (hiddenDisplay) {
+            hiddenDisplay.classList.remove('hidden');
+            hiddenDisplay.innerHTML = stock > 0
+                ? '<i class="fas fa-check-circle text-green-500 mr-1"></i><span class="text-green-600 font-medium">Còn hàng</span>'
+                : '<i class="fas fa-times-circle text-red-500 mr-1"></i><span class="text-red-600 font-medium">Hết hàng</span>';
+        }
     } else {
-        const stock = parseInt(variant.stock) || 0;
-        el.textContent = stock;
-        if (stock <= 0) {
-            wrap.innerHTML = '<i class="fas fa-times-circle text-red-500 mr-1"></i><span class="text-red-600 font-medium">Hết hàng</span>';
-        } else if (stock <= 5) {
-            wrap.innerHTML = `<i class="fas fa-exclamation-triangle text-amber-500 mr-1"></i><span class="text-amber-600 font-medium">Chỉ còn ${stock} chiếc <span class="text-gray-400">(${variant.color} - ${variant.storage})</span></span>`;
-        } else {
-            wrap.innerHTML = `<i class="fas fa-check-circle text-green-500 mr-1"></i><span class="text-green-600 font-medium">Còn ${stock} chiếc <span class="text-gray-400">(${variant.color} - ${variant.storage})</span></span>`;
+        if (hiddenDisplay) hiddenDisplay.classList.add('hidden');
+        if (normalDisplay) {
+            normalDisplay.classList.remove('hidden');
+            if (stock <= 0) {
+                normalDisplay.innerHTML = '<i class="fas fa-times-circle text-red-500 mr-1"></i><span class="text-red-600 font-medium">Hết hàng</span>';
+            } else if (stock <= 5) {
+                normalDisplay.innerHTML = `<i class="fas fa-exclamation-triangle text-amber-500 mr-1"></i><span class="text-amber-600 font-medium">Chỉ còn <span id="stockCount" class="font-bold text-green-600">${stock}</span> chiếc <span class="text-gray-400">(${variant.color} - ${variant.storage})</span></span>`;
+            } else {
+                normalDisplay.innerHTML = `<i class="fas fa-check-circle text-green-500 mr-1"></i><span class="text-green-600 font-medium">Còn <span id="stockCount" class="font-bold text-green-600">${stock}</span> chiếc <span class="text-gray-400">(${variant.color} - ${variant.storage})</span></span>`;
+            }
         }
     }
 }

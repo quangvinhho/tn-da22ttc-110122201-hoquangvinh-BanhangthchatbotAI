@@ -939,6 +939,7 @@ router.get('/', async (req, res) => {
             LEFT JOIN cau_hinh ch ON sp.ma_sp = ch.ma_sp
             LEFT JOIN bao_hanh_san_pham bh ON sp.ma_sp = bh.ma_sp
             WHERE COALESCE(sp.trang_thai, 'active') <> 'discontinued'
+            ORDER BY sp.ma_sp DESC
         `);
         
         // Map dữ liệu sang format frontend

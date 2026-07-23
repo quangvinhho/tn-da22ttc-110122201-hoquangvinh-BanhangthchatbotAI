@@ -659,6 +659,31 @@
                     </div>
                 </div>
 
+                <!-- AI Recommendations Section - Hidden by default, shown if user logged in -->
+                <div id="aiRecommendationsContainer" class="w-full mb-6 hidden">
+                    <div class="w-full bg-[#fef2f2] rounded-3xl p-5 border border-red-100 shadow-sm relative overflow-hidden">
+                        <!-- Decorative glow -->
+                        <div class="absolute -top-12 -right-12 w-40 h-40 bg-red-200 rounded-full blur-3xl opacity-50"></div>
+                        
+                        <div class="flex items-center justify-between mb-4 relative z-10">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-8 h-8 bg-gradient-to-br from-red-600 to-pink-500 rounded-lg flex items-center justify-center shadow-md animate-pulse">
+                                    <i class="fas fa-magic text-white text-xs"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-base font-bold text-gray-900 leading-snug">Gợi ý dành riêng cho bạn</h3>
+                                    <p class="text-xs text-gray-500">Sản phẩm được tối ưu hóa dựa trên lịch sử xem và sở thích của bạn</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Horizontal Carousel Grid -->
+                        <div id="aiRecommendationsGrid" class="flex gap-4 overflow-x-auto pb-2 scrollbar-thin snap-x snap-mandatory">
+                            <!-- JS will inject items here -->
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Products Grid - 4 sản phẩm mỗi hàng -->
                 <div id="productsGrid" class="w-full grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-5"></div>
                 

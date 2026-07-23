@@ -33,9 +33,6 @@
 
         <div class="flex items-center gap-4">
             <span class="text-sm font-semibold text-slate-600" id="admin-name">Admin</span>
-            <a href="admin-kho-loi.html" class="px-4 py-2 bg-rose-50 text-rose-700 border border-rose-200 rounded-xl hover:bg-rose-100 transition text-sm font-semibold flex items-center gap-2">
-                <i class="fas fa-warehouse"></i> Kho máy lỗi
-            </a>
             <a href="admin.html" class="px-4 py-2 border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition text-sm font-semibold flex items-center gap-2">
                 <i class="fas fa-chart-line"></i> Dashboard chính
             </a>
@@ -131,14 +128,9 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Cập nhật trạng thái xử lý <span class="text-red-500">*</span></label>
-                    <select id="modal-claim-status" onchange="toggleRefundField(this.value)" class="w-full px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-slate-400 transition" required>
-                        <option value="pending">Chờ duyệt</option>
-                        <option value="approved">Đã phê duyệt (Đợi gửi máy tới)</option>
-                        <option value="processing">Đang xử lý (Đang kỹ thuật kiểm tra)</option>
-                        <option value="completed">Đã hoàn tất (Hoàn tiền hoặc Đổi trả máy mới)</option>
-                        <option value="rejected">Từ chối đổi trả</option>
-                    </select>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Cập nhật trạng thái xử lý <span class="text-red-500">*</span></label>
+                    <div id="return-status-buttons" class="grid grid-cols-2 gap-2"></div>
+                    <input type="hidden" id="modal-claim-status" required>
                 </div>
 
                 <div id="refund-field-container" class="hidden">
@@ -351,11 +343,77 @@
             if (claim.loai === 'hoan_tien') typeLabel = 'Hoàn tiền';
             document.getElementById('modal-claim-type').value = typeLabel;
 
-            document.getElementById('modal-claim-status').value = claim.trang_thai;
+            const isFinalized = ['completed', 'rejected'].includes(claim.trang_thai);
+            const statusInput = document.getElementById('modal-claim-status');
+            const refundInput = document.getElementById('modal-claim-refund');
+            const noteTextarea = document.getElementById('modal-claim-note');
+            const submitBtn = document.querySelector('#process-form button[type="submit"]');
+
+            const returnStatusNames = {
+                'pending': '⏳ Chờ duyệt',
+                'approved': '✅ Phê duyệt',
+                'processing': '⚙️ Đang xử lý',
+                'completed': '🎉 Hoàn tất',
+                'rejected': '❌ Từ chối'
+            };
+
+            let allowedStatuses = ['pending', 'approved', 'processing', 'completed', 'rejected'];
+            if (claim.trang_thai === 'approved') {
+                allowedStatuses = ['approved', 'processing', 'completed', 'rejected'];
+            } else if (claim.trang_thai === 'processing') {
+                allowedStatuses = ['processing', 'completed', 'rejected'];
+            } else if (['completed', 'rejected'].includes(claim.trang_thai)) {
+                allowedStatuses = [claim.trang_thai];
+            }
+
+            const btnContainer = document.getElementById('return-status-buttons');
+            btnContainer.innerHTML = '';
+            
+            allowedStatuses.forEach(s => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = `status-select-btn px-3 py-2 border rounded-xl text-xs font-semibold text-center transition cursor-pointer ${
+                    isFinalized ? 'opacity-50 cursor-not-allowed' : ''
+                }`;
+                btn.textContent = returnStatusNames[s];
+                
+                const setButtonActive = (statusVal) => {
+                    document.querySelectorAll('.status-select-btn').forEach(b => {
+                        b.className = 'status-select-btn px-3 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-semibold text-center hover:bg-slate-50 transition cursor-pointer';
+                    });
+                    btn.className = 'status-select-btn px-3 py-2 border-2 border-red-600 bg-red-50 text-red-700 rounded-xl text-xs font-bold text-center transition cursor-pointer';
+                    
+                    statusInput.value = statusVal;
+                    toggleRefundField(statusVal);
+                };
+
+                if (s === claim.trang_thai) {
+                    setTimeout(() => setButtonActive(s), 50);
+                }
+
+                if (!isFinalized) {
+                    btn.onclick = () => setButtonActive(s);
+                }
+                btnContainer.appendChild(btn);
+            });
+            statusInput.value = claim.trang_thai;
+
             document.getElementById('modal-claim-refund').value = claim.so_tien_hoan || '';
             document.getElementById('modal-claim-note').value = claim.ghi_chu_admin || '';
 
             toggleRefundField(claim.trang_thai);
+
+            if (refundInput) refundInput.disabled = isFinalized;
+            if (noteTextarea) noteTextarea.disabled = isFinalized;
+            if (submitBtn) {
+                if (isFinalized) {
+                    submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                    submitBtn.disabled = true;
+                } else {
+                    submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    submitBtn.disabled = false;
+                }
+            }
 
             document.getElementById('process-modal').classList.remove('hidden');
         }

@@ -1,7 +1,9 @@
 import os
+import re
 import mysql.connector
 from dotenv import load_dotenv
 from typing import List, Dict, Any
+import recommend_flow
 
 from langchain_classic.chains import create_sql_query_chain
 from langchain_community.utilities import SQLDatabase
@@ -28,7 +30,24 @@ def sanitize_ai_response(text: str) -> str:
     cleaned = re.sub(r'\*([^*]+)\*', r'<em>\1</em>', cleaned)
     cleaned = re.sub(r'^\s*[-*]\s+', r'<br>• ', cleaned, flags=re.MULTILINE)
     cleaned = re.sub(r'^#+\s*(.+)$', r'<strong>\1</strong>', cleaned, flags=re.MULTILINE)
+    
+    # Trích xuất và bảo vệ các thẻ HTML card để không bị chèn <br> làm hỏng giao diện
+    html_blocks = []
+    def save_html(m):
+        html_blocks.append(m.group(0))
+        return f"___HTML_BLOCK_HOLDER_{len(html_blocks)-1}___"
+    
+    cleaned = re.sub(r'(<div class="ai-product-card">.*?</div>)', save_html, cleaned, flags=re.DOTALL)
+    
+    # Thay thế xuống dòng thành <br> cho phần văn bản thường
     cleaned = cleaned.replace('\n', '<br>')
+    
+    # Khôi phục các thẻ HTML card và dọn dẹp khoảng trắng/xuòng dòng thừa bên trong
+    for i, block in enumerate(html_blocks):
+        block_clean = re.sub(r'>\s*\n\s*<', '><', block)
+        block_clean = block_clean.replace('\n', '').replace('\r', '')
+        cleaned = cleaned.replace(f"___HTML_BLOCK_HOLDER_{i}___", block_clean)
+        
     cleaned = re.sub(r'(<br>\s*){3,}', r'<br><br>', cleaned)
     return cleaned
 
@@ -150,9 +169,12 @@ def is_accessory(name: str) -> bool:
             is_acc_kw = True
             
     if is_acc_kw:
-        # Exempt charging/cable keywords if a phone indicator is present
+        # Exempt charging/cable keywords if a phone indicator is present (e.g. "Samsung sạc nhanh")
+        # BUT only if it is NOT a dedicated accessory (does not contain charger/cable nouns)
         if has_phone_indicator:
-            if 'op' not in n and 'tai nghe' not in n and 'cuong luc' not in n and 'bao da' not in n:
+            # Check if it has accessory-specific nouns
+            is_real_accessory = any(w in n.split() for w in ['cap', 'cu', 'day', 'coc', 'adapter', 'op']) or any(term in n for term in ['tai nghe', 'cuong luc', 'bao da', 'du phong'])
+            if not is_real_accessory:
                 return False
         return True
     return False
@@ -1247,19 +1269,27 @@ class RAGEngine:
         # Helper: trích xuất tất cả mức giá bằng số được liệt kê trong block
         def extract_prices_from_block(block_content):
             prices = []
-            # 1. Tìm span giá đặc thù
             span_match = re.search(r'class="ai-product-price"[^>]*>([^<]+)</span>', block_content, re.IGNORECASE)
             if span_match:
                 digits = re.sub(r'[^\d]', '', span_match.group(1))
                 if digits:
                     prices.append(int(digits))
-            # 2. Tìm các chuỗi số dạng phân tách hàng nghìn
-            raw_patterns = re.findall(r'\b\d{1,3}(?:[.,]\d{3})+(?:\s*(?:đ|VNĐ|vnđ|dong|đồng))?\b', block_content)
-            for rp in raw_patterns:
-                digits = re.sub(r'[^\d]', '', rp)
+            
+            # Match digits with separators and check suffix
+            raw_matches = re.finditer(r'\b(\d{1,3}(?:[.,]\d{3})+)(?:\s*([a-zA-ZđVNĐvnđđồng]+))?\b', block_content)
+            for m in raw_matches:
+                val_str = m.group(1)
+                suffix = (m.group(2) or '').lower().strip()
+                
+                # Skip non-currency measurements
+                exclude_units = {'km', 'm', 'gb', 'tb', 'mah', 'hz', 'mp', 'inch', 'inches', 'cai', 'tuoi', 'thang', 'nam', 'kg', 'g', 'trieu', 'tr'}
+                if suffix in exclude_units:
+                    continue
+                    
+                digits = re.sub(r'[^\d]', '', val_str)
                 if digits:
                     prices.append(int(digits))
-            # 3. Tìm các chuỗi giá triệu (ví dụ: 3.9 triệu, 4tr)
+                    
             text_clean = remove_diacritics(block_content.lower())
             million_matches = re.finditer(r'(\d+(?:[.,]\d+)?)\s*(?:trieu|tr)\b', text_clean)
             for m in million_matches:
@@ -1567,6 +1597,8 @@ class RAGEngine:
         return cleaned
 
     def query_brand_products(self, brand: str, question: str, history: List[Dict] = None, interests: List[str] = None) -> str:
+        if not brand:
+            return ""
         """Truy vấn SQL trực tiếp theo hãng sản phẩm"""
         try:
             conn = mysql.connector.connect(
@@ -1913,6 +1945,9 @@ class RAGEngine:
                     continue
                 if re.search(r'\d+gb', w):
                     continue
+                # Bỏ qua các chữ số đơn lẻ (tránh trùng lặp với số tiền như "5" triệu, lớp "6",...)
+                if w.isdigit() and len(w) == 1:
+                    continue
                 filtered_words.add(w)
             return filtered_words
 
@@ -1926,6 +1961,10 @@ class RAGEngine:
             p_brand = (p.get('ten_hang') or '').lower()
             if p_brand in disliked_brands:
                 continue
+            # Ràng buộc hãng khi tìm theo tên (tránh rò rỉ chéo hãng)
+            if brands:
+                if not any(b.lower() == p_brand for b in brands):
+                    continue
             core_words = get_core_words(p['ten_sp'])
             is_acc = is_accessory(p['ten_sp'])
             if user_asked_for_accessory != is_acc:
@@ -2139,11 +2178,22 @@ class RAGEngine:
             digits = re.sub(r'[^\d]', '', span_match.group(1))
             if digits:
                 prices.append(int(digits))
-        raw_patterns = re.findall(r'\b\d{1,3}(?:[.,]\d{3})+(?:\s*(?:đ|VNĐ|vnđ|dong|đồng))?\b', block_content)
-        for rp in raw_patterns:
-            digits = re.sub(r'[^\d]', '', rp)
+        
+        # Match digits with separators and check suffix
+        raw_matches = re.finditer(r'\b(\d{1,3}(?:[.,]\d{3})+)(?:\s*([a-zA-ZđVNĐvnđđồng]+))?\b', block_content)
+        for m in raw_matches:
+            val_str = m.group(1)
+            suffix = (m.group(2) or '').lower().strip()
+            
+            # Skip non-currency measurements
+            exclude_units = {'km', 'm', 'gb', 'tb', 'mah', 'hz', 'mp', 'inch', 'inches', 'cai', 'tuoi', 'thang', 'nam', 'kg', 'g', 'trieu', 'tr'}
+            if suffix in exclude_units:
+                continue
+                
+            digits = re.sub(r'[^\d]', '', val_str)
             if digits:
                 prices.append(int(digits))
+                
         text_clean = remove_diacritics(block_content.lower())
         million_matches = re.finditer(r'(\d+(?:[.,]\d+)?)\s*(?:trieu|tr)\b', text_clean)
         for m in million_matches:
@@ -2155,10 +2205,13 @@ class RAGEngine:
                 pass
         return list(set(prices))
 
-    def verify_draft_response(self, draft: str, db_products: dict) -> tuple:
+    def verify_draft_response(self, draft: str, allowed_products: dict, db_products_all: dict = None) -> tuple:
         import re
         if not draft:
             return True, ""
+            
+        if db_products_all is None:
+            db_products_all = allowed_products
             
         # 1. Check product cards
         id_pattern = re.compile(r'product-detail\.html\?id=([^"\'\s&<>]+)', re.IGNORECASE)
@@ -2166,10 +2219,10 @@ class RAGEngine:
         
         for mid in mentioned_ids:
             mid_str = str(mid)
-            if mid_str not in db_products:
-                return False, f"Mã sản phẩm (ID) {mid_str} không tồn tại trong cơ sở dữ liệu."
+            if mid_str not in allowed_products:
+                return False, f"Mã sản phẩm (ID) {mid_str} không tồn tại trong danh sách sản phẩm được phép hiển thị."
                 
-            db_info = db_products[mid_str]
+            db_info = allowed_products[mid_str]
             db_name = db_info['ten_sp']
             db_price = db_info['gia']
             db_image = db_info['anh_dai_dien']
@@ -2231,7 +2284,7 @@ class RAGEngine:
         }
         
         db_model_words = set()
-        for pid, p in db_products.items():
+        for pid, p in db_products_all.items():
             db_model_words.update(self.get_core_words_text(p.get('ten_sp') or '') - brands)
             
         price_regex = re.compile(
@@ -2256,7 +2309,7 @@ class RAGEngine:
                 continue
                 
             has_match = False
-            for pid, p in db_products.items():
+            for pid, p in db_products_all.items():
                 p_brand = (p.get('ten_hang') or '').lower()
                 p_name = remove_diacritics((p.get('ten_sp') or '').lower())
                 
@@ -2292,7 +2345,7 @@ class RAGEngine:
                 for num in numbers:
                     if num in ['7', '8', '11', '12', '13', '14', '15', '16', '17', '18']:
                         db_has_apple_num = False
-                        for pid, p in db_products.items():
+                        for pid, p in db_products_all.items():
                             p_brand = (p.get('ten_hang') or '').lower()
                             p_name = remove_diacritics((p.get('ten_sp') or '').lower())
                             if ('apple' in p_brand or 'iphone' in p_name) and num in p_name:
@@ -2306,7 +2359,7 @@ class RAGEngine:
                 samsung_models = re.findall(r'\b([samz]\d+)\b', line_lower)
                 for sm in samsung_models:
                     db_has_samsung_model = False
-                    for pid, p in db_products.items():
+                    for pid, p in db_products_all.items():
                         p_brand = (p.get('ten_hang') or '').lower()
                         p_name = remove_diacritics((p.get('ten_sp') or '').lower()).replace(" ", "")
                         if ('samsung' in p_brand or 'galaxy' in p_brand) and sm in p_name:
@@ -2329,14 +2382,16 @@ class RAGEngine:
         q_lower = remove_diacritics(question).lower()
         neg_patterns = ['khong thich', 'ghet', 'khong dung', 'tranh', 'khong muon mua', 'tay chay', 'loai tru']
         if any(pat in q_lower for pat in neg_patterns):
-            if any(term in q_lower for term in ['samsung', 'samssung', 'samsum', 'sam sung', 'galaxy', 'ss']):
-                disliked_brands.append('samsung')
-            if any(term in q_lower for term in ['apple', 'aple', 'iphone', 'iphong', 'ip']):
-                disliked_brands.append('apple')
-            if any(term in q_lower for term in ['xiaomi', 'xiao mi', 'redmi', 'poco']):
-                disliked_brands.append('xiaomi')
-            if any(term in q_lower for term in ['oppo', 'vivo']):
-                disliked_brands.append('oppo')
+            # Tuyệt đối không coi là phủ định/ghét hãng nếu đó là câu hỏi hỏi lý do tại sao (ví dụ: "tại sao không dùng", "sao không mua")
+            if not any(qw in q_lower for qw in ["tai sao", "sao khong", "sao lai khong", "sao lai"]):
+                if any(term in q_lower for term in ['samsung', 'samssung', 'samsum', 'sam sung', 'galaxy', 'ss']):
+                    disliked_brands.append('samsung')
+                if any(term in q_lower for term in ['apple', 'aple', 'iphone', 'iphong', 'ip']):
+                    disliked_brands.append('apple')
+                if any(term in q_lower for term in ['xiaomi', 'xiao mi', 'redmi', 'poco']):
+                    disliked_brands.append('xiaomi')
+                if any(term in q_lower for term in ['oppo', 'vivo']):
+                    disliked_brands.append('oppo')
         context_state["disliked_brands"] = disliked_brands
             
         # Format history string
@@ -2452,9 +2507,9 @@ QUY TẮC BẮT BUỘC:
         elif db_products and brand:
             has_requested_brand = any((p.get('ten_hang') or '').lower() == brand.lower() for p in db_products)
             if not has_requested_brand:
-                other_brands_in_db = list({p.get('ten_hang') for p in db_products if p.get('ten_hang')})
+                other_prods_str = ", ".join([p['ten_sp'] for p in db_products])
                 product_type_label = "phụ kiện" if user_asked_for_accessory else "điện thoại"
-                price_note = f"\n\n⚠️ THÔNG BÁO QUAN TRỌNG: Cửa hàng HIỆN KHÔNG CÓ bất kỳ sản phẩm {product_type_label} nào của hãng {brand} trong tầm giá/ngân sách phù hợp yêu cầu. Bạn BẮT BUỘC phải bắt đầu câu trả lời bằng cách khẳng định rõ ràng và lịch sự là cửa hàng không có sản phẩm {brand} trong phân khúc này (Ví dụ: 'Dạ, hiện tại dòng {product_type_label} của hãng {brand} ở tầm giá này bên em đang tạm hết hàng ạ'). Sau đó, giới thiệu các sản phẩm thay thế của hãng khác đang có sẵn dưới đây là {', '.join(other_brands_in_db)} để khách tham khảo. TUYỆT ĐỐI KHÔNG TỰ BỊA sản phẩm của hãng {brand}."
+                price_note = f"\n\n⚠️ THÔNG BÁO QUAN TRỌNG: Cửa hàng HIỆN KHÔNG CÓ bất kỳ sản phẩm {product_type_label} nào của hãng {brand} trong tầm giá/ngân sách phù hợp yêu cầu. Bạn BẮT BUỘC phải bắt đầu câu trả lời bằng cách khẳng định rõ ràng và lịch sự là cửa hàng không có sản phẩm {brand} trong phân khúc này (Ví dụ: 'Dạ, hiện tại dòng {product_type_label} của hãng {brand} ở tầm giá này bên em đang tạm hết hàng ạ'). Sau đó, bạn chỉ được giới thiệu các sản phẩm thay thế đang có sẵn tại cửa hàng là: {other_prods_str}. TUYỆT ĐỐI KHÔNG ĐƯỢC tự bịa bất kỳ sản phẩm nào khác ngoài danh sách này."
 
         # Phát hiện sản phẩm/hãng bị thiếu trong yêu cầu so sánh
         import re
@@ -2468,7 +2523,7 @@ QUY TẮC BẮT BUỘC:
                 brands_list = {'iphone', 'apple', 'samsung', 'galaxy', 'xiaomi', 'redmi', 'poco', 'oppo', 'vivo', 'realme', 'sony', 'xperia', 'google', 'pixel', 'vsmart', 'asus', 'rog', 'tecno', 'nokia'}
                 missing_items = []
                 for item in items:
-                    item_words = get_core_words(item)
+                    item_words = self.get_core_words_text(item)
                     item_brands = {b for b in brands_list if b in item}
                     
                     matched_in_db = False
@@ -2483,7 +2538,7 @@ QUY TẮC BẮT BUỘC:
                             if not brand_ok:
                                 continue
                                 
-                        p_words = get_core_words(p_name)
+                        p_words = self.get_core_words_text(p_name)
                         p_strict = p_words - brands_list
                         item_strict = item_words - brands_list
                         
@@ -2525,7 +2580,9 @@ QUY TẮC BẮT BUỘC:
         has_query_modifier = bool(query_words.intersection(modifiers))
         
         variant_hints = []
-        if not has_query_modifier and db_products:
+        # Chỉ chạy kiểm tra lệch phiên bản nếu khách hàng hỏi đích danh một dòng máy (thường có chứa chữ số hoặc từ khóa dòng máy đặc trưng)
+        has_model_spec = any(c.isdigit() for c in q_clean) or any(w in q_clean for w in ['galaxy', 'xperia', 'pixel', 'redmi', 'poco', 'reno', 'vsmart'])
+        if has_model_spec and not has_query_modifier and db_products:
             for p in db_products:
                 p_name_lower = p['ten_sp'].lower()
                 p_words = set(re.findall(r'\b\w+\b', p_name_lower))
@@ -2533,7 +2590,7 @@ QUY TẮC BẮT BUỘC:
                 if p_modifiers:
                     variant_hints.append(f"- Khách hàng đang hỏi về phiên bản tiêu chuẩn (không chứa các từ {list(p_modifiers)}), nhưng cửa hàng chỉ có phiên bản đặc biệt: {p['ten_sp']}. Bạn BẮT BUỘC phải giải thích rõ ràng, lịch sự cho khách là cửa hàng không có sẵn mẫu tiêu chuẩn đó, thay vào đó giới thiệu dòng {p['ten_sp']} đang có sẵn để thay thế.")
         
-        if variant_hints:
+        if variant_hints and brand:
             missing_note += "\n\n⚠️ THÔNG BÁO QUAN TRỌNG VỀ PHÂN LOẠI PHIÊN BẢN SẢN PHẨM:\n" + "\n".join(variant_hints)
             
             # Fetch same brand alts
@@ -2635,7 +2692,7 @@ Mục tiêu của bạn là tư vấn nhiệt tình, chuyên nghiệp và thuy�
 
 QUY TẮC BẮT BUỘC:
 1. CHỈ ĐƯỢC tư vấn sản phẩm có trong danh sách CSDL dưới đây. Tuyệt đối không tự tạo tên sản phẩm (ví dụ: POCO C71 là sản phẩm không tồn tại nếu không có trong danh sách), không tự đặt giá khác với dữ liệu cung cấp.
-2. Nếu không tìm thấy sản phẩm nào trong dữ liệu, hãy phản hồi: "Dạ, hiện em chưa tìm thấy sản phẩm phù hợp trong hệ thống cửa hàng ạ. Anh/chị có thể cho em xin thêm thông tin để em tìm mẫu khác nhé!" hoặc nếu khách hỏi dòng máy cụ thể mà hết hàng thì khẳng định rõ ràng là cửa hàng không có dòng máy/hãng đó trong tầm giá này.
+2. Nếu danh sách CSDL dưới đây hoàn toàn trống rỗng, hãy phản hồi: "Dạ, hiện em chưa tìm thấy sản phẩm phù hợp trong hệ thống cửa hàng ạ. Anh/chị có thể cho em xin thêm thông tin để em tìm mẫu khác nhé!". Nhưng nếu trong mục CSDL dưới đây CÓ sản phẩm, bạn BẮT BUỘC phải giới thiệu chúng cho khách hàng vì hệ thống đã tự động lọc khớp ngân sách từ trước, tuyệt đối không được từ chối hoặc nói không tìm thấy. Nếu khách hỏi dòng máy cụ thể mà hết hàng thì khẳng định rõ ràng là cửa hàng không có dòng máy/hãng đó trong tầm giá này.
 3. ĐỐI VỚI YÊU CẦU SO SÁNH (NẾU THIẾU SẢN PHẨM): Nếu khách hàng muốn so sánh 2 sản phẩm A và B, nhưng cửa hàng chỉ có sản phẩm B mà không có sản phẩm A (hoặc ngược lại):
    - Bạn BẮT BUỘC phải thông báo lịch sự ngay từ đầu là sản phẩm A hiện đang tạm hết hàng tại cửa hàng.
    - Sau đó, bạn chủ động đề xuất một sản phẩm tương tự A đang có sẵn tại cửa hàng (gọi là A') để so sánh với B cho khách tiện theo dõi (Ví dụ: "Dạ, hiện tại dòng iPhone 15 bên em đang tạm hết hàng rồi ạ. Để anh/chị tiện tham khảo, em xin phép đề xuất dòng máy tương tự đang có sẵn là iPhone 14 Pro Max để so sánh với Samsung A07 cho mình nhé!").
@@ -2657,6 +2714,7 @@ QUY TẮC BẮT BUỘC:
 5. TUYỆT ĐỐI KHÔNG dùng bất kỳ ký hiệu Markdown nào (như `**`, `*`, `-`, `#`, ` ``` `). Chỉ dùng HTML cơ bản như `<br>`, `<strong>`, `<b>`.
 6. LIÊN KẾT NGỮ CẢNH: Luôn luôn đọc kỹ <Lịch sử trò chuyện> để hiểu ngữ cảnh hiện tại. Nếu khách hàng hỏi những câu rút gọn hoặc dùng đại từ thay thế (ví dụ: "chiếc thứ hai", "máy đó", "màu khác có không", "bao nhiêu tiền"), bạn phải đối chiếu lịch sử trò chuyện để xác định chính xác sản phẩm khách đang nói đến trước khi trả lời.
 7. PHONG CÁCH TỰ NHIÊN: Hãy trả lời bằng giọng điệu vô cùng thân thiện, tự nhiên, đậm chất giao tiếp đời thường của người Việt. Hãy sử dụng linh hoạt các đại từ xưng hô thân mật (như "dạ", "em", "anh/chị") và các trợ từ ở cuối câu để tăng tính gần gũi (như "nhá", "nhé", "ạ", "nhen", "nha", "đồ á", "nè"). Tránh giọng điệu máy móc, cứng nhắc hoặc quá trang nghiêm.
+8. ĐỐI VỚI CÂU HỎI KHOA HỌC / KIẾN THỨC NGOÀI LỀ (Out-of-domain): Nếu khách hàng hỏi những câu hỏi kiến thức chung, địa lý, lịch sử, khoa học ngoài lề (ví dụ: "Mặt Trăng cách Trái Đất bao xa", "Thủ đô nước Pháp", v.v.), sau khi trả lời chính xác, ngắn gọn kiến thức đó, bạn bắt buộc phải KHÉO LÉO liên kết giới thiệu tới một sản phẩm điện thoại phù hợp đang có sẵn trong cửa hàng để tiếp thị bán hàng (Ví dụ: liên kết việc chụp ảnh Mặt Trăng với điện thoại có camera zoom siêu nét hoặc camera độ phân giải cao như Samsung Galaxy A06 (camera 200MP OIS), hay tra cứu du lịch ở Paris với điện thoại pin trâu, v.v.).
 
 {interests_instruction}
 {price_note}
@@ -2698,6 +2756,17 @@ Hãy đưa ra câu trả lời thuyết phục bằng tiếng Việt:"""
         except Exception as e:
             print(f"[Verifier DB] Error: {e}")
             
+        allowed_products = {}
+        if db_products:
+            for p in db_products:
+                allowed_products[str(p['ma_sp'])] = {
+                    'ten_sp': p['ten_sp'],
+                    'gia': p['gia'],
+                    'ten_hang': p.get('ten_hang') or '',
+                    'anh_dai_dien': p.get('anh_dai_dien') or ''
+                }
+            
+        is_valid = False
         for attempt in range(3):
             if attempt == 0:
                 prompt_input = system_template
@@ -2712,7 +2781,7 @@ Yêu cầu: Hãy tạo lại câu trả lời và KHÔNG ĐƯỢC lặp lại l�
                 res = self.llm.invoke(prompt_input)
                 draft = res.content
                 
-                is_valid, err_msg = self.verify_draft_response(draft, db_products_all)
+                is_valid, err_msg = self.verify_draft_response(draft, allowed_products, db_products_all)
                 if is_valid:
                     final_response = draft
                     break
@@ -2723,6 +2792,44 @@ Yêu cầu: Hãy tạo lại câu trả lời và KHÔNG ĐƯỢC lặp lại l�
             except Exception as e:
                 print(f"[LLM Generation Exception] {e}")
                 break
+                
+        if not is_valid:
+            print("[Verifier Fail-Safe] LLM failed verification 3 times. Constructing fail-safe alternative product card list.")
+            product_type_label = "phụ kiện" if user_asked_for_accessory else "điện thoại"
+            brand_label = brand if brand else "các hãng"
+            if db_products:
+                cards_html = ""
+                for p in db_products:
+                    price_formatted = f"{int(p['gia']):,}".replace(",", ".") + "đ" if p['gia'] else "N/A"
+                    price_raw = int(p['gia']) if p['gia'] else 0
+                    ram = p.get('ram')
+                    chip = p.get('chip')
+                    pin = p.get('pin')
+                    man_hinh = p.get('man_hinh')
+                    camera = p.get('camera')
+                    parts = []
+                    if ram: parts.append(f"RAM {ram}")
+                    if chip: parts.append(f"Chip {chip.strip()}")
+                    if pin: parts.append(f"Pin {pin.strip()}")
+                    if man_hinh: parts.append(f"Màn hình {man_hinh.strip()}")
+                    if camera: parts.append(f"Camera {camera.strip()}")
+                    config_str = ", ".join(parts) if parts else p['ten_sp']
+                    
+                    cards_html += f"""\n<div class="ai-product-card">
+  <img src="{p['anh_dai_dien'] or 'images/default-product.webp'}" alt="{p['ten_sp']}" class="ai-product-image">
+  <div class="ai-product-info">
+    <strong class="ai-product-name">{p['ten_sp']}</strong>
+    <div class="ai-product-price-row">Giá: <span class="ai-product-price">{price_formatted}</span></div>
+    <div class="ai-product-config">{config_str}</div>
+    <div class="ai-product-actions">
+      <a href="product-detail.html?id={p['ma_sp']}" class="ai-product-btn-detail">Xem chi tiết</a>
+      <button class="chatbot-add-cart-btn ai-product-btn-cart" data-pid="{p['ma_sp']}" data-pname="{p['ten_sp']}" data-pprice="{price_raw}" data-pimage="{p['anh_dai_dien'] or ''}"><i class="fas fa-cart-plus"></i> Thêm</button>
+    </div>
+  </div>
+</div>"""
+                final_response = f"Dạ, hiện tại dòng {product_type_label} của hãng {brand_label} ở tầm giá này bên em đang tạm hết hàng ạ. Tuy nhiên, anh/chị có thể tham khảo các mẫu máy khác đang có sẵn tại cửa hàng bên em:<br>{cards_html}<br>Dạ, anh/chị thấy sao ạ?"
+            else:
+                final_response = f"Dạ, hiện tại cửa hàng bên em không có mẫu {product_type_label} nào của hãng {brand_label} trong phân khúc này phù hợp với yêu cầu của anh/chị rồi ạ. Anh/chị cho em xin thêm thông tin để em tìm mẫu khác nhé!"
                 
         final_response = self._validate_response_product_ids(final_response)
         final_response = sanitize_ai_response(final_response)
@@ -2774,6 +2881,33 @@ Câu hỏi viết lại đầy đủ nghĩa:"""
             print(f"[Query Rewriter] Error: {e}")
             return current_input
 
+    def check_if_user_asked_separate_question(self, message: str, last_question: str) -> bool:
+        if not last_question:
+            return False
+        
+        msg_clean = remove_diacritics(message.lower().strip())
+        if msg_clean in ["dung", "dung vay", "khong", "khong can", "co", "hoc tap", "choi game", "chup anh", "selfie", "xem phim"]:
+            return False
+        if re.match(r'^\d+(\s*(trieu|tr|k|000))?$', msg_clean):
+            return False
+            
+        prompt = f"""Bạn là trợ lý AI. Hãy phân tích tin nhắn mới nhất của người dùng xem đó là:
+1. Một câu hỏi riêng biệt hoặc yêu cầu khác không liên quan đến việc trả lời cho câu hỏi tư vấn phía dưới (ví dụ: hỏi địa chỉ cửa hàng, hỏi giá một máy cụ thể, so sánh máy, hỏi chính sách trả góp/bảo hành...).
+2. Một câu trả lời (hoặc phản hồi) bình thường cho câu hỏi tư vấn được đặt ra.
+
+Câu hỏi của tư vấn viên trước đó: "{last_question}"
+Tin nhắn mới nhất của người dùng: "{message}"
+
+Nhiệm vụ: Trả về "YES" nếu tin nhắn của người dùng là một câu hỏi/yêu cầu riêng biệt khác. Trả về "NO" nếu đó là câu trả lời hoặc phản hồi thông thường cho câu hỏi trên.
+Chỉ trả về duy nhất từ "YES" hoặc "NO". Không giải thích thêm.
+Kết quả:"""
+        try:
+            res = self.llm.invoke(prompt)
+            content = res.content.strip().upper()
+            return "YES" in content
+        except Exception:
+            return False
+
     def process_chat(self, message: str, history: List[Dict] = None, is_admin: bool = False, user_id: Any = None, interests: List[str] = None, context_state: Dict[str, Any] = None) -> tuple:
         if context_state is None:
             context_state = {}
@@ -2781,23 +2915,186 @@ Câu hỏi viết lại đầy đủ nghĩa:"""
         message = self.normalize_query(message)
         message_clean = message.strip().lower()
         
-        # 1. KIỂM TRA FAST-PATH (So khớp từ khóa tĩnh từ chatbot_knowledge)
-        # Giúp trả về ngay các câu trả lời tĩnh (địa chỉ, giờ làm việc, chính sách...) 
-        # mà không cần gọi LLM hay ChromaDB, tiết kiệm 100% chi phí Groq API.
+        # 1. KIỂM TRA LUỒNG TƯ VẤN (CONVERSATIONAL RECOMMENDATION FLOW) - ƯU TIÊN SỐ 1
+        active_flow = context_state.get("recommendation_flow")
+        detected_flow = recommend_flow.detect_recommendation_flow(message)
+        flow_triggered_this_turn = False
+        
+        if detected_flow and detected_flow != active_flow:
+            is_sub_flow = detected_flow in ["photographer", "gamer", "undecided"]
+            if active_flow and is_sub_flow:
+                # Không chuyển đổi luồng khi đã có luồng chính đang hoạt động để tránh nhảy luồng do trả lời từ khóa
+                pass
+            else:
+                print(f"[Recommend Flow] Chuyển đổi luồng từ {active_flow} sang: {detected_flow}")
+                active_flow = detected_flow
+                context_state["recommendation_flow"] = active_flow
+                flow_config = recommend_flow.FLOWS[active_flow]
+                context_state["flow_data"] = {k: None for k in flow_config["fields"]}
+                context_state["flow_completed"] = False
+                flow_triggered_this_turn = True
+                # Clear old RAG memory to avoid pollution
+                for key in ["brand", "price_constraint", "confirmed", "product_type", "last_recommended_ids", "disliked_brands"]:
+                    if key in context_state:
+                        context_state.pop(key)
+        elif not active_flow and detected_flow:
+            print(f"[Recommend Flow] Kích hoạt luồng mới: {detected_flow}")
+            active_flow = detected_flow
+            context_state["recommendation_flow"] = active_flow
+            flow_config = recommend_flow.FLOWS[active_flow]
+            context_state["flow_data"] = {k: None for k in flow_config["fields"]}
+            context_state["flow_completed"] = False
+            flow_triggered_this_turn = True
+            # Clear old RAG memory to avoid pollution
+            for key in ["brand", "price_constraint", "confirmed", "product_type", "last_recommended_ids", "disliked_brands"]:
+                if key in context_state:
+                    context_state.pop(key)
+                
+        if active_flow:
+            print(f"[Recommend Flow] Đang xử lý luồng: {active_flow}")
+            
+            # Lấy câu hỏi cuối cùng của Assistant từ lịch sử trò chuyện
+            last_assistant_question = ""
+            if history:
+                for msg in reversed(history):
+                    if msg.get("role") == "assistant":
+                        # Loại bỏ các thẻ HTML để làm sạch câu hỏi gửi sang LLM
+                        import re
+                        last_assistant_question = re.sub(r'<[^>]+>', ' ', msg.get("content", "")).strip()
+                        break
+                        
+            # Kiểm tra xem tin nhắn mới có phải là câu hỏi riêng biệt không
+            is_separate_question = False
+            if last_assistant_question and not flow_triggered_this_turn:
+                # Fast path heuristic checks
+                flow_config = recommend_flow.FLOWS[active_flow]
+                flow_data = context_state.get("flow_data", {})
+                missing_field = None
+                for field in flow_config["order"]:
+                    if field not in flow_data or flow_data[field] is None:
+                        missing_field = field
+                        break
+                
+                is_chip_match = False
+                if missing_field:
+                    chips = flow_config["chips"].get(missing_field, [])
+                    msg_norm = remove_diacritics(message.lower().strip())
+                    for chip in chips:
+                        chip_text = remove_diacritics(chip["text"].lower().strip())
+                        if msg_norm == chip_text or chip_text in msg_norm or msg_norm in chip_text:
+                            is_chip_match = True
+                            break
+                            
+                if is_chip_match:
+                    is_separate_question = False
+                else:
+                    msg_norm = remove_diacritics(message.lower().strip())
+                    short_answers = ["co", "khong", "dung", "phai", "chuan", "ok", "yes", "no", "yep", "chup", "quay", "game", "pin", "hoc", "lam"]
+                    if len(message.split()) <= 3 and any(w == msg_norm or msg_norm.startswith(w + " ") or msg_norm.endswith(" " + w) for w in short_answers):
+                        is_separate_question = False
+                    else:
+                        is_separate_question = self.check_if_user_asked_separate_question(message, last_assistant_question)
+                
+            if is_separate_question:
+                print(f"[Recommend Flow] Phát hiện câu hỏi riêng biệt của người dùng: '{message}'")
+                # 1) Chạy RAG/QA bình thường để lấy câu trả lời
+                try:
+                    self._ensure_vectorstore_fresh()
+                except Exception as e:
+                    print(f"[Freshness] Check failed: {e}")
+                
+                rewritten_message = self.rewrite_query(message, history)
+                ans, updated_state = self.query_semantic_state(rewritten_message, history, interests, context_state)
+                
+                # 2) Kiểm tra xem luồng hiện tại còn thiếu trường nào để hỏi tiếp
+                flow_data = updated_state.get("flow_data", {})
+                flow_config = recommend_flow.FLOWS[active_flow]
+                missing_field = None
+                for field in flow_config["order"]:
+                    if field not in flow_data or flow_data[field] is None:
+                        missing_field = field
+                        break
+                        
+                if missing_field:
+                    history_str = ""
+                    if history:
+                        for msg in history[-4:]:
+                            role = "User" if msg.get("role") == "user" else "Assistant"
+                            history_str += f"{role}: {msg.get('content', '')[:100]}\n"
+                    history_str += f"User: {message}\n"
+                    question = recommend_flow.generate_flow_question(active_flow, missing_field, history_str, self.llm)
+                    
+                    ans_combined = f"{ans}<br><br>Dạ, quay lại với việc tư vấn điện thoại cho mình, {question}"
+                    chips = flow_config["chips"].get(missing_field, [])
+                    return ans_combined, updated_state, chips
+                else:
+                    # Nếu đã đủ thông tin, thực hiện gợi ý luôn
+                    matching_prods = recommend_flow.query_matching_products(active_flow, flow_data)
+                    recommendation = recommend_flow.generate_final_recommendation(active_flow, flow_data, matching_prods, self.llm)
+                    ans_combined = f"{ans}<br><br>{recommendation}"
+                    
+                    updated_state["completed_flow"] = active_flow
+                    updated_state["completed_flow_data"] = flow_data
+                    updated_state.pop("recommendation_flow", None)
+                    updated_state.pop("flow_data", None)
+                    updated_state.pop("flow_completed", None)
+                    return ans_combined, updated_state, None
+            else:
+                # 3) Nếu là câu trả lời bình thường cho luồng tư vấn, tiếp tục trích xuất
+                flow_data = context_state.get("flow_data", {})
+                flow_data = recommend_flow.extract_flow_entities(
+                    active_flow, 
+                    message, 
+                    flow_data, 
+                    last_assistant_question, 
+                    self.llm
+                )
+                context_state["flow_data"] = flow_data
+                
+                history_str = ""
+                if history:
+                    for msg in history[-4:]:
+                        role = "User" if msg.get("role") == "user" else "Assistant"
+                        history_str += f"{role}: {msg.get('content', '')[:100]}\n"
+                history_str += f"User: {message}\n"
+                        
+                flow_config = recommend_flow.FLOWS[active_flow]
+                missing_field = None
+                for field in flow_config["order"]:
+                    if field not in flow_data or flow_data[field] is None:
+                        missing_field = field
+                        break
+                        
+                if missing_field:
+                    question = recommend_flow.generate_flow_question(active_flow, missing_field, history_str, self.llm)
+                    chips = flow_config["chips"].get(missing_field, [])
+                    return question, context_state, chips
+                else:
+                    print(f"[Recommend Flow] Đủ thông tin. Thực hiện gợi ý...")
+                    matching_prods = recommend_flow.query_matching_products(active_flow, flow_data)
+                    recommendation = recommend_flow.generate_final_recommendation(active_flow, flow_data, matching_prods, self.llm)
+                    
+                    context_state["completed_flow"] = active_flow
+                    context_state["completed_flow_data"] = flow_data
+                    
+                    context_state.pop("recommendation_flow", None)
+                    context_state.pop("flow_data", None)
+                    context_state.pop("flow_completed", None)
+                    
+                    return recommendation, context_state, None
+
+        # 2. KIỂM TRA FAST-PATH (So khớp từ khóa tĩnh từ chatbot_knowledge) - Chỉ chạy nếu không thuộc luồng tư vấn
         static_mappings = self._get_static_knowledge_mappings()
         if message_clean in static_mappings:
             print(f"[Fast-Path Hit] Trả về trực tiếp nội dung tĩnh cho: '{message_clean}'")
-            return static_mappings[message_clean], context_state
+            return static_mappings[message_clean], context_state, None
             
-        # Kiểm tra xem có keyword nào là con của câu hỏi không (đối với câu hỏi ngắn)
-        # Ví dụ: "địa chỉ shop là gì" chứa "địa chỉ shop" hoặc "địa chỉ cửa hàng"
         for kw, content in static_mappings.items():
-            # Chỉ áp dụng so khớp con với từ khóa có độ dài từ 8 ký tự trở lên để tránh match sai các từ ngắn
             if len(kw) >= 8 and kw in message_clean:
                 print(f"[Fast-Path Substring Hit] Trực tiếp cho: '{kw}' từ câu hỏi: '{message_clean}'")
-                return content, context_state
+                return content, context_state, None
 
-        # Kiểm tra câu hỏi quá vắn tắt / mơ hồ không thể nhận diện
+        # 3. Kiểm tra câu hỏi quá vắn tắt / mơ hồ không thể nhận diện
         import re
         clean_no_punct = re.sub(r'[^\w\s]', '', message_clean).strip()
         stop_words = {'co', 'ko', 'khong', 'co ko', 'a', 'da', 'oi', 'helo', 'hello', 'hi', 'ok', 'nhe', 'nha', 'di', 'dum', 'giup', 'em', 'anh', 'chi', 'ban', 'shop', 'cua hang', 'cho', 'voi', 'lam', 'sao', 'nao', 'nay', 'do', 'kia', 'dau', 'gi'}
@@ -2811,10 +3108,9 @@ Câu hỏi viết lại đầy đủ nghĩa:"""
                 "Dạ, câu hỏi của anh/chị hơi vắn tắt hoặc chưa rõ ý quá ạ. "
                 "Anh/chị có thể cung cấp thêm thông tin chi tiết một chút (ví dụ: tên dòng máy cụ thể, tầm giá hoặc nhu cầu sử dụng) "
                 "để em hỗ trợ tư vấn chính xác nhất cho mình nhé!"
-            ), context_state
-                
+            ), context_state, None
+
         # 2. KIỂM TRA CHAT CACHE (Bộ nhớ đệm câu trả lời động từ LLM)
-        # Khóa cache bao gồm nội dung câu hỏi + lịch sử 2 câu cuối (để giữ ngữ cảnh)
         history_key = ""
         if history:
             history_key = "_".join([f"{m.get('role', '')}:{m.get('content', '')[:50]}" for m in history[-2:]])
@@ -2823,7 +3119,7 @@ Câu hỏi viết lại đầy đủ nghĩa:"""
         cached_res = self.cache.get(cache_key)
         if cached_res:
             print(f"[Cache Hit] Trả về kết quả từ bộ nhớ đệm cho: '{message_clean}'")
-            return cached_res["response"], cached_res["context_state"]
+            return cached_res["response"], cached_res["context_state"], cached_res.get("suggestions", None)
             
         # 3. NẾU CACHE MISS -> CHẠY PIPELINE RAG + LLM BÌNH THƯỜNG
         try:
@@ -2839,7 +3135,7 @@ Câu hỏi viết lại đầy đủ nghĩa:"""
             ])
             if is_bi_query:
                 print("=> Routing to KPI/SQL engine for Admin")
-                return self.query_kpi(message), context_state
+                return self.query_kpi(message), context_state, None
                 
         # Call Query Rewriter
         rewritten_message = self.rewrite_query(message, history)
@@ -2847,14 +3143,14 @@ Câu hỏi viết lại đầy đủ nghĩa:"""
         ans, updated_state = self.query_semantic_state(rewritten_message, history, interests, context_state)
         
         # 4. LƯU KẾT QUẢ VÀO CACHE (Thời hạn TTL: 1 tiếng = 3600s)
-        # Không lưu cache nếu có lỗi hoặc không có nội dung hợp lệ
         if ans and "chưa được cấu hình khóa API" not in ans and "lỗi khóa API" not in ans:
             self.cache.set(cache_key, {
                 "response": ans,
-                "context_state": updated_state
+                "context_state": updated_state,
+                "suggestions": None
             }, ttl=3600)
             
-        return ans, updated_state
+        return ans, updated_state, None
 
 # Khởi tạo singleton instance
 rag_engine = None

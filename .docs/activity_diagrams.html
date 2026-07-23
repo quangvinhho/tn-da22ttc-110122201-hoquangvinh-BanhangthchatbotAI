@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trọn Bộ Sơ Đồ Hoạt Động (UML Activity Diagrams) - Quang Hưng Mobile</title>
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-color: #0f172a;
+            --text-muted: #475569;
+            --border-color: #cbd5e1;
+            --node-bg: #70B2E4;
+            --node-border: #1F6FEB;
+            --node-text: #000000;
+            --arrow-color: #1e293b;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
+        }
+
+        body.dark {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --node-bg: #2563eb;
+            --node-border: #60a5fa;
+            --node-text: #ffffff;
+            --arrow-color: #cbd5e1;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 25px;
+            transition: all 0.3s ease;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .title-group h1 {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text-color);
+            margin-bottom: 6px;
+        }
+
+        .title-group p {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .section-header {
+            font-size: 19px;
+            font-weight: 700;
+            margin: 35px 0 15px 0;
+            color: #1e40af;
+            border-left: 5px solid #2563eb;
+            padding-left: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        body.dark .section-header {
+            color: #60a5fa;
+            border-left-color: #60a5fa;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: var(--card-bg);
+            color: var(--text-color);
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            border-color: #2563eb;
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: #ffffff;
+            border-color: #10b981;
+        }
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            color: #ffffff;
+            border-color: #2563eb;
+        }
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
+
+        .diagram-card {
+            background: var(--card-bg);
+            border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+        }
+
+        .diagram-header {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .diagram-title {
+            font-size: 17px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .diagram-badge {
+            background: rgba(37, 99, 235, 0.1);
+            color: #2563eb;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .diagram-svg-container {
+            width: 100%;
+            overflow-x: auto;
+            padding: 15px 10px;
+            background: #ffffff;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+        }
+
+        body.dark .diagram-svg-container {
+            background: #111827;
+            border-color: #374151;
+        }
+
+        svg {
+            display: block;
+            margin: 0 auto;
+        }
+
+        /* SVG Node Styling - Chữ Semi-Bold 600 hài hòa và sắc nét */
+        .node-rect {
+            fill: #70B2E4;
+            stroke: #1F6FEB;
+            stroke-width: 2.0;
+            rx: 10px;
+            ry: 10px;
+            filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.08));
+        }
+
+        body.dark .node-rect {
+            fill: #2563eb;
+            stroke: #60a5fa;
+        }
+
+        .node-text {
+            fill: #000000;
+            font-size: 13px;
+            font-weight: 600;
+            text-anchor: middle;
+            dominant-baseline: middle;
+        }
+
+        body.dark .node-text {
+            fill: #ffffff;
+        }
+
+        .node-rhombus {
+            fill: #70B2E4;
+            stroke: #1F6FEB;
+            stroke-width: 2.0;
+            filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.08));
+        }
+
+        body.dark .node-rhombus {
+            fill: #2563eb;
+            stroke: #60a5fa;
+        }
+
+        .arrow-line {
+            stroke: var(--arrow-color);
+            stroke-width: 2.0;
+            fill: none;
+        }
+
+        .join-bar {
+            fill: #0f172a;
+            rx: 3px;
+        }
+
+        body.dark .join-bar {
+            fill: #f8fafc;
+        }
+
+        .label-text {
+            fill: #0f172a;
+            font-size: 12.5px;
+            font-weight: 600;
+        }
+
+        body.dark .label-text {
+            fill: #60a5fa;
+        }
+
+        @media print {
+            body {
+                background: white;
+                color: black;
+                padding: 0;
+            }
+            .controls, .header p, .btn-download {
+                display: none !important;
+            }
+            .diagram-card {
+                box-shadow: none;
+                border: 1px solid #ccc;
+                page-break-inside: avoid;
+                margin-bottom: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="title-group">
+            <h1>Trọn Bộ Sơ Đồ Hoạt Động (UML Activity Diagrams - Phông Chữ Semi-Bold Nét Đẹp)</h1>
+            <p>Khóa luận tốt nghiệp: Website Bán Hàng Quang Hưng Mobile Tích Hợp Chatbot AI & Gợi Ý Sản Phẩm</p>
+        </div>
+        <div class="controls">
+            <button class="btn" onclick="toggleTheme()">🌓 Đổi giao diện (Dark/Light)</button>
+            <button class="btn btn-primary" onclick="window.print()">🖨️ In / Xuất PDF Báo Cáo</button>
+        </div>
+    </div>
+
+    <!-- PHẦN 1: CÁC SƠ ĐỒ HOẠT ĐỘNG HỆ THỐNG CƠ BẢN -->
+    <div class="section-header">📌 PHẦN 1: CÁC SƠ ĐỒ HOẠT ĐỘNG CHỨC NĂNG HỆ THỐNG</div>
+
+    <!-- 1. SƠ ĐỒ ĐĂNG KÝ VÀ ĐĂNG NHẬP -->
+    <div class="diagram-card">
+        <div class="diagram-header">
+            <div class="diagram-title">
+                Hình 3.6 Sơ Đồ Hoạt Động Đăng Ký Và Đăng Nhập
+                <span class="diagram-badge">Xác thực OTP Email & JWT / OAuth</span>
+            </div>
+            <button class="btn btn-success btn-download" onclick="downloadPNG('svg-auth', 'Hinh_3_6_So_Do_Dang_Ky_Dang_Nhap.png')">
+                📸 Tải Ảnh HD Nét Căng (PNG)
+            </button>
+        </div>
+        <div class="diagram-svg-container">
+            <svg id="svg-auth" width="1720" height="260" viewBox="0 0 1720 260" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <marker id="arrow1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                        <path d="M 0 1 L 10 5 L 0 9 z" fill="#1e293b" />
+                    </marker>
+                </defs>
+
+                <!-- Start Node -->
+                <circle cx="35" cy="130" r="12" fill="#000000" />
+                <path d="M 47 130 L 75 130" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Step 1 -->
+                <rect x="75" y="98" width="160" height="64" class="node-rect" />
+                <text x="155" y="122" class="node-text">Truy cập Website</text>
+                <text x="155" y="140" class="node-text">Quang Hưng Mobile</text>
+                <path d="M 235 130 L 275 130" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Decision: "Đã có tài khoản?" -->
+                <polygon points="340,85 405,130 340,175 275,130" class="node-rhombus" />
+                <text x="340" y="124" class="node-text">Đã có</text>
+                <text x="340" y="140" class="node-text">tài khoản?</text>
+
+                <!-- Branch "Chưa" (Đăng ký OTP - Top) -->
+                <path d="M 340 85 L 340 48 L 460 48" class="arrow-line" marker-end="url(#arrow1)" />
+                <text x="348" y="38" class="label-text">Chưa (Đăng ký)</text>
+
+                <rect x="460" y="16" width="165" height="64" class="node-rect" />
+                <text x="542" y="40" class="node-text">Nhập Email &</text>
+                <text x="542" y="58" class="node-text">Mật khẩu đăng ký</text>
+                <path d="M 625 48 L 655 48" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <rect x="655" y="16" width="165" height="64" class="node-rect" />
+                <text x="737" y="40" class="node-text">Hệ thống gửi mã</text>
+                <text x="737" y="58" class="node-text">OTP qua Email</text>
+                <path d="M 820 48 L 850 48" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <rect x="850" y="16" width="155" height="64" class="node-rect" />
+                <text x="927" y="40" class="node-text">Khách nhập mã OTP</text>
+                <text x="927" y="58" class="node-text">xác thực email</text>
+                <path d="M 1005 48 L 1045 48" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Decision OTP -->
+                <polygon points="1095,10 1145,48 1095,86 1045,48" class="node-rhombus" />
+                <text x="1095" y="52" class="node-text" style="font-size:12px;">OTP hợp lệ?</text>
+
+                <!-- OTP Có -->
+                <path d="M 1145 48 L 1200 48" class="arrow-line" marker-end="url(#arrow1)" />
+                <text x="1155" y="40" class="label-text">Có</text>
+
+                <rect x="1200" y="16" width="175" height="64" class="node-rect" />
+                <text x="1287" y="40" class="node-text">Mã hóa Bcrypt Pass</text>
+                <text x="1287" y="58" class="node-text">& Lưu bảng khachhang</text>
+                <path d="M 1375 48 L 1445 48 L 1445 110" class="arrow-line" />
+
+                <!-- Branch "Rồi" (Đăng nhập - Bottom) -->
+                <path d="M 340 175 L 340 212 L 460 212" class="arrow-line" marker-end="url(#arrow1)" />
+                <text x="348" y="202" class="label-text">Rồi (Đăng nhập)</text>
+
+                <rect x="460" y="180" width="185" height="64" class="node-rect" />
+                <text x="552" y="204" class="node-text">Nhập Email/Password</text>
+                <text x="552" y="222" class="node-text">hoặc Google OAuth</text>
+                <path d="M 645 212 L 685 212" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <rect x="685" y="180" width="175" height="64" class="node-rect" />
+                <text x="772" y="204" class="node-text">So khớp Mật khẩu</text>
+                <text x="772" y="222" class="node-text">(Bcrypt compare)</text>
+                <path d="M 860 212 L 900 212" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Decision Pass -->
+                <polygon points="950,172 1000,212 950,252 900,212" class="node-rhombus" />
+                <text x="950" y="210" class="node-text" style="font-size:11px;">Mật khẩu</text>
+                <text x="950" y="224" class="node-text" style="font-size:11px;">đúng?</text>
+
+                <!-- Pass Có -->
+                <path d="M 1000 212 L 1200 212" class="arrow-line" marker-end="url(#arrow1)" />
+                <text x="1010" y="204" class="label-text">Có</text>
+
+                <rect x="1200" y="180" width="175" height="64" class="node-rect" />
+                <text x="1287" y="204" class="node-text">Sinh token JWT</text>
+                <text x="1287" y="222" class="node-text">duy trì phiên làm việc</text>
+                <path d="M 1375 212 L 1445 212 L 1445 150" class="arrow-line" />
+
+                <!-- Join Bar 1 -->
+                <rect x="1442" y="30" width="7" height="200" class="join-bar" />
+                <path d="M 1449 130 L 1480 130" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Output Step -->
+                <rect x="1480" y="98" width="160" height="64" class="node-rect" />
+                <text x="1560" y="122" class="node-text">Đăng nhập thành công</text>
+                <text x="1560" y="140" class="node-text">& Chuyển Màn hình</text>
+                <path d="M 1640 130 L 1670 130" class="arrow-line" />
+
+                <!-- Join Bar 2 -->
+                <rect x="1670" y="70" width="7" height="120" class="join-bar" />
+                <path d="M 1677 130 L 1700 130" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- End Node -->
+                <circle cx="1705" cy="130" r="13" stroke="#000000" stroke-width="2.5" fill="none" />
+                <circle cx="1705" cy="130" r="8" fill="#000000" />
+            </svg>
+        </div>
+    </div>
+
+    <!-- 2. SƠ ĐỒ TÌM KIẾM VÀ LỌC SẢN PHẨM -->
+    <div class="diagram-card">
+        <div class="diagram-header">
+            <div class="diagram-title">
+                Hình 3.7 Sơ Đồ Hoạt Động Tìm Kiếm Và Lọc Sản Phẩm
+                <span class="diagram-badge">Lọc đa tiêu chí Hãng / Giá / RAM / Chip</span>
+            </div>
+            <button class="btn btn-success btn-download" onclick="downloadPNG('svg-search', 'Hinh_3_7_So_Do_Tim_Kiem_Loc_San_Pham.png')">
+                📸 Tải Ảnh HD Nét Căng (PNG)
+            </button>
+        </div>
+        <div class="diagram-svg-container">
+            <svg id="svg-search" width="1360" height="220" viewBox="0 0 1360 220" xmlns="http://www.w3.org/2000/svg">
+                <!-- Start Node -->
+                <circle cx="35" cy="110" r="12" fill="#000000" />
+                <path d="M 47 110 L 75 110" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Step 1 -->
+                <rect x="75" y="78" width="175" height="64" class="node-rect" />
+                <text x="162" y="102" class="node-text">Nhập từ khóa / Chọn bộ lọc</text>
+                <text x="162" y="120" class="node-text">(Hãng, Giá, RAM, Chip)</text>
+                <path d="M 250 110 L 280 110" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Step 2 -->
+                <rect x="280" y="78" width="175" height="64" class="node-rect" />
+                <text x="367" y="102" class="node-text">Client gửi GET Request</text>
+                <text x="367" y="120" class="node-text">kèm Query Parameters</text>
+                <path d="M 455 110 L 485 110" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Step 3 -->
+                <rect x="485" y="78" width="175" height="64" class="node-rect" />
+                <text x="572" y="102" class="node-text">Server Node.js tiếp nhận</text>
+                <text x="572" y="120" class="node-text">& Tạo câu lệnh SQL động</text>
+                <path d="M 660 110 L 690 110" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Step 4 -->
+                <rect x="690" y="78" width="175" height="64" class="node-rect" />
+                <text x="777" y="102" class="node-text">Truy xuất CSDL MySQL</text>
+                <text x="777" y="120" class="node-text">(sanpham, chitietsanpham)</text>
+                <path d="M 865 110 L 910 110" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Decision: "Có sản phẩm khớp?" -->
+                <polygon points="965,70 1020,110 965,150 910,110" class="node-rhombus" />
+                <text x="965" y="104" class="node-text" style="font-size:12px;">Có SP</text>
+                <text x="965" y="118" class="node-text" style="font-size:12px;">khớp?</text>
+
+                <!-- Branch "Có" (Top) -->
+                <path d="M 965 70 L 965 45 L 1055 45" class="arrow-line" marker-end="url(#arrow1)" />
+                <text x="975" y="38" class="label-text">Có</text>
+
+                <rect x="1055" y="15" width="185" height="60" class="node-rect" />
+                <text x="1147" y="38" class="node-text">Trả về danh sách SP &</text>
+                <text x="1147" y="55" class="node-text">Hiển thị dạng Card / Lưới</text>
+                <path d="M 1240 45 L 1290 45 L 1290 95" class="arrow-line" />
+
+                <!-- Branch "Không" (Bottom) -->
+                <path d="M 965 150 L 965 175 L 1055 175" class="arrow-line" marker-end="url(#arrow1)" />
+                <text x="975" y="168" class="label-text">Không</text>
+
+                <rect x="1055" y="145" width="185" height="60" class="node-rect" />
+                <text x="1147" y="168" class="node-text">Hiển thị thông báo</text>
+                <text x="1147" y="185" class="node-text">"Không tìm thấy SP phù hợp"</text>
+                <path d="M 1240 175 L 1290 175 L 1290 125" class="arrow-line" />
+
+                <!-- Join Bar -->
+                <rect x="1287" y="30" width="7" height="160" class="join-bar" />
+                <path d="M 1294 110 L 1325 110" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- End Node -->
+                <circle cx="1338" cy="110" r="13" stroke="#000000" stroke-width="2.5" fill="none" />
+                <circle cx="1338" cy="110" r="8" fill="#000000" />
+            </svg>
+        </div>
+    </div>
+
+    <!-- 3. SƠ ĐỒ QUẢN LÝ GIỎ HÀNG -->
+    <div class="diagram-card">
+        <div class="diagram-header">
+            <div class="diagram-title">
+                Hình 3.8 Sơ Đồ Hoạt Động Quản Lý Giỏ Hàng
+                <span class="diagram-badge">Đồng bộ CSDL & Cập nhật Real-time</span>
+            </div>
+            <button class="btn btn-success btn-download" onclick="downloadPNG('svg-cart', 'Hinh_3_8_So_Do_Quan_Ly_Gio_Hang.png')">
+                📸 Tải Ảnh HD Nét Căng (PNG)
+            </button>
+        </div>
+        <div class="diagram-svg-container">
+            <svg id="svg-cart" width="1220" height="260" viewBox="0 0 1220 260" xmlns="http://www.w3.org/2000/svg">
+                <!-- Start Node -->
+                <circle cx="35" cy="130" r="12" fill="#000000" />
+                <path d="M 47 130 L 75 130" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Step 1 -->
+                <rect x="75" y="98" width="165" height="64" class="node-rect" />
+                <text x="157" y="122" class="node-text">Xem chi tiết sản phẩm /</text>
+                <text x="157" y="140" class="node-text">Màn hình danh sách máy</text>
+                <path d="M 240 130 L 280 130" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Decision: "Thao tác giỏ hàng?" -->
+                <polygon points="335,85 390,130 335,175 280,130" class="node-rhombus" />
+                <text x="335" y="124" class="node-text">Thao tác</text>
+                <text x="335" y="138" class="node-text">Giỏ?</text>
+
+                <!-- Branch 1: Thêm SP -->
+                <path d="M 335 85 L 335 48 L 470 48" class="arrow-line" marker-end="url(#arrow1)" />
+                <text x="345" y="38" class="label-text">Thêm sản phẩm</text>
+
+                <rect x="470" y="16" width="170" height="64" class="node-rect" />
+                <text x="555" y="40" class="node-text">Click "Thêm vào giỏ"</text>
+                <text x="555" y="58" class="node-text">& Kiểm tra số lượng tồn</text>
+                <path d="M 640 48 L 685 48 L 685 110" class="arrow-line" />
+
+                <!-- Branch 2: Đổi số lượng -->
+                <path d="M 390 130 L 470 130" class="arrow-line" marker-end="url(#arrow1)" />
+                <text x="395" y="122" class="label-text">Cập nhật số lượng</text>
+
+                <rect x="470" y="98" width="165" height="64" class="node-rect" />
+                <text x="552" y="122" class="node-text">Tăng / Giảm số lượng</text>
+                <text x="552" y="140" class="node-text">điện thoại trong giỏ</text>
+                <path d="M 635 130 L 685 130" class="arrow-line" />
+
+                <!-- Branch 3: Xóa SP -->
+                <path d="M 335 175 L 335 212 L 470 212" class="arrow-line" marker-end="url(#arrow1)" />
+                <text x="345" y="202" class="label-text">Xóa sản phẩm</text>
+
+                <rect x="470" y="180" width="170" height="64" class="node-rect" />
+                <text x="555" y="204" class="node-text">Nhấn nút "Xóa SP"</text>
+                <text x="555" y="222" class="node-text">xác nhận bỏ khỏi giỏ</text>
+                <path d="M 640 212 L 685 212 L 685 150" class="arrow-line" />
+
+                <!-- Join Bar 1 -->
+                <rect x="682" y="30" width="7" height="200" class="join-bar" />
+                <path d="M 689 130 L 720 130" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Backend Sync Step -->
+                <rect x="720" y="98" width="175" height="64" class="node-rect" />
+                <text x="807" y="122" class="node-text">Node.js đồng bộ CSDL</text>
+                <text x="807" y="140" class="node-text">(giohang, chitietgiohang)</text>
+                <path d="M 895 130 L 925 130" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <rect x="925" y="98" width="175" height="64" class="node-rect" />
+                <text x="1012" y="122" class="node-text">Tính lại Tổng tiền &</text>
+                <text x="1012" y="140" class="node-text">Cập nhật Giỏ hàng Client</text>
+                <path d="M 1100 130 L 1170 130" class="arrow-line" />
+
+                <!-- Join Bar 2 -->
+                <rect x="1170" y="70" width="7" height="120" class="join-bar" />
+                <path d="M 1177 130 L 1200 130" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- End Node -->
+                <circle cx="1205" cy="130" r="13" stroke="#000000" stroke-width="2.5" fill="none" />
+                <circle cx="1205" cy="130" r="8" fill="#000000" />
+            </svg>
+        </div>
+    </div>
+
+    <!-- 4. SƠ ĐỒ THANH TOÁN ĐƠN HÀNG -->
+    <div class="diagram-card">
+        <div class="diagram-header">
+            <div class="diagram-title">
+                Hình 3.9 Sơ Đồ Hoạt Động Thanh Toán Đơn Hàng
+                <span class="diagram-badge">COD / Quét mã QR & Trừ kho CSDL</span>
+            </div>
+            <button class="btn btn-success btn-download" onclick="downloadPNG('svg-checkout', 'Hinh_3_9_So_Do_Thanh_Toan_Don_Hang.png')">
+                📸 Tải Ảnh HD Nét Căng (PNG)
+            </button>
+        </div>
+        <div class="diagram-svg-container">
+            <svg id="svg-checkout" width="1860" height="260" viewBox="0 0 1860 260" xmlns="http://www.w3.org/2000/svg">
+                <!-- Start Node -->
+                <circle cx="35" cy="130" r="12" fill="#000000" />
+                <path d="M 47 130 L 75 130" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Step 1 -->
+                <rect x="75" y="98" width="155" height="64" class="node-rect" />
+                <text x="152" y="122" class="node-text">Mở màn hình Giỏ hàng</text>
+                <text x="152" y="140" class="node-text">& Click "Thanh toán"</text>
+                <path d="M 230 130 L 260 130" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Step 2 -->
+                <rect x="260" y="98" width="165" height="64" class="node-rect" />
+                <text x="342" y="122" class="node-text">Nhập địa chỉ giao hàng</text>
+                <text x="342" y="140" class="node-text">& SĐT người nhận</text>
+                <path d="M 425 130 L 475 130" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Decision: "Phương thức thanh toán?" -->
+                <polygon points="535,85 590,130 535,175 475,130" class="node-rhombus" />
+                <text x="535" y="124" class="node-text">Hình thức</text>
+                <text x="535" y="138" class="node-text">PTTT?</text>
+
+                <!-- Branch COD (Top) -->
+                <path d="M 535 85 L 535 48 L 650 48" class="arrow-line" marker-end="url(#arrow1)" />
+                <text x="545" y="38" class="label-text">COD (Tiền mặt)</text>
+
+                <rect x="650" y="16" width="175" height="64" class="node-rect" />
+                <text x="737" y="40" class="node-text">Chọn Thanh toán khi nhận</text>
+                <text x="737" y="58" class="node-text">Tạo đơn "Đang xử lý"</text>
+                <path d="M 825 48 L 1085 48 L 1085 110" class="arrow-line" />
+
+                <!-- Branch QR (Bottom) -->
+                <path d="M 535 175 L 535 212 L 650 212" class="arrow-line" marker-end="url(#arrow1)" />
+                <text x="545" y="202" class="label-text">Quét mã QR</text>
+
+                <rect x="650" y="180" width="180" height="64" class="node-rect" />
+                <text x="740" y="204" class="node-text">Server tạo Mã QR giao dịch</text>
+                <text x="740" y="222" class="node-text">& Thời gian hết hạn exp</text>
+                <path d="M 830 212 L 870 212" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <rect x="870" y="180" width="175" height="64" class="node-rect" />
+                <text x="957" y="204" class="node-text">Khách quét mã chuyển khoản</text>
+                <text x="957" y="222" class="node-text">& Webhook xác thực đơn</text>
+                <path d="M 1045 212 L 1085 212 L 1085 150" class="arrow-line" />
+
+                <!-- Join Bar 1 -->
+                <rect x="1082" y="30" width="7" height="200" class="join-bar" />
+                <path d="M 1089 130 L 1120 130" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- DB Order Processing -->
+                <rect x="1120" y="98" width="185" height="64" class="node-rect" />
+                <text x="1212" y="122" class="node-text">Tạo bản ghi donhang &</text>
+                <text x="1212" y="140" class="node-text">chitietdonhang trong DB</text>
+                <path d="M 1305 130 L 1335 130" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <rect x="1335" y="98" width="175" height="64" class="node-rect" />
+                <text x="1422" y="122" class="node-text">Trừ số lượng tồn kho &</text>
+                <text x="1422" y="140" class="node-text">Xóa sạch giỏ hàng tạm</text>
+                <path d="M 1510 130 L 1540 130" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <rect x="1540" y="98" width="175" height="64" class="node-rect" />
+                <text x="1627" y="122" class="node-text">Hiển thị màn hình Đặt hàng</text>
+                <text x="1627" y="140" class="node-text">thành công & Mã đơn</text>
+                <path d="M 1715 130 L 1805 130" class="arrow-line" />
+
+                <!-- Join Bar 2 -->
+                <rect x="1805" y="70" width="7" height="120" class="join-bar" />
+                <path d="M 1812 130 L 1840 130" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- End Node -->
+                <circle cx="1848" cy="130" r="13" stroke="#000000" stroke-width="2.5" fill="none" />
+                <circle cx="1848" cy="130" r="8" fill="#000000" />
+            </svg>
+        </div>
+    </div>
+
+    <!-- 5. SƠ ĐỒ QUẢN LÝ TÀI KHOẢN VÀ THEO DÕI ĐƠN HÀNG -->
+    <div class="diagram-card">
+        <div class="diagram-header">
+            <div class="diagram-title">
+                Hình 3.10 Sơ Đồ Hoạt Động Quản Lý Tài Khoản Và Theo Dõi Đơn Hàng
+                <span class="diagram-badge">Cập nhật thông tin & Trạng thái đơn</span>
+            </div>
+            <button class="btn btn-success btn-download" onclick="downloadPNG('svg-account', 'Hinh_3_10_So_Do_Quan_Ly_Tai_Khoan_Theo_Doi_Don.png')">
+                📸 Tải Ảnh HD Nét Căng (PNG)
+            </button>
+        </div>
+        <div class="diagram-svg-container">
+            <svg id="svg-account" width="1450" height="260" viewBox="0 0 1450 260" xmlns="http://www.w3.org/2000/svg">
+                <!-- Start Node -->
+                <circle cx="35" cy="130" r="12" fill="#000000" />
+                <path d="M 47 130 L 75 130" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Step 1 -->
+                <rect x="75" y="98" width="155" height="64" class="node-rect" />
+                <text x="152" y="122" class="node-text">Đăng nhập & Mở trang</text>
+                <text x="152" y="140" class="node-text">Tài khoản cá nhân</text>
+                <path d="M 230 130 L 270 130" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Decision: "Chọn chức năng?" -->
+                <polygon points="330,85 385,130 330,175 275,130" class="node-rhombus" />
+                <text x="330" y="124" class="node-text">Chọn chức</text>
+                <text x="330" y="138" class="node-text">năng?</text>
+
+                <!-- Branch 1: Đổi thông tin -->
+                <path d="M 330 85 L 330 48 L 470 48" class="arrow-line" marker-end="url(#arrow1)" />
+                <text x="340" y="38" class="label-text">Thông tin cá nhân</text>
+
+                <rect x="470" y="16" width="175" height="64" class="node-rect" />
+                <text x="557" y="40" class="node-text">Cập nhật Họ tên, SĐT,</text>
+                <text x="557" y="58" class="node-text">Địa chỉ nhận hàng</text>
+                <path d="M 645 48 L 675 48" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <rect x="675" y="16" width="165" height="64" class="node-rect" />
+                <text x="757" y="40" class="node-text">Lưu thay đổi CSDL</text>
+                <text x="757" y="58" class="node-text">& Báo cập nhật thành công</text>
+                <path d="M 840 48 L 905 48 L 905 110" class="arrow-line" />
+
+                <!-- Branch 2: Theo dõi đơn -->
+                <path d="M 330 175 L 330 212 L 470 212" class="arrow-line" marker-end="url(#arrow1)" />
+                <text x="340" y="202" class="label-text">Lịch sử đơn hàng</text>
+
+                <rect x="470" y="180" width="175" height="64" class="node-rect" />
+                <text x="557" y="204" class="node-text">Xem danh sách đơn hàng</text>
+                <text x="557" y="222" class="node-text">& Chọn Chi tiết đơn hàng</text>
+                <path d="M 645 212 L 675 212" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <rect x="675" y="180" width="180" height="64" class="node-rect" />
+                <text x="765" y="204" class="node-text">Kiểm tra trạng thái đơn</text>
+                <text x="765" y="222" class="node-text">(Xử lý / Giao / Hoàn thành)</text>
+                <path d="M 855 212 L 905 212 L 905 150" class="arrow-line" />
+
+                <!-- Join Bar 1 -->
+                <rect x="902" y="30" width="7" height="200" class="join-bar" />
+                <path d="M 909 130 L 940 130" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Sync GUI -->
+                <rect x="940" y="98" width="160" height="64" class="node-rect" />
+                <text x="1020" y="122" class="node-text">Cập nhật Giao diện &</text>
+                <text x="1020" y="140" class="node-text">Lưu trạng thái mới</text>
+                <path d="M 1100 130 L 1395 130" class="arrow-line" />
+
+                <!-- Join Bar 2 -->
+                <rect x="1395" y="70" width="7" height="120" class="join-bar" />
+                <path d="M 1402 130 L 1425 130" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- End Node -->
+                <circle cx="1430" cy="130" r="13" stroke="#000000" stroke-width="2.5" fill="none" />
+                <circle cx="1430" cy="130" r="8" fill="#000000" />
+            </svg>
+        </div>
+    </div>
+
+
+    <!-- PHẦN 2: CÁC SƠ ĐỒ HOẠT ĐỘNG HỆ THỐNG GỢI Ý SẢN PHẨM AI -->
+    <div class="section-header">🤖 PHẦN 2: CÁC SƠ ĐỒ HOẠT ĐỘNG THUẬT TOÁN GỢI Ý SẢN PHẨM</div>
+
+    <!-- 6. APRIORI ASSOCIATION RULES -->
+    <div class="diagram-card">
+        <div class="diagram-header">
+            <div class="diagram-title">
+                Hình 3.17-A Gợi Ý Sản Phẩm Kèm (Apriori Association Rules)
+                <span class="diagram-badge">Phụ kiện mua kèm / Cross-selling</span>
+            </div>
+            <button class="btn btn-success btn-download" onclick="downloadPNG('svg-apriori', 'Hinh_3_17A_So_Do_Apriori.png')">
+                📸 Tải Ảnh HD Nét Căng (PNG)
+            </button>
+        </div>
+        <div class="diagram-svg-container">
+            <svg id="svg-apriori" width="2020" height="230" viewBox="0 0 2020 230" xmlns="http://www.w3.org/2000/svg">
+                <!-- Start Node -->
+                <circle cx="35" cy="115" r="12" fill="#000000" />
+                <path d="M 47 115 L 75 115" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Step 1 -->
+                <rect x="75" y="82" width="145" height="66" class="node-rect" />
+                <text x="147" y="106" class="node-text">Lấy các SP trong</text>
+                <text x="147" y="125" class="node-text">giỏ hàng</text>
+                <path d="M 220 115 L 250 115" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Step 2 -->
+                <rect x="250" y="82" width="145" height="66" class="node-rect" />
+                <text x="322" y="106" class="node-text">Nhóm sản phẩm</text>
+                <text x="322" y="125" class="node-text">theo đơn hàng</text>
+                <path d="M 395 115 L 425 115" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Step 3 -->
+                <rect x="425" y="82" width="145" height="66" class="node-rect" />
+                <text x="497" y="106" class="node-text">Mã hóa dữ liệu</text>
+                <text x="497" y="125" class="node-text">đơn hàng</text>
+                <path d="M 570 115 L 600 115" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Step 4 -->
+                <rect x="600" y="82" width="170" height="66" class="node-rect" />
+                <text x="685" y="106" class="node-text">Apriori: Tìm các tập</text>
+                <text x="685" y="125" class="node-text">sản phẩm phổ biến</text>
+                <path d="M 770 115 L 800 115" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Step 5 -->
+                <rect x="800" y="82" width="165" height="66" class="node-rect" />
+                <text x="882" y="106" class="node-text">Sinh luật kết hợp</text>
+                <text x="882" y="125" class="node-text">theo Confidence & Lift</text>
+                <path d="M 965 115 L 995 115" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Step 6 -->
+                <rect x="995" y="82" width="155" height="66" class="node-rect" />
+                <text x="1072" y="106" class="node-text">Lọc quy tắc 1 SP</text>
+                <text x="1072" y="125" class="node-text">& lưu file</text>
+                <path d="M 1150 115 L 1180 115" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Step 7 -->
+                <rect x="1180" y="82" width="155" height="66" class="node-rect" />
+                <text x="1257" y="106" class="node-text">Tra cứu quy tắc</text>
+                <text x="1257" y="125" class="node-text">từ dữ liệu đã lưu</text>
+                <path d="M 1335 115 L 1365 115" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Step 8 -->
+                <rect x="1365" y="82" width="170" height="66" class="node-rect" />
+                <text x="1450" y="106" class="node-text">Tính điểm = Lift*Conf,</text>
+                <text x="1450" y="125" class="node-text">trích xuất Top phụ kiện</text>
+                <path d="M 1535 115 L 1585 115" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Decision Rhombus -->
+                <polygon points="1635,75 1685,115 1635,155 1585,115" class="node-rhombus" />
+                <text x="1635" y="119" class="node-text" style="font-size:12px;">Mua kèm?</text>
+
+                <!-- Branch "Có" (Top) -->
+                <path d="M 1635 75 L 1635 48 L 1725 48" class="arrow-line" marker-end="url(#arrow1)" />
+                <text x="1645" y="40" class="label-text">Có</text>
+
+                <rect x="1725" y="20" width="175" height="54" class="node-rect" />
+                <text x="1812" y="50" class="node-text">Đặt hàng thành công</text>
+                <path d="M 1900 48 L 1935 48 L 1935 100" class="arrow-line" />
+
+                <!-- Branch "Không" (Bottom) -->
+                <path d="M 1635 155 L 1635 182 L 1725 182" class="arrow-line" marker-end="url(#arrow1)" />
+                <text x="1645" y="174" class="label-text">Không</text>
+
+                <rect x="1725" y="155" width="175" height="54" class="node-rect" />
+                <text x="1812" y="185" class="node-text">Hủy bỏ</text>
+                <path d="M 1900 182 L 1935 182 L 1935 130" class="arrow-line" />
+
+                <!-- Join Bar -->
+                <rect x="1932" y="30" width="7" height="170" class="join-bar" />
+                <path d="M 1939 115 L 1970 115" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- End Node -->
+                <circle cx="1983" cy="115" r="13" stroke="#000000" stroke-width="2.5" fill="none" />
+                <circle cx="1983" cy="115" r="8" fill="#000000" />
+            </svg>
+        </div>
+    </div>
+
+    <!-- 7. KNN COLLABORATIVE FILTERING -->
+    <div class="diagram-card">
+        <div class="diagram-header">
+            <div class="diagram-title">
+                Hình 3.17-B Gợi Ý Theo Người Dùng Tương Đồng (KNN Collaborative Filtering)
+                <span class="diagram-badge">User-based Collaborative Filtering</span>
+            </div>
+            <button class="btn btn-success btn-download" onclick="downloadPNG('svg-knn', 'Hinh_3_17B_So_Do_KNN.png')">
+                📸 Tải Ảnh HD Nét Căng (PNG)
+            </button>
+        </div>
+        <div class="diagram-svg-container">
+            <svg id="svg-knn" width="1740" height="180" viewBox="0 0 1740 180" xmlns="http://www.w3.org/2000/svg">
+                <!-- Start Node -->
+                <circle cx="35" cy="90" r="12" fill="#000000" />
+                <path d="M 47 90 L 75 90" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Step 1 -->
+                <rect x="75" y="58" width="155" height="64" class="node-rect" />
+                <text x="152" y="82" class="node-text">Tiếp nhận Mã KH</text>
+                <text x="152" y="100" class="node-text">(MaKH) hiện tại</text>
+                <path d="M 230 90 L 260 90" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Step 2 -->
+                <rect x="260" y="58" width="165" height="64" class="node-rect" />
+                <text x="342" y="82" class="node-text">Truy xuất lịch sử xem</text>
+                <text x="342" y="100" class="node-text">& đơn hàng từ DB</text>
+                <path d="M 425 90 L 455 90" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Step 3 -->
+                <rect x="455" y="58" width="170" height="64" class="node-rect" />
+                <text x="540" y="82" class="node-text">Xây dựng Ma trận</text>
+                <text x="540" y="100" class="node-text">User-Item Matrix</text>
+                <path d="M 625 90 L 655 90" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Step 4 -->
+                <rect x="655" y="58" width="170" height="64" class="node-rect" />
+                <text x="740" y="82" class="node-text">KNN: Tính độ tương đồng</text>
+                <text x="740" y="100" class="node-text">Cosine Similarity</text>
+                <path d="M 825 90 L 855 90" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Step 5 -->
+                <rect x="855" y="58" width="160" height="64" class="node-rect" />
+                <text x="935" y="82" class="node-text">Xác định K người dùng</text>
+                <text x="935" y="100" class="node-text">lân cận tốt nhất</text>
+                <path d="M 1015 90 L 1045 90" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Step 6 -->
+                <rect x="1045" y="58" width="170" height="64" class="node-rect" />
+                <text x="1130" y="82" class="node-text">Rút trích các SP lân cận</text>
+                <text x="1130" y="100" class="node-text">đã mua/xem (User chưa mua)</text>
+                <path d="M 1215 90 L 1245 90" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Step 7 -->
+                <rect x="1245" y="58" width="165" height="64" class="node-rect" />
+                <text x="1327" y="82" class="node-text">Tính điểm dự đoán</text>
+                <text x="1327" y="100" class="node-text">Score_KNN từng SP</text>
+                <path d="M 1410 90 L 1440 90" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Step 8 -->
+                <rect x="1440" y="58" width="170" height="64" class="node-rect" />
+                <text x="1525" y="82" class="node-text">Sắp xếp giảm dần &</text>
+                <text x="1525" y="100" class="node-text">Hiển thị Top K sản phẩm</text>
+                <path d="M 1610 90 L 1645 90" class="arrow-line" />
+
+                <!-- Join Bar -->
+                <rect x="1642" y="30" width="7" height="120" class="join-bar" />
+                <path d="M 1649 90 L 1680 90" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- End Node -->
+                <circle cx="1693" cy="90" r="13" stroke="#000000" stroke-width="2.5" fill="none" />
+                <circle cx="1693" cy="90" r="8" fill="#000000" />
+            </svg>
+        </div>
+    </div>
+
+    <!-- 8. CONTENT-BASED FILTERING -->
+    <div class="diagram-card">
+        <div class="diagram-header">
+            <div class="diagram-title">
+                Hình 3.17-C Gợi Ý Theo Sở Thích Cá Nhân (Content-Based Filtering)
+                <span class="diagram-badge">Feature Matching / Profile-based</span>
+            </div>
+            <button class="btn btn-success btn-download" onclick="downloadPNG('svg-content', 'Hinh_3_17C_So_Do_ContentBased.png')">
+                📸 Tải Ảnh HD Nét Căng (PNG)
+            </button>
+        </div>
+        <div class="diagram-svg-container">
+            <svg id="svg-content" width="1740" height="180" viewBox="0 0 1740 180" xmlns="http://www.w3.org/2000/svg">
+                <!-- Start Node -->
+                <circle cx="35" cy="90" r="12" fill="#000000" />
+                <path d="M 47 90 L 75 90" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Step 1 -->
+                <rect x="75" y="58" width="160" height="64" class="node-rect" />
+                <text x="155" y="82" class="node-text">Trích xuất Hồ sơ sở thích</text>
+                <text x="155" y="100" class="node-text">so_thich_khach_hang</text>
+                <path d="M 235 90 L 265 90" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Step 2 -->
+                <rect x="265" y="58" width="170" height="64" class="node-rect" />
+                <text x="350" y="82" class="node-text">Truy xuất cấu hình SP</text>
+                <text x="350" y="100" class="node-text">từ chitietsanpham</text>
+                <path d="M 435 90 L 465 90" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Step 3 -->
+                <rect x="465" y="58" width="165" height="64" class="node-rect" />
+                <text x="547" y="82" class="node-text">Mã hóa Vector thuộc tính</text>
+                <text x="547" y="100" class="node-text">(Hãng, Chip, RAM, Giá)</text>
+                <path d="M 630 90 L 660 90" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Step 4 -->
+                <rect x="660" y="58" width="170" height="64" class="node-rect" />
+                <text x="745" y="82" class="node-text">So khớp Vector sở thích</text>
+                <text x="745" y="100" class="node-text">với Vector thuộc tính SP</text>
+                <path d="M 830 90 L 860 90" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Step 5 -->
+                <rect x="860" y="58" width="170" height="64" class="node-rect" />
+                <text x="945" y="82" class="node-text">Tính Score_Content</text>
+                <text x="945" y="100" class="node-text">(Tối đa 5.0 điểm)</text>
+                <path d="M 1030 90 L 1060 90" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Step 6 -->
+                <rect x="1060" y="58" width="165" height="64" class="node-rect" />
+                <text x="1142" y="82" class="node-text">Lọc phân khúc nhu cầu</text>
+                <text x="1142" y="100" class="node-text">(Gaming/Camera/Budget)</text>
+                <path d="M 1225 90 L 1255 90" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Step 7 -->
+                <rect x="1255" y="58" width="165" height="64" class="node-rect" />
+                <text x="1337" y="82" class="node-text">Sắp xếp theo Score_Content</text>
+                <text x="1337" y="100" class="node-text">& trích Top N sản phẩm</text>
+                <path d="M 1420 90 L 1450 90" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Step 8 -->
+                <rect x="1450" y="58" width="160" height="64" class="node-rect" />
+                <text x="1530" y="82" class="node-text">Hiển thị gợi ý</text>
+                <text x="1530" y="100" class="node-text">sở thích cá nhân</text>
+                <path d="M 1610 90 L 1645 90" class="arrow-line" />
+
+                <!-- Join Bar -->
+                <rect x="1642" y="30" width="7" height="120" class="join-bar" />
+                <path d="M 1649 90 L 1680 90" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- End Node -->
+                <circle cx="1693" cy="90" r="13" stroke="#000000" stroke-width="2.5" fill="none" />
+                <circle cx="1693" cy="90" r="8" fill="#000000" />
+            </svg>
+        </div>
+    </div>
+
+    <!-- 9. HYBRID RECOMMENDER ENGINE & FILTERS -->
+    <div class="diagram-card">
+        <div class="diagram-header">
+            <div class="diagram-title">
+                Hình 3.17-D Động Cơ Gợi Ý Lai Tổng Hợp & Các Bộ Lọc (Hybrid Recommendation Engine)
+                <span class="diagram-badge">Full Architecture & Post-Filters</span>
+            </div>
+            <button class="btn btn-success btn-download" onclick="downloadPNG('svg-hybrid', 'Hinh_3_17D_So_Do_Hybrid_Engine.png')">
+                📸 Tải Ảnh HD Nét Căng (PNG)
+            </button>
+        </div>
+        <div class="diagram-svg-container">
+            <svg id="svg-hybrid" width="1860" height="350" viewBox="0 0 1860 350" xmlns="http://www.w3.org/2000/svg">
+                <!-- Start Node -->
+                <circle cx="35" cy="175" r="12" fill="#000000" />
+                <path d="M 47 175 L 75 175" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Step 1 -->
+                <rect x="75" y="143" width="150" height="64" class="node-rect" />
+                <text x="150" y="167" class="node-text">Nhận yêu cầu gợi ý</text>
+                <text x="150" y="185" class="node-text">cho MaKH từ Client/AI</text>
+                <path d="M 225 175 L 265 175" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Decision Node: "Đã có dữ liệu?" -->
+                <polygon points="325,130 385,175 325,220 265,175" class="node-rhombus" />
+                <text x="325" y="169" class="node-text">Đã có</text>
+                <text x="325" y="183" class="node-text">dữ liệu?</text>
+
+                <!-- Branch "Không" (Cold-Start - Top) -->
+                <path d="M 325 130 L 325 58 L 400 58" class="arrow-line" marker-end="url(#arrow1)" />
+                <text x="335" y="48" class="label-text">Không (Cold-Start)</text>
+
+                <rect x="400" y="26" width="185" height="64" class="node-rect" />
+                <text x="492" y="50" class="node-text">Tính Popularity Score</text>
+                <text x="492" y="68" class="node-text font-mono">= 3*SoLuongBan + LuotXem</text>
+                <path d="M 585 58 L 615 58" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <rect x="615" y="26" width="170" height="64" class="node-rect" />
+                <text x="700" y="50" class="node-text">Lấy Top SP phổ biến</text>
+                <text x="700" y="68" class="node-text">(Bán chạy / Xem nhiều)</text>
+                <path d="M 785 58 L 905 58 L 905 105" class="arrow-line" />
+
+                <!-- Branch "Có" (Bottom - Hybrid Algorithms) -->
+                <path d="M 325 220 L 325 245 L 390 245" class="arrow-line" marker-end="url(#arrow1)" />
+                <text x="335" y="235" class="label-text">Có</text>
+
+                <!-- Fork Bar -->
+                <rect x="388" y="145" width="7" height="170" class="join-bar" />
+
+                <!-- Sub-branch 1: Content-Based -->
+                <path d="M 395 155 L 425 155" class="arrow-line" marker-end="url(#arrow1)" />
+                <rect x="425" y="130" width="185" height="50" class="node-rect" />
+                <text x="517" y="159" class="node-text">1. Content-Based (Score x 0.5)</text>
+                <path d="M 610 155 L 640 155" class="arrow-line" />
+
+                <!-- Sub-branch 2: KNN CF -->
+                <path d="M 395 230 L 425 230" class="arrow-line" marker-end="url(#arrow1)" />
+                <rect x="425" y="205" width="185" height="50" class="node-rect" />
+                <text x="517" y="234" class="node-text">2. KNN CF (Score x 0.3)</text>
+                <path d="M 610 230 L 640 230" class="arrow-line" />
+
+                <!-- Sub-branch 3: Apriori -->
+                <path d="M 395 300 L 425 300" class="arrow-line" marker-end="url(#arrow1)" />
+                <rect x="425" y="275" width="185" height="50" class="node-rect" />
+                <text x="517" y="304" class="node-text">3. Apriori Rules (Score x 0.2)</text>
+                <path d="M 610 300 L 640 300" class="arrow-line" />
+
+                <!-- Join Bar 1 -->
+                <rect x="638" y="140" width="7" height="175" class="join-bar" />
+                <path d="M 645 230 L 675 230" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Score Synthesis -->
+                <rect x="675" y="198" width="200" height="64" class="node-rect" />
+                <text x="775" y="222" class="node-text">Tổng hợp Total Score =</text>
+                <text x="775" y="240" class="node-text">0.5*CB + 0.3*KNN + 0.2*Apriori</text>
+                <path d="M 875 230 L 905 230 L 905 190" class="arrow-line" />
+
+                <!-- Join Bar 2 -->
+                <rect x="902" y="40" width="7" height="270" class="join-bar" />
+                <path d="M 909 175 L 940 175" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Post Filter 1: Purchased Items Exclusion -->
+                <rect x="940" y="143" width="170" height="64" class="node-rect" />
+                <text x="1025" y="167" class="node-text">Bộ lọc 1: Loại bỏ SP</text>
+                <text x="1025" y="185" class="node-text">khách đã mua thành công</text>
+                <path d="M 1110 175 L 1140 175" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Post Filter 2: Phones vs Accessories -->
+                <rect x="1140" y="143" width="170" height="64" class="node-rect" />
+                <text x="1225" y="167" class="node-text">Bộ lọc 2: Phân tách</text>
+                <text x="1225" y="185" class="node-text">Điện thoại vs Phụ kiện</text>
+                <path d="M 1310 175 L 1340 175" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Post Filter 3: Round-Robin Diversity -->
+                <rect x="1340" y="143" width="175" height="64" class="node-rect" />
+                <text x="1427" y="167" class="node-text">Bộ lọc 3: Round-Robin</text>
+                <text x="1427" y="185" class="node-text">đa dạng hóa thương hiệu</text>
+                <path d="M 1515 175 L 1545 175" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- Output Step -->
+                <rect x="1545" y="143" width="160" height="64" class="node-rect" />
+                <text x="1625" y="167" class="node-text">Hiển thị Top N sản phẩm</text>
+                <text x="1625" y="185" class="node-text">gợi ý lên UI / Chatbot</text>
+                <path d="M 1705 175 L 1760 175" class="arrow-line" />
+
+                <!-- Join Bar 3 -->
+                <rect x="1760" y="90" width="7" height="170" class="join-bar" />
+                <path d="M 1767 175 L 1800 175" class="arrow-line" marker-end="url(#arrow1)" />
+
+                <!-- End Node -->
+                <circle cx="1813" cy="175" r="13" stroke="#000000" stroke-width="2.5" fill="none" />
+                <circle cx="1813" cy="175" r="8" fill="#000000" />
+            </svg>
+        </div>
+    </div>
+
+    <script>
+        function toggleTheme() {
+            document.body.classList.toggle('dark');
+        }
+
+        // Tự động tải ảnh PNG siêu nét HD (2.5x resolution) từ SVG
+        function downloadPNG(svgId, filename) {
+            const svgElement = document.getElementById(svgId);
+            const svgWidth = parseInt(svgElement.getAttribute('width'));
+            const svgHeight = parseInt(svgElement.getAttribute('height'));
+
+            const scale = 2.5;
+
+            const svgString = new XMLSerializer().serializeToString(svgElement);
+            const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+            const url = URL.createObjectURL(svgBlob);
+
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                canvas.width = svgWidth * scale;
+                canvas.height = svgHeight * scale;
+
+                const ctx = canvas.getContext('2d');
+                ctx.scale(scale, scale);
+
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, svgWidth, svgHeight);
+
+                ctx.drawImage(img, 0, 0, svgWidth, svgHeight);
+
+                const pngUrl = canvas.toDataURL('image/png');
+                const downloadLink = document.createElement('a');
+                downloadLink.href = pngUrl;
+                downloadLink.download = filename;
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+                URL.revokeObjectURL(url);
+            };
+            img.src = url;
+        }
+    </script>
+</body>
+</html>

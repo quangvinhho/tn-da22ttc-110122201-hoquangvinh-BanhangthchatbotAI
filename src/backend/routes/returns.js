@@ -326,6 +326,14 @@ router.put('/claim/:id/status', checkAdmin, async (req, res) => {
       });
     }
 
+    // Kiểm tra luồng chuyển trạng thái (chỉ được tiến, không được lùi)
+    if (claim.trang_thai === 'approved' && status === 'pending') {
+      return res.status(400).json({ success: false, message: 'Không thể chuyển ngược trạng thái từ Đã duyệt về Chờ duyệt.' });
+    }
+    if (claim.trang_thai === 'processing' && ['pending', 'approved'].includes(status)) {
+      return res.status(400).json({ success: false, message: 'Không thể chuyển ngược trạng thái từ Đang xử lý về Đã duyệt hoặc Chờ duyệt.' });
+    }
+
     const completedDate = ['completed', 'rejected'].includes(status) ? new Date() : null;
     const finalRefund = parseFloat(refundAmount) || 0.00;
 

@@ -392,7 +392,12 @@ function isAccessory(name) {
   
   if (isAccKw) {
     if (hasPhoneIndicator) {
-      if (!n.includes('op') && !n.includes('tai nghe') && !n.includes('cuong luc') && !n.includes('bao da')) {
+      // Check if it has charger/cable specific nouns
+      const isRealAccessory = ['cap', 'cu', 'day', 'coc', 'adapter', 'du phong', 'tai nghe', 'op', 'cuong luc', 'bao da'].some(word => {
+        const regex = new RegExp('\\b' + word + '\\b');
+        return regex.test(n);
+      });
+      if (!isRealAccessory) {
         return false;
       }
     }
@@ -1395,6 +1400,7 @@ router.post('/chat', checkChatbotAccess, async (req, res) => {
       }
     } else {
       contextState = req.session.context_state || {};
+      history = req.session.chatbot_history || [];
     }
 
     let userMessage;
@@ -2023,8 +2029,66 @@ Trả lời (HTML thuần, KHÔNG dùng markdown **/*, có thể dùng <br>, <st
               aiResponse = pyData.response;
               isFromRag = true;
               ragRecordSuccess();
+              if (pyData.suggestions) {
+                suggestionsPayload = pyData.suggestions;
+              }
               if (pyData.context_state) {
                 contextState = pyData.context_state;
+                
+                // [CÁ NHÂN HÓA SAU TƯ VẤN] Tự động lưu sở thích người dùng từ luồng tư vấn đã hoàn thành
+                if (contextState.completed_flow && userId) {
+                  const flowName = contextState.completed_flow;
+                  const flowData = contextState.completed_flow_data || {};
+                  
+                  try {
+                    const interestsToSave = [];
+                    
+                    if (flowData.brand_preference) {
+                      const b = flowData.brand_preference.toLowerCase();
+                      if (b.includes('samsung')) interestsToSave.push('samsung');
+                      else if (b.includes('apple') || b.includes('iphone')) interestsToSave.push('apple');
+                      else if (b.includes('xiaomi') || b.includes('redmi')) interestsToSave.push('xiaomi');
+                      else if (b.includes('oppo') || b.includes('vivo')) interestsToSave.push('oppo');
+                    }
+                    
+                    const priorityVal = String(flowData.priority || flowData.purpose || '').toLowerCase();
+                    if (priorityVal.includes('pin') || priorityVal.includes('battery')) {
+                      interestsToSave.push('battery');
+                    }
+                    if (priorityVal.includes('game') || priorityVal.includes('gaming') || priorityVal.includes('fps')) {
+                      interestsToSave.push('gaming');
+                    }
+                    if (priorityVal.includes('chup') || priorityVal.includes('camera') || priorityVal.includes('selfie') || priorityVal.includes('quay')) {
+                      interestsToSave.push('camera');
+                    }
+                    if (priorityVal.includes('hoc') || priorityVal.includes('study') || flowName === 'student') {
+                      interestsToSave.push('budget');
+                    }
+                    
+                    if (flowData.budget) {
+                      const budgetNum = parseInt(flowData.budget);
+                      if (budgetNum >= 15000000) {
+                        interestsToSave.push('luxury');
+                      } else if (budgetNum < 8000000) {
+                        interestsToSave.push('budget');
+                      }
+                    }
+                    
+                    for (const keyword of interestsToSave) {
+                      await pool.query(
+                        'INSERT IGNORE INTO so_thich_khach_hang (ma_kh, tu_khoa, thoi_gian) VALUES (?, ?, NOW())',
+                        [userId, keyword]
+                      );
+                      console.log(`[Cá nhân hóa sau tư vấn] Tự động lưu sở thích '${keyword}' cho ma_kh: ${userId}`);
+                    }
+                  } catch (dbErr) {
+                    console.error('Lỗi khi lưu sở thích từ luồng tư vấn đã hoàn thành:', dbErr);
+                  }
+                  
+                  delete contextState.completed_flow;
+                  delete contextState.completed_flow_data;
+                }
+                
                 if (userId && currentConversationId) {
                   await pool.query('UPDATE cuoc_hoi_thoai SET context_state = ? WHERE ma_cuoc_hoi_thoai = ?', [JSON.stringify(contextState), currentConversationId]);
                 } else {
@@ -2258,6 +2322,9 @@ Trả lời (HTML thuần, KHÔNG dùng markdown **/*, có thể dùng <br>, <st
       await pool.query('UPDATE cuoc_hoi_thoai SET context_state = ? WHERE ma_cuoc_hoi_thoai = ?', [JSON.stringify(contextState), currentConversationId]);
     } else {
       req.session.context_state = contextState;
+      // Save assistant message to guest session history
+      history.push({ role: 'assistant', content: String(aiResponse) });
+      req.session.chatbot_history = history.slice(-10); // Keep last 10 messages
     }
 
     res.json({
@@ -2400,7 +2467,9 @@ router.delete('/conversations-all', checkChatbotAccess, async (req, res) => {
     const userId = req.query.userId;
     
     if (!userId) {
-      return res.status(400).json({ error: 'Thiếu userId' });
+      req.session.context_state = {};
+      req.session.chatbot_history = [];
+      return res.json({ message: 'Đã xóa tất cả cuộc hội thoại của khách' });
     }
     
     await pool.query('DELETE FROM cuoc_hoi_thoai WHERE ma_kh = ?', [userId]);

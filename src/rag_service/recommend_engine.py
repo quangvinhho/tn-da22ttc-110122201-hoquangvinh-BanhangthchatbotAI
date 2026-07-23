@@ -488,7 +488,38 @@ def mock_get_recommendation(user_id=None, cart_items=None):
     top_log = ', '.join([f"#{p}({brand_map.get(p, '?')[:6]}={scores[p]:.1f})" for p in diversified[:5]])
     print(f"[Hybrid] user={user_id} top5: {top_log}")
 
-    return diversified
+    # --- FILTER TO ONLY ACCESSORIES (CHARGERS, ADAPTERS, HEADPHONES, ETC.) ---
+    try:
+        from recommend_flow import is_accessory
+        conn = mysql.connector.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, database=DB_NAME)
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT ma_sp, ten_sp FROM san_pham WHERE so_luong_ton > 0")
+        all_prods = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        
+        prod_map = {int(p['ma_sp']): p['ten_sp'] for p in all_prods}
+        
+        acc_recs = []
+        for pid in diversified:
+            if pid in prod_map and is_accessory(prod_map[pid]):
+                acc_recs.append(pid)
+                
+        # Nếu thiếu, lấp đầy danh sách bằng bất kỳ phụ kiện nào khác có trong kho
+        if len(acc_recs) < 4:
+            all_accs = [int(p['ma_sp']) for p in all_prods if is_accessory(p['ten_sp'])]
+            for apid in all_accs:
+                if apid not in acc_recs:
+                    acc_recs.append(apid)
+                    if len(acc_recs) >= 4:
+                        break
+                        
+        print(f"[Hybrid Accessories] Filtered accessories: {acc_recs[:5]}")
+        return acc_recs
+        
+    except Exception as e:
+        print(f"[Hybrid Accessories] Filtering failed: {e}")
+        return diversified
 
 def extract_interests_from_history(user_id):
     """

@@ -96,6 +96,7 @@ class ChatResponse(BaseModel):
     response: str
     intent: Optional[str] = None
     context_state: Optional[Dict[str, Any]] = {}
+    suggestions: Optional[List[Dict[str, Any]]] = None
 
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest, http_request: Request):
@@ -116,7 +117,7 @@ async def chat(request: ChatRequest, http_request: Request):
             )
 
         engine = get_rag_engine()
-        answer, updated_state = engine.process_chat(
+        answer, updated_state, suggestions = engine.process_chat(
             request.message, 
             request.history, 
             user_id=request.userId, 
@@ -124,7 +125,7 @@ async def chat(request: ChatRequest, http_request: Request):
             context_state=request.context_state
         )
         
-        return ChatResponse(response=answer, context_state=updated_state)
+        return ChatResponse(response=answer, context_state=updated_state, suggestions=suggestions)
     except Exception as e:
         import traceback
         traceback.print_exc()
